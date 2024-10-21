@@ -18,7 +18,7 @@ public static class ProductEndpoints
       logger.LogInformation("Creating products");
       await productService.AddProductAsync(product);
 
-      return Results.Ok("Product created!");
+      return Results.Created($"/products/{product.Id}", product);
     })
     .WithName("CreateProduct")
     .WithTags("Products");
@@ -26,7 +26,7 @@ public static class ProductEndpoints
     app.MapGet("/products", async (IProductService productService) =>
     {
       var products = await productService.GetAllProductsAsync();
-      logger.LogInformation($"Number of products to be returned: {products.Count}");
+      logger.LogInformation($"Number of products to be returned: {products.Count()}");
       return Results.Ok(products);
     })
     .WithName("GetAllProducts")

@@ -1,34 +1,38 @@
 using ECommerce.Common.Interfaces;
 using ECommerce.Modules.Products.Domain;
+using ECommerce.Modules.Products.Persistence;
 using Microsoft.Extensions.Logging;
+using Microsoft.EntityFrameworkCore;
 
 namespace ECommerce.Modules.Products.Services;
 
 public class ProductService : IProductService
 {
-  private readonly IRepository<Product> _productRepository;
+  private readonly ProductDbContext _productDbContext;
   private readonly ILogger<ProductService> _logger;
 
-  public ProductService(IRepository<Product> productRepository, ILogger<ProductService> logger)
+  public ProductService(ProductDbContext productDbContext, ILogger<ProductService> logger)
   {
-    _productRepository = productRepository;
+    _productDbContext = productDbContext;
     _logger = logger;
   }
 
   public async Task<Product> GetProductByIdAsync(Guid productId)
   {
-    return await _productRepository.GetByIdAsync(productId);
+    return await _productDbContext.Products.FindAsync(productId);
   }
 
-  public async Task<List<Product>> GetAllProductsAsync()
+  public async Task<IEnumerable<Product>> GetAllProductsAsync()
   {
-    var products = await _productRepository.GetAllAsync();
-    _logger.LogInformation($"Number of products to be returned: {products.Count}");
+    var products = await _productDbContext.Products.ToListAsync();
+    _logger.LogInformation($"Number of products to be returned: {products.Count()}");
     return products;
   }
 
-  public async Task AddProductAsync(Product product)
+  public async Task<Product> AddProductAsync(Product product)
   {
-    await _productRepository.AddAsync(product);
+    _productDbContext.Products.Add(product);
+    await _productDbContext.SaveChangesAsync();
+    return product;
   }
 }
