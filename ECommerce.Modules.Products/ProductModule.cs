@@ -13,8 +13,8 @@ public static class ProductModule
 {
   public static IServiceCollection AddProductModule(this IServiceCollection services, IConfiguration configuration)
   {
-    services.AddSingleton<IProductService, ProductService>();
-    services.AddSingleton<IProductCatalogService, ProductCatalogService>();
+    services.AddScoped<IProductService, ProductService>();
+    services.AddScoped<IProductCatalogService, ProductCatalogService>();
     services.AddSingleton(typeof(IRepository<Product>), typeof(InMemoryRepository<Product>));
     return services;
   }

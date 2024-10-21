@@ -6,6 +6,7 @@ project.lock.json
 nupkg/
 **/bin/
 **/obj/
+**/test-results/
 
 # Visual Studio Code
 .vscode/

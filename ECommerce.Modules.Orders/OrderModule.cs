@@ -11,8 +11,8 @@ public static class OrderModule
 {
     public static IServiceCollection AddOrderModule(this IServiceCollection services, IConfiguration configuration)
     {
-        services.AddSingleton<IOrderService, OrderService>();
-        services.AddSingleton(typeof(IRepository<Order>), typeof(InMemoryRepository<Order>));
+        services.AddScoped<IOrderService, OrderService>();
+        services.AddScoped(typeof(IRepository<Order>), typeof(InMemoryRepository<Order>));
         return services;
     }
 }

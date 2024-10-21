@@ -1,29 +1,32 @@
-using ECommerce.Common.Interfaces;
 using ECommerce.Modules.Customers.Domain;
+using ECommerce.Modules.Customers.Persistence;
+using Microsoft.EntityFrameworkCore;
 
 namespace ECommerce.Modules.Customers.Services;
 
 public class CustomerService : ICustomerService
 {
-  private readonly IRepository<Customer> _customerRepository;
+    private readonly CustomerDbContext _customerDbContext;
 
-  public CustomerService(IRepository<Customer> customerRepository)
-  {
-    _customerRepository = customerRepository;
-  }
+    public CustomerService(CustomerDbContext customerDbContext)
+    {
+        _customerDbContext = customerDbContext;
+    }
 
-  public async Task<Customer> GetCustomerByIdAsync(Guid customerId)
-  {
-    return await _customerRepository.GetByIdAsync(customerId);
-  }
+    public async Task<Customer> GetCustomerByIdAsync(Guid customerId)
+    {
+        return await _customerDbContext.Customers.FindAsync(customerId);
+    }
 
-  public async Task<List<Customer>> GetAllCustomersAsync()
-  {
-    return await _customerRepository.GetAllAsync();
-  }
+    public async Task<IEnumerable<Customer>> GetAllCustomersAsync()
+    {
+        return await _customerDbContext.Customers.ToListAsync();
+    }
 
-  public async Task AddCustomerAsync(Customer customer)
-  {
-    await _customerRepository.AddAsync(customer);
-  }
+    public async Task<Customer> AddCustomerAsync(Customer customer)
+    {
+        _customerDbContext.Customers.Add(customer);
+        await _customerDbContext.SaveChangesAsync();
+        return customer;
+    }
 }
