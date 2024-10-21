@@ -1,33 +1,21 @@
-using ECommerce.Common.Domain;
+using Microsoft.EntityFrameworkCore;
 
 namespace ECommerce.Modules.Orders.Domain
 {
-  public class Order : Entity
+    public class Order
   {
-    public Guid CustomerId { get; private set; }
-    public List<OrderItem> Items { get; private set; }
-
-    public Order(Guid customerId, List<OrderItem> items)
-    {
-      Id = Guid.NewGuid();
-      CustomerId = customerId;
-      Items = items;
-    }
-
-    public decimal GetTotal() => Items.Sum(i => i.Price * i.Quantity);
+    public Guid Id { get; set; }
+    public Guid CustomerId { get; set; }
+    public ICollection<OrderItem> Items { get; set; } = [];
   }
 
+  [Owned]
   public class OrderItem
   {
-    public Guid ProductId { get; private set; }
-    public int Quantity { get; private set; }
-    public decimal Price { get; private set; }
+    public Guid Id { get; set; }
 
-    public OrderItem(Guid productId, int quantity, decimal price)
-    {
-      ProductId = productId;
-      Quantity = quantity;
-      Price = price;
-    }
+        public Guid ProductId { get; set; }
+    public int Quantity { get; set; }
+    public decimal Price { get; set; }
   }
 }

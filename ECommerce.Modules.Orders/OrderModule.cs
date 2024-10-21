@@ -1,7 +1,6 @@
-using ECommerce.Common.Infrastructure;
-using ECommerce.Common.Interfaces;
-using ECommerce.Modules.Orders.Domain;
+using ECommerce.Modules.Orders.Persistence;
 using ECommerce.Modules.Orders.Services;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -11,10 +10,12 @@ public static class OrderModule
 {
     public static IServiceCollection AddOrderModule(this IServiceCollection services, IConfiguration configuration)
     {
+        services.AddDbContext<OrderDbContext>(options =>
+        {
+            options.UseInMemoryDatabase("ECommerce.Product");
+        });
+
         services.AddScoped<IOrderService, OrderService>();
-        services.AddScoped(typeof(IRepository<Order>), typeof(InMemoryRepository<Order>));
         return services;
     }
 }
-
-

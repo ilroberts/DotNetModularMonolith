@@ -1,17 +1,18 @@
-using ECommerce.Common.Interfaces;
 using ECommerce.Contracts.Interfaces;
 using ECommerce.Modules.Orders.Domain;
+using ECommerce.Modules.Orders.Persistence;
 using ECommerce.Modules.Orders.Result;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace ECommerce.Modules.Orders.Services;
 
-internal class OrderService(IRepository<Order> orderRepository,
+internal class OrderService(OrderDbContext orderDbContext,
   ILogger<OrderService> logger,
   IProductCatalogService productCatalogService,
   ICustomerCatalogService customerCatalogService) : IOrderService
 {
-  private readonly IRepository<Order> _orderRepository = orderRepository;
+  private readonly OrderDbContext _orderDbContext = orderDbContext;
   private readonly ILogger<OrderService> _logger = logger;
   private readonly IProductCatalogService _productCatalogService = productCatalogService;
   private readonly ICustomerCatalogService _customerCatalogService = customerCatalogService;
@@ -28,10 +29,21 @@ internal class OrderService(IRepository<Order> orderRepository,
 
       var customer = await _customerCatalogService.GetCustomerByIdAsync(customerId) ?? 
         throw new Exception($"Customer with id {customerId} not found");
-      
-      var order = new Order(customerId, items);
-      await _orderRepository.AddAsync(order);
-      await _orderRepository.SaveChangesAsync();
+
+            var order = new Order()
+            {
+        Id = Guid.NewGuid(),
+        CustomerId = customerId,
+        Items = items.Select((item, index) => new OrderItem
+        {
+          Id = Guid.NewGuid(),
+          ProductId = item.ProductId,
+          Quantity = item.Quantity,
+          Price = products[index].Price
+        }).ToList()
+      };
+      await _orderDbContext.Orders.AddAsync(order);
+      await _orderDbContext.SaveChangesAsync();
 
       return new OrderResult
       {
@@ -50,13 +62,13 @@ internal class OrderService(IRepository<Order> orderRepository,
 
   public async Task<Order> GetOrderByIdAsync(Guid orderId)
   {
-    return await _orderRepository.GetByIdAsync(orderId);
+    return await _orderDbContext.Orders.FindAsync(orderId);
   }
 
-  public async Task<List<Order>> GetAllOrdersAsync()
+  public async Task<IEnumerable<Order>> GetAllOrdersAsync()
   {
-    var orders = await _orderRepository.GetAllAsync();
-    _logger.LogInformation($"Number of orders to be returned: {orders.Count}");
+    var orders = await _orderDbContext.Orders.ToListAsync();
+    _logger.LogInformation($"Number of orders to be returned: {orders.Count()}");
     return orders;
   }
 }
