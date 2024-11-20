@@ -3,27 +3,28 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ECommerceApp", "ECommerceApp\ECommerceApp.csproj", "{7D6E8C93-57E5-40E0-B857-5795E3B083DD}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ECommerceApp", "ECommerceApp\ECommerceApp.csproj", "{7D6E8C93-57E5-40E0-B857-5795E3B083DD}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ECommerce.Common", "ECommerce.Common\ECommerce.Common.csproj", "{F8ADAA72-6EAC-49BE-9C95-A1D0D36E4D24}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ECommerce.Common", "ECommerce.Common\ECommerce.Common.csproj", "{F8ADAA72-6EAC-49BE-9C95-A1D0D36E4D24}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ECommerce.Modules.Orders", "ECommerce.Modules.Orders\ECommerce.Modules.Orders.csproj", "{94EC02AE-4A68-417A-A63B-802ADC5A11DF}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ECommerce.Modules.Orders", "ECommerce.Modules.Orders\ECommerce.Modules.Orders.csproj", "{94EC02AE-4A68-417A-A63B-802ADC5A11DF}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ECommerce.Modules.Products", "ECommerce.Modules.Products\ECommerce.Modules.Products.csproj", "{98E748F4-A48F-458D-A434-B5627DF290D2}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ECommerce.Modules.Products", "ECommerce.Modules.Products\ECommerce.Modules.Products.csproj", "{98E748F4-A48F-458D-A434-B5627DF290D2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ECommerce.Modules.Customers", "ECommerce.Modules.Customers\ECommerce.Modules.Customers.csproj", "{00CE914D-10E2-4A33-AA17-4EA6ADD69763}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ECommerce.Modules.Customers", "ECommerce.Modules.Customers\ECommerce.Modules.Customers.csproj", "{00CE914D-10E2-4A33-AA17-4EA6ADD69763}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ECommerce.Contracts", "ECommerce.Contracts\ECommerce.Contracts.csproj", "{42A3ABC3-97E3-4BAA-8199-F62F7AD6CDBF}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ECommerce.Contracts", "ECommerce.Contracts\ECommerce.Contracts.csproj", "{42A3ABC3-97E3-4BAA-8199-F62F7AD6CDBF}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ECommerce.Modules.Orders.Tests", "ECommerce.Modules.Orders.Tests\ECommerce.Modules.Orders.Tests.csproj", "{AB433BF2-B470-4D8A-8360-CC10D2092CCA}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ECommerce.Modules.Orders.Tests", "ECommerce.Modules.Orders.Tests\ECommerce.Modules.Orders.Tests.csproj", "{AB433BF2-B470-4D8A-8360-CC10D2092CCA}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{E518047E-53A8-4DAE-B213-87355DA9C6AD}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ECommerce.ArchitectureTests", "tests\ECommerce.ArchitectureTests\ECommerce.ArchitectureTests.csproj", "{7686BB5E-2588-4C8A-B76D-3AFD7838643B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Release|Any CPU = Release|Any CPU
-	EndGlobalSection
-	GlobalSection(SolutionProperties) = preSolution
-		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{7D6E8C93-57E5-40E0-B857-5795E3B083DD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
@@ -54,5 +55,18 @@ Global
 		{AB433BF2-B470-4D8A-8360-CC10D2092CCA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{AB433BF2-B470-4D8A-8360-CC10D2092CCA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{AB433BF2-B470-4D8A-8360-CC10D2092CCA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7686BB5E-2588-4C8A-B76D-3AFD7838643B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7686BB5E-2588-4C8A-B76D-3AFD7838643B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7686BB5E-2588-4C8A-B76D-3AFD7838643B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7686BB5E-2588-4C8A-B76D-3AFD7838643B}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{7686BB5E-2588-4C8A-B76D-3AFD7838643B} = {E518047E-53A8-4DAE-B213-87355DA9C6AD}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {31260D7E-2CB3-41B0-BBEF-0C0C02066180}
 	EndGlobalSection
 EndGlobal
