@@ -25,6 +25,9 @@ public class CustomerService : ICustomerService
 
     public async Task<Customer> AddCustomerAsync(Customer customer)
     {
+        // get valid suspensions
+        var suspensionTypes = SuspensionTypeCode.GetAllSuspensionTypes();
+
         _customerDbContext.Customers.Add(customer);
         await _customerDbContext.SaveChangesAsync();
         return customer;
