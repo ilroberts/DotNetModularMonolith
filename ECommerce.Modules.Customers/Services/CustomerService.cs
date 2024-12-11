@@ -1,5 +1,6 @@
 using ECommerce.Modules.Customers.Domain;
 using ECommerce.Modules.Customers.Persistence;
+using ECommerce.Modules.Customers.Util;
 using Microsoft.EntityFrameworkCore;
 
 namespace ECommerce.Modules.Customers.Services;
@@ -25,6 +26,9 @@ public class CustomerService : ICustomerService
 
     public async Task<Customer> AddCustomerAsync(Customer customer)
     {
+        // get valid suspensions
+        var suspensionTypes = SuspensionTypeCode.GetAllSuspensionTypes();
+
         _customerDbContext.Customers.Add(customer);
         await _customerDbContext.SaveChangesAsync();
         return customer;

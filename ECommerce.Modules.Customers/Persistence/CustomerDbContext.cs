@@ -4,12 +4,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ECommerce.Modules.Customers.Persistence
 {
-    public class CustomerDbContext : DbContext
+    public class CustomerDbContext(DbContextOptions<CustomerDbContext> options) : DbContext(options)
     {
-        public CustomerDbContext(DbContextOptions<CustomerDbContext> options) : base(options)
-        {
-        }
-
         public DbSet<Customer> Customers { get; set; }
+        public DbSet<SuspensionType> SuspensionTypes { get; set; }
     }
 }
