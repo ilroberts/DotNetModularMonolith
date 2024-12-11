@@ -1,5 +1,6 @@
 using ECommerce.Modules.Customers.Domain;
 using ECommerce.Modules.Customers.Persistence;
+using ECommerce.Modules.Customers.Util;
 using Microsoft.EntityFrameworkCore;
 
 namespace ECommerce.Modules.Customers.Services;

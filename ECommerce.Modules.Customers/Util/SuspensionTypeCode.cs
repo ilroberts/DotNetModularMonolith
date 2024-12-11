@@ -1,5 +1,7 @@
 
-namespace ECommerce.Modules.Customers.Domain;
+using ECommerce.Modules.Customers.Domain;
+
+namespace ECommerce.Modules.Customers.Util;
 
 public class SuspensionTypeCode
 {
