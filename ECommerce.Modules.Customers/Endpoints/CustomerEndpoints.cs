@@ -20,7 +20,8 @@ public static class CustomerEndpoints
             return Results.Created($"/customers/{customer.Id}", customer);
         })
         .WithName("CreateCustomer")
-        .WithTags("Customers");
+        .WithTags("Customers")
+        .RequireAuthorization();
 
         app.MapGet("/customers", async (ICustomerService customerService) =>
         {
@@ -29,7 +30,8 @@ public static class CustomerEndpoints
             return Results.Ok(customers);
         })
         .WithName("GetAllCustomers")
-        .WithTags("Customers");
+        .WithTags("Customers")
+        .RequireAuthorization();
 
         app.MapGet("/customers/{id}", async (ICustomerService customerService, Guid id) =>
         {
@@ -37,6 +39,7 @@ public static class CustomerEndpoints
             return customer is not null ? Results.Ok(customer) : Results.NotFound();
         })
         .WithName("GetCustomerById")
-        .WithTags("Customers");
+        .WithTags("Customers")
+        .RequireAuthorization();
     }
 }
