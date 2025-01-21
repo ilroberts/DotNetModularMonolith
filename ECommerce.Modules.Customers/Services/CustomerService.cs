@@ -5,23 +5,16 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ECommerce.Modules.Customers.Services;
 
-public class CustomerService : ICustomerService
+public class CustomerService(CustomerDbContext customerDbContext) : ICustomerService
 {
-    private readonly CustomerDbContext _customerDbContext;
-
-    public CustomerService(CustomerDbContext customerDbContext)
-    {
-        _customerDbContext = customerDbContext;
-    }
-
     public async Task<Customer> GetCustomerByIdAsync(Guid customerId)
     {
-        return await _customerDbContext.Customers.FindAsync(customerId);
+        return await customerDbContext.Customers.FindAsync(customerId);
     }
 
     public async Task<IEnumerable<Customer>> GetAllCustomersAsync()
     {
-        return await _customerDbContext.Customers.ToListAsync();
+        return await customerDbContext.Customers.ToListAsync();
     }
 
     public async Task<Customer> AddCustomerAsync(Customer customer)
@@ -29,8 +22,8 @@ public class CustomerService : ICustomerService
         // get valid suspensions
         var suspensionTypes = SuspensionTypeCode.GetAllSuspensionTypes();
 
-        _customerDbContext.Customers.Add(customer);
-        await _customerDbContext.SaveChangesAsync();
+        customerDbContext.Customers.Add(customer);
+        await customerDbContext.SaveChangesAsync();
         return customer;
     }
 }
