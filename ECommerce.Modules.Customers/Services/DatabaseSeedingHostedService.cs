@@ -1,7 +1,6 @@
 // Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 
-using ECommerce.Modules.Customers.Domain;
 using ECommerce.Modules.Customers.Persistence;
 using ECommerce.Modules.Customers.Util;
 using Microsoft.EntityFrameworkCore;
@@ -11,7 +10,7 @@ using Microsoft.Extensions.Logging;
 
 namespace ECommerce.Modules.Customers.Services;
 
-public class DatabaseSeedingHostedService(IServiceProvider serviceProvider,
+internal class DatabaseSeedingHostedService(IServiceProvider serviceProvider,
     ILogger<DatabaseSeedingHostedService> logger) : IHostedService
 {
     public async Task StartAsync(CancellationToken cancellationToken)
@@ -21,7 +20,7 @@ public class DatabaseSeedingHostedService(IServiceProvider serviceProvider,
 
         if (!await dbContext.SuspensionTypes.AnyAsync())
         {
-            logger.LogInformation("seeding database");
+            logger.LogInformation("--> seeding database <--");
             SuspensionTypeSeedData.Seed(dbContext);
         }
 
