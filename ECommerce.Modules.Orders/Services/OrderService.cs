@@ -1,3 +1,4 @@
+using ECommerce.Contracts.DTOs;
 using ECommerce.Contracts.Interfaces;
 using ECommerce.Modules.Orders.Domain;
 using ECommerce.Modules.Orders.Persistence;
@@ -66,5 +67,13 @@ internal class OrderService(OrderDbContext orderDbContext,
         var orders = await _orderDbContext.Orders.ToListAsync();
         _logger.LogInformation($"Number of orders to be returned: {orders.Count()}");
         return orders;
+    }
+
+    public OrderDto? GetOrderByProductIdAsync(Guid productId)
+    {
+        return new OrderDto
+        {
+            Id = Guid.NewGuid(),
+        };
     }
 }
