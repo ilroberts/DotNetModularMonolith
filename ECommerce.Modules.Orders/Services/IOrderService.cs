@@ -1,3 +1,4 @@
+using ECommerce.Contracts.DTOs;
 using ECommerce.Modules.Orders.Domain;
 using ECommerce.Modules.Orders.Result;
 
@@ -8,4 +9,5 @@ public interface IOrderService
     Task<OrderResult> CreateOrderAsync(Guid customerId, List<OrderItem> items);
   Task<Order> GetOrderByIdAsync(Guid orderId);
   Task<IEnumerable<Order>> GetAllOrdersAsync();
+    OrderDto? GetOrderByProductIdAsync(Guid productId);
 }
