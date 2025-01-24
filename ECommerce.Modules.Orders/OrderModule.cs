@@ -1,3 +1,4 @@
+using ECommerce.Contracts.Interfaces;
 using ECommerce.Modules.Orders.Persistence;
 using ECommerce.Modules.Orders.Services;
 using Microsoft.EntityFrameworkCore;
@@ -16,6 +17,7 @@ public static class OrderModule
         });
 
         services.AddScoped<IOrderService, OrderService>();
+        services.AddScoped<IOrderCatalogService, OrderCatalogService>();
         return services;
     }
 }

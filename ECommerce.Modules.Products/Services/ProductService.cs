@@ -1,3 +1,4 @@
+using ECommerce.Contracts.Interfaces;
 using ECommerce.Modules.Products.Domain;
 using ECommerce.Modules.Products.Persistence;
 using Microsoft.Extensions.Logging;
@@ -9,11 +10,15 @@ public class ProductService : IProductService
 {
   private readonly ProductDbContext _productDbContext;
   private readonly ILogger<ProductService> _logger;
+  private readonly IOrderCatalogService _orderCatalogService;
 
-  public ProductService(ProductDbContext productDbContext, ILogger<ProductService> logger)
+  public ProductService(ProductDbContext productDbContext,
+      ILogger<ProductService> logger,
+      IOrderCatalogService orderCatalogService)
   {
     _productDbContext = productDbContext;
     _logger = logger;
+    _orderCatalogService = orderCatalogService;
   }
 
   public async Task<Product> GetProductByIdAsync(Guid productId)
@@ -25,6 +30,11 @@ public class ProductService : IProductService
   {
     var products = await _productDbContext.Products.ToListAsync();
     _logger.LogInformation($"Number of products to be returned: {products.Count()}");
+
+    // dummy call to OrderCatalogService
+    var order = await _orderCatalogService.GetOrderByProductIdAsync(products.First().Id);
+    _logger.LogInformation("Order Id returned from product service: {OrderId}", order?.Id);
+
     return products;
   }
 
