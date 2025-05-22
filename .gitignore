@@ -7,7 +7,7 @@ nupkg/
 **/bin/
 **/obj/
 **/test-results/
-
+**/docs/
 # Visual Studio Code
 .vscode/
 
