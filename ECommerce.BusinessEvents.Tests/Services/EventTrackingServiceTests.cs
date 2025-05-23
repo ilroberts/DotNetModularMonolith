@@ -62,6 +62,7 @@ namespace ECommerce.BusinessEvents.Tests.Services
                 entityId: 1,
                 eventType: "CustomerCreated",
                 actorId: "test-user",
+                actorType: "User", // Added argument
                 entityData: customer);
 
             // Assert
@@ -71,6 +72,7 @@ namespace ECommerce.BusinessEvents.Tests.Services
             Assert.Equal(1, savedEvent.EntityId);
             Assert.Equal("CustomerCreated", savedEvent.EventType);
             Assert.Equal("test-user", savedEvent.ActorId);
+            Assert.Equal("User", savedEvent.ActorType); // Assert ActorType
             Assert.Equal(1, savedEvent.SchemaVersion);
             Assert.Contains("john.doe@example.com", savedEvent.EntityData);
             _schemaValidatorMock.Verify(v => v.Validate(It.IsAny<string>(), It.IsAny<string>()), Times.Once);
@@ -92,6 +94,7 @@ namespace ECommerce.BusinessEvents.Tests.Services
                     entityId: 1,
                     eventType: "CustomerCreated",
                     actorId: "test-user",
+                    actorType: "User", // Added argument
                     entityData: invalidCustomer));
 
             // Verify no events were saved
@@ -113,6 +116,7 @@ namespace ECommerce.BusinessEvents.Tests.Services
                     entityId: 1,
                     eventType: "VehicleCreated",
                     actorId: "test-user",
+                    actorType: "User", // Added argument
                     entityData: vehicle));
 
             // Verify no events were saved

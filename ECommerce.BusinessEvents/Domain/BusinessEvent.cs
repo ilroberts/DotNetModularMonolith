@@ -11,6 +11,7 @@ namespace ModularMonolith.Domain.BusinessEvents
         public int SchemaVersion { get; set; }
         public DateTime EventTimestamp { get; set; }
         public string ActorId { get; set; }
+        public string ActorType { get; set; }
         public string EntityData { get; set; }
     }
 }

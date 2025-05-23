@@ -15,6 +15,7 @@ namespace ECommerce.BusinessEvents.Services
             int entityId,
             string eventType,
             string actorId,
+            string actorType,
             object entityData)
         {
             // Get the latest schema version for this entity type
@@ -39,6 +40,7 @@ namespace ECommerce.BusinessEvents.Services
                 SchemaVersion = schemaVersion,
                 EventTimestamp = DateTime.UtcNow,
                 ActorId = actorId,
+                ActorType = actorType, // Set ActorType
                 EntityData = json
             };
 
