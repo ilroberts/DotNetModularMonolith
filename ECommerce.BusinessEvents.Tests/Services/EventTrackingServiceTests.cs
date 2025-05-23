@@ -2,6 +2,8 @@ using Microsoft.EntityFrameworkCore;
 using ECommerce.BusinessEvents.Persistence;
 using ECommerce.BusinessEvents.Services;
 using ECommerce.Modules.Customers.Domain;
+using ECommerce.BusinessEvents.Infrastructure.Validators;
+using Moq;
 
 namespace ECommerce.BusinessEvents.Tests.Services
 {
@@ -9,6 +11,7 @@ namespace ECommerce.BusinessEvents.Tests.Services
     {
         private readonly BusinessEventDbContext _context;
         private readonly SchemaRegistryService _schemaRegistry;
+        private readonly Mock<IJsonSchemaValidator> _schemaValidatorMock;
         private readonly EventTrackingService _eventTracker;
 
         public EventTrackingServiceTests()
@@ -19,7 +22,8 @@ namespace ECommerce.BusinessEvents.Tests.Services
 
             _context = new BusinessEventDbContext(options);
             _schemaRegistry = new SchemaRegistryService(_context);
-            _eventTracker = new EventTrackingService(_context, _schemaRegistry);
+            _schemaValidatorMock = new Mock<IJsonSchemaValidator>();
+            _eventTracker = new EventTrackingService(_context, _schemaRegistry, _schemaValidatorMock.Object);
 
             // Set up schema for testing
             InitializeTestSchema().Wait();
@@ -48,6 +52,9 @@ namespace ECommerce.BusinessEvents.Tests.Services
         {
             // Arrange
             Customer customer = new Customer("John Doe", "john.doe@example.com");
+            _schemaValidatorMock
+                .Setup(v => v.Validate(It.IsAny<string>(), It.IsAny<string>()))
+                .Verifiable();
 
             // Act
             await _eventTracker.TrackEventAsync(
@@ -66,6 +73,7 @@ namespace ECommerce.BusinessEvents.Tests.Services
             Assert.Equal("test-user", savedEvent.ActorId);
             Assert.Equal(1, savedEvent.SchemaVersion);
             Assert.Contains("john.doe@example.com", savedEvent.EntityData);
+            _schemaValidatorMock.Verify(v => v.Validate(It.IsAny<string>(), It.IsAny<string>()), Times.Once);
         }
 
         [Fact]
@@ -73,6 +81,9 @@ namespace ECommerce.BusinessEvents.Tests.Services
         {
             // Arrange
             var invalidCustomer = new Customer("john doe", "wrong-email-format");
+            _schemaValidatorMock
+                .Setup(v => v.Validate(It.IsAny<string>(), It.IsAny<string>()))
+                .Throws(new InvalidOperationException("Entity data does not match schema"));
 
             // Act & Assert
             await Assert.ThrowsAsync<InvalidOperationException>(() =>
@@ -85,6 +96,7 @@ namespace ECommerce.BusinessEvents.Tests.Services
 
             // Verify no events were saved
             Assert.Empty(await _context.BusinessEvents.ToListAsync());
+            _schemaValidatorMock.Verify(v => v.Validate(It.IsAny<string>(), It.IsAny<string>()), Times.Once);
         }
 
         [Fact]
@@ -92,6 +104,7 @@ namespace ECommerce.BusinessEvents.Tests.Services
         {
             // Arrange
             var vehicle = new { Id = 1, Make = "Toyota", Model = "Corolla" };
+            // No need to setup schema validator, as schema will not be found
 
             // Act & Assert
             await Assert.ThrowsAsync<InvalidOperationException>(() =>
@@ -104,6 +117,7 @@ namespace ECommerce.BusinessEvents.Tests.Services
 
             // Verify no events were saved
             Assert.Empty(await _context.BusinessEvents.ToListAsync());
+            _schemaValidatorMock.Verify(v => v.Validate(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
         }
 
         public void Dispose()

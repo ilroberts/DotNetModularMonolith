@@ -1,3 +1,4 @@
+using ECommerce.BusinessEvents.Infrastructure.Validators;
 using ECommerce.BusinessEvents.Persistence;
 using ECommerce.BusinessEvents.Services;
 using Microsoft.EntityFrameworkCore;
@@ -16,6 +17,7 @@ namespace ECommerce.BusinessEvents
             });
 
             services.AddScoped<EventTrackingService>();
+            services.AddScoped<JsonSchemaValidator>();
 
             // Add other services as needed
 

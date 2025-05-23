@@ -1,13 +1,14 @@
 using System.Text.Json;
+using ECommerce.BusinessEvents.Infrastructure.Validators;
 using ModularMonolith.Domain.BusinessEvents;
 using ECommerce.BusinessEvents.Persistence;
-using Json.Schema;
 
 namespace ECommerce.BusinessEvents.Services
 {
     public class EventTrackingService(
         BusinessEventDbContext dbContext,
-        SchemaRegistryService schemaRegistry)
+        SchemaRegistryService schemaRegistry,
+        IJsonSchemaValidator schemaValidator)
     {
         public async Task TrackEventAsync(
             string entityType,
@@ -23,24 +24,11 @@ namespace ECommerce.BusinessEvents.Services
 
             // Use the latest schema version
             var schemaVersion = latestSchema.Version;
-            var serializerOptions = new JsonSerializerOptions
-            {
-                PropertyNamingPolicy = null
-            };
 
             // Serialize the entity data to JSON
+            var serializerOptions = new JsonSerializerOptions { PropertyNamingPolicy = null };
             var json = JsonSerializer.Serialize(entityData, serializerOptions);
-            using var jsonDocument = JsonDocument.Parse(json);
-
-            var schema = JsonSchema.FromText(latestSchema.SchemaDefinition);
-            var result = schema.Evaluate(jsonDocument, new EvaluationOptions
-            {
-                OutputFormat = OutputFormat.List,
-                RequireFormatValidation = true
-            });
-
-            if (!result.IsValid)
-                throw new InvalidOperationException("Entity data does not match schema");
+            schemaValidator.Validate(json, latestSchema.SchemaDefinition);
 
             var businessEvent = new BusinessEvent
             {
