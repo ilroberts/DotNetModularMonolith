@@ -1,9 +1,6 @@
-using System;
-using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
-using Xunit;
 using ECommerce.BusinessEvents.Persistence;
-using ECommerce.BusinessEvents.Service;
+using ECommerce.BusinessEvents.Services;
 
 namespace ECommerce.BusinessEvents.Tests.Services
 {
@@ -95,6 +92,62 @@ namespace ECommerce.BusinessEvents.Tests.Services
         {
             // Act
             var result = await _service.GetLatestSchemaAsync("NonExistent");
+
+            // Assert
+            Assert.Null(result);
+        }
+
+        [Fact]
+        public async Task GetSchemaVersionsAsync_ShouldReturnAllVersionsOrdered()
+        {
+            // Arrange
+            var entityType = "Order";
+            await _service.AddSchemaAsync(entityType, 2, "{ \"version\": 2 }");
+            await _service.AddSchemaAsync(entityType, 1, "{ \"version\": 1 }");
+            await _service.AddSchemaAsync(entityType, 3, "{ \"version\": 3 }");
+
+            // Act
+            var versions = await _service.GetSchemaVersionsAsync(entityType);
+
+            // Assert
+            Assert.Equal(3, versions.Count);
+            Assert.Equal(1, versions[0].Version);
+            Assert.Equal(2, versions[1].Version);
+            Assert.Equal(3, versions[2].Version);
+        }
+
+        [Fact]
+        public async Task GetSchemaVersionsAsync_ShouldReturnEmptyListForNonExistentEntity()
+        {
+            // Act
+            var versions = await _service.GetSchemaVersionsAsync("NonExistent");
+
+            // Assert
+            Assert.NotNull(versions);
+            Assert.Empty(versions);
+        }
+
+        [Fact]
+        public async Task GetSchemaDefinitionAsync_ShouldReturnCorrectSchemaDefinition()
+        {
+            // Arrange
+            var entityType = "Product";
+            var version = 1;
+            var schemaDefinition = "{ \"type\": \"object\", \"title\": \"Product\" }";
+            await _service.AddSchemaAsync(entityType, version, schemaDefinition);
+
+            // Act
+            var result = await _service.GetSchemaDefinitionAsync(entityType, version);
+
+            // Assert
+            Assert.Equal(schemaDefinition, result);
+        }
+
+        [Fact]
+        public async Task GetSchemaDefinitionAsync_ShouldReturnNullForNonExistentSchema()
+        {
+            // Act
+            var result = await _service.GetSchemaDefinitionAsync("NonExistent", 99);
 
             // Assert
             Assert.Null(result);

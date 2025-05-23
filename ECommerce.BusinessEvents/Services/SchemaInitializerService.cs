@@ -1,18 +1,8 @@
-using System;
-using System.Threading.Tasks;
-using ECommerce.BusinessEvents.Service;
 
 namespace ECommerce.BusinessEvents.Services
 {
-    public class SchemaInitializerService
+    public class SchemaInitializerService(SchemaRegistryService schemaRegistry)
     {
-        private readonly SchemaRegistryService _schemaRegistry;
-
-        public SchemaInitializerService(SchemaRegistryService schemaRegistry)
-        {
-            _schemaRegistry = schemaRegistry;
-        }
-
         public async Task InitializeDefaultSchemasAsync()
         {
             await InitializeCustomerSchemaAsync();
@@ -24,7 +14,7 @@ namespace ECommerce.BusinessEvents.Services
             const string entityType = "Customer";
             const int version = 1;
 
-            var existingSchema = await _schemaRegistry.GetSchemaAsync(entityType, version);
+            var existingSchema = await schemaRegistry.GetSchemaAsync(entityType, version);
             if (existingSchema != null)
             {
                 return; // Schema already exists
@@ -37,39 +27,39 @@ namespace ECommerce.BusinessEvents.Services
                 ""description"": ""A customer entity"",
                 ""type"": ""object"",
                 ""properties"": {
-                    ""Id"": { 
+                    ""Id"": {
                         ""type"": ""integer"",
                         ""description"": ""Unique customer identifier""
                     },
-                    ""FirstName"": { 
+                    ""FirstName"": {
                         ""type"": ""string"",
                         ""description"": ""Customer's first name""
                     },
-                    ""LastName"": { 
+                    ""LastName"": {
                         ""type"": ""string"",
                         ""description"": ""Customer's last name""
                     },
-                    ""Email"": { 
-                        ""type"": ""string"", 
+                    ""Email"": {
+                        ""type"": ""string"",
                         ""format"": ""email"",
                         ""description"": ""Customer's email address""
                     },
-                    ""Phone"": { 
+                    ""Phone"": {
                         ""type"": ""string"",
                         ""description"": ""Customer's phone number""
                     },
-                    ""DateOfBirth"": { 
-                        ""type"": ""string"", 
+                    ""DateOfBirth"": {
+                        ""type"": ""string"",
                         ""format"": ""date-time"",
                         ""description"": ""Customer's date of birth""
                     },
-                    ""CreatedAt"": { 
-                        ""type"": ""string"", 
+                    ""CreatedAt"": {
+                        ""type"": ""string"",
                         ""format"": ""date-time"",
                         ""description"": ""When the customer was created""
                     },
-                    ""UpdatedAt"": { 
-                        ""type"": ""string"", 
+                    ""UpdatedAt"": {
+                        ""type"": ""string"",
                         ""format"": ""date-time"",
                         ""description"": ""When the customer was last updated""
                     }
@@ -78,7 +68,7 @@ namespace ECommerce.BusinessEvents.Services
                 ""additionalProperties"": false
             }";
 
-            await _schemaRegistry.AddSchemaAsync(entityType, version, customerSchema);
+            await schemaRegistry.AddSchemaAsync(entityType, version, customerSchema);
         }
     }
 }

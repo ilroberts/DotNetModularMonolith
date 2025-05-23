@@ -1,11 +1,7 @@
-using System;
-using System.Threading.Tasks;
+
 using Microsoft.EntityFrameworkCore;
-using Xunit;
 using ECommerce.BusinessEvents.Persistence;
 using ECommerce.BusinessEvents.Services;
-using ECommerce.BusinessEvents.Service;
-using ModularMonolith.Domain.BusinessEvents;
 
 namespace ECommerce.BusinessEvents.Tests.Services
 {

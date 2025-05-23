@@ -1,7 +1,6 @@
 using System.Text.Json;
 using ModularMonolith.Domain.BusinessEvents;
 using ECommerce.BusinessEvents.Persistence;
-using ECommerce.BusinessEvents.Service;
 using Json.Schema;
 
 namespace ECommerce.BusinessEvents.Services
