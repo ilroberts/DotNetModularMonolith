@@ -17,7 +17,7 @@ namespace ECommerce.BusinessEvents
             });
 
             services.AddScoped<EventTrackingService>();
-            services.AddScoped<JsonSchemaValidator>();
+            services.AddScoped<IJsonSchemaValidator, JsonSchemaValidator>();
 
             // Add other services as needed
 
