@@ -1,5 +1,5 @@
 using ECommerce.BusinessEvents.Persistence;
-using ECommerce.BusinessEvents.Service;
+using ECommerce.BusinessEvents.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;

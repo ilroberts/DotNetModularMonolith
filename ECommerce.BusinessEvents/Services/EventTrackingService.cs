@@ -1,29 +1,47 @@
-using System;
-using System.Threading.Tasks;
 using System.Text.Json;
 using ModularMonolith.Domain.BusinessEvents;
 using ECommerce.BusinessEvents.Persistence;
+using ECommerce.BusinessEvents.Service;
+using Json.Schema;
 
-namespace ECommerce.BusinessEvents.Service
+namespace ECommerce.BusinessEvents.Services
 {
-    public class EventTrackingService
+    public class EventTrackingService(
+        BusinessEventDbContext dbContext,
+        SchemaRegistryService schemaRegistry)
     {
-        private readonly BusinessEventDbContext _dbContext;
-
-        public EventTrackingService(BusinessEventDbContext dbContext)
-        {
-            _dbContext = dbContext;
-        }
-
         public async Task TrackEventAsync(
             string entityType,
             int entityId,
             string eventType,
-            int schemaVersion,
             string actorId,
             object entityData)
         {
-            string json = JsonSerializer.Serialize(entityData);
+            // Get the latest schema version for this entity type
+            var latestSchema = await schemaRegistry.GetLatestSchemaAsync(entityType);
+            if (latestSchema == null)
+                throw new InvalidOperationException($"No schema found for entity type '{entityType}'. Please register a schema first.");
+
+            // Use the latest schema version
+            var schemaVersion = latestSchema.Version;
+            var serializerOptions = new JsonSerializerOptions
+            {
+                PropertyNamingPolicy = null
+            };
+
+            // Serialize the entity data to JSON
+            var json = JsonSerializer.Serialize(entityData, serializerOptions);
+            using var jsonDocument = JsonDocument.Parse(json);
+
+            var schema = JsonSchema.FromText(latestSchema.SchemaDefinition);
+            var result = schema.Evaluate(jsonDocument, new EvaluationOptions
+            {
+                OutputFormat = OutputFormat.List,
+                RequireFormatValidation = true
+            });
+
+            if (!result.IsValid)
+                throw new InvalidOperationException("Entity data does not match schema");
 
             var businessEvent = new BusinessEvent
             {
@@ -37,8 +55,8 @@ namespace ECommerce.BusinessEvents.Service
                 EntityData = json
             };
 
-            _dbContext.BusinessEvents.Add(businessEvent);
-            await _dbContext.SaveChangesAsync();
+            dbContext.BusinessEvents.Add(businessEvent);
+            await dbContext.SaveChangesAsync();
         }
     }
 }
