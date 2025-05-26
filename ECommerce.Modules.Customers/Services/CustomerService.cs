@@ -1,3 +1,4 @@
+using ECommerce.Contracts.DTOs;
 using ECommerce.Modules.Customers.Domain;
 using ECommerce.Modules.Customers.Persistence;
 using ECommerce.Modules.Customers.Util;
@@ -41,5 +42,29 @@ public class CustomerService(
              entityData: customer);
 
         return customer;
+    }
+
+    public async Task<Customer> UpdateCustomerAsync(Guid id, CustomerUpdateDto customerUpdateDto)
+    {
+        var existingCustomer = await customerDbContext.Customers.FindAsync(id);
+        if (existingCustomer == null)
+        {
+            throw new InvalidOperationException("Customer not found.");
+        }
+
+        existingCustomer.Name = customerUpdateDto.Name;
+        existingCustomer.Email = customerUpdateDto.Email;
+
+        await customerDbContext.SaveChangesAsync();
+
+        await businessEventService.TrackEventAsync(
+            entityType: "Customer",
+            entityId: id.ToString(),
+            eventType: "CustomerUpdated",
+            actorId: "system",
+            actorType: "System",
+            entityData: existingCustomer);
+
+        return existingCustomer;
     }
 }

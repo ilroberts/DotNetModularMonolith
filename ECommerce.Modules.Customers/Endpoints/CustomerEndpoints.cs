@@ -1,3 +1,4 @@
+using ECommerce.Contracts.DTOs;
 using ECommerce.Modules.Customers.Domain;
 using ECommerce.Modules.Customers.Services;
 using Microsoft.AspNetCore.Builder;
@@ -39,6 +40,23 @@ public static class CustomerEndpoints
             return customer is not null ? Results.Ok(customer) : Results.NotFound();
         })
         .WithName("GetCustomerById")
+        .WithTags("Customers")
+        .RequireAuthorization();
+
+        app.MapPut("/customers/{id}", async (ICustomerService customerService, Guid id,
+                CustomerUpdateDto customerUpdateDto) =>
+        {
+            try
+            {
+                var updatedCustomer = await customerService.UpdateCustomerAsync(id, customerUpdateDto);
+                return Results.Ok(updatedCustomer);
+            }
+            catch (InvalidOperationException)
+            {
+                return Results.NotFound();
+            }
+        })
+        .WithName("UpdateCustomer")
         .WithTags("Customers")
         .RequireAuthorization();
     }
