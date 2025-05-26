@@ -1,5 +1,6 @@
 using System.Text;
 using ECommerce.BusinessEvents;
+using ECommerce.BusinessEvents.Endpoints;
 using ECommerce.Modules.Orders;
 using ECommerce.Modules.Customers;
 using ECommerce.Modules.Products;
@@ -91,6 +92,7 @@ app.MapGet("/", () => "E-Commerce Modular Monolith with .NET 8!").WithTags("Home
 app.MapOrderEndpoints();
 app.MapCustomerEndpoints();
 app.MapProductEndpoints();
+app.MapBusinessEventEndpoints();
 app.MapAdminEndpoints();
 
 app.Run();

@@ -35,13 +35,9 @@ namespace ECommerce.BusinessEvents.Services
                         ""type"": ""string"",
                         ""description"": ""Unique customer identifier""
                     },
-                    ""FirstName"": {
+                    ""Name"": {
                         ""type"": ""string"",
-                        ""description"": ""Customer's first name""
-                    },
-                    ""LastName"": {
-                        ""type"": ""string"",
-                        ""description"": ""Customer's last name""
+                        ""description"": ""Customer's name""
                     },
                     ""Email"": {
                         ""type"": ""string"",
@@ -68,7 +64,7 @@ namespace ECommerce.BusinessEvents.Services
                         ""description"": ""When the customer was last updated""
                     }
                 },
-                ""required"": [""Id"", ""FirstName"", ""LastName"", ""Email""],
+                ""required"": [""Id"", ""Name"", ""Email""],
                 ""additionalProperties"": false
             }";
 

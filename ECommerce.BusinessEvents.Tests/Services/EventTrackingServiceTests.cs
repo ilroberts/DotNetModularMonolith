@@ -23,7 +23,9 @@ namespace ECommerce.BusinessEvents.Tests.Services
             _context = new BusinessEventDbContext(options);
             _schemaRegistry = new SchemaRegistryService(_context);
             _schemaValidatorMock = new Mock<IJsonSchemaValidator>();
-            _eventTracker = new EventTrackingService(_context, _schemaRegistry, _schemaValidatorMock.Object);
+            // Add a mock logger for EventTrackingService
+            var loggerMock = new Mock<Microsoft.Extensions.Logging.ILogger<EventTrackingService>>();
+            _eventTracker = new EventTrackingService(_context, _schemaRegistry, _schemaValidatorMock.Object, loggerMock.Object);
 
             // Set up schema for testing
             InitializeTestSchema().Wait();
@@ -62,7 +64,7 @@ namespace ECommerce.BusinessEvents.Tests.Services
                 entityId: "1",
                 eventType: "CustomerCreated",
                 actorId: "test-user",
-                actorType: "User", // Added argument
+                actorType: "User",
                 entityData: customer);
 
             // Assert
@@ -72,7 +74,7 @@ namespace ECommerce.BusinessEvents.Tests.Services
             Assert.Equal("1", savedEvent.EntityId);
             Assert.Equal("CustomerCreated", savedEvent.EventType);
             Assert.Equal("test-user", savedEvent.ActorId);
-            Assert.Equal("User", savedEvent.ActorType); // Assert ActorType
+            Assert.Equal("User", savedEvent.ActorType);
             Assert.Equal(1, savedEvent.SchemaVersion);
             Assert.Contains("john.doe@example.com", savedEvent.EntityData);
             _schemaValidatorMock.Verify(v => v.Validate(It.IsAny<string>(), It.IsAny<string>()), Times.Once);
@@ -94,7 +96,7 @@ namespace ECommerce.BusinessEvents.Tests.Services
                     entityId: "1",
                     eventType: "CustomerCreated",
                     actorId: "test-user",
-                    actorType: "User", // Added argument
+                    actorType: "User",
                     entityData: invalidCustomer));
 
             // Verify no events were saved
@@ -112,16 +114,61 @@ namespace ECommerce.BusinessEvents.Tests.Services
             // Act & Assert
             await Assert.ThrowsAsync<InvalidOperationException>(() =>
                 _eventTracker.TrackEventAsync(
-                    entityType: "Vehicle",  // No schema exists for Vehicle
+                    entityType: "Vehicle",
                     entityId: "1",
                     eventType: "VehicleCreated",
                     actorId: "test-user",
-                    actorType: "User", // Added argument
+                    actorType: "User",
                     entityData: vehicle));
 
             // Verify no events were saved
             Assert.Empty(await _context.BusinessEvents.ToListAsync());
             _schemaValidatorMock.Verify(v => v.Validate(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task GetAllEventsAsync_ReturnsAllEvents()
+        {
+            // Arrange
+            Customer customer1 = new Customer("Alice", "alice@example.com");
+            Customer customer2 = new Customer("Bob", "bob@example.com");
+            _schemaValidatorMock.Setup(v => v.Validate(It.IsAny<string>(), It.IsAny<string>()));
+
+            await _eventTracker.TrackEventAsync(
+                entityType: "Customer",
+                entityId: "1",
+                eventType: "CustomerCreated",
+                actorId: "actor1",
+                actorType: "User",
+                entityData: customer1);
+
+            await _eventTracker.TrackEventAsync(
+                entityType: "Customer",
+                entityId: "2",
+                eventType: "CustomerCreated",
+                actorId: "actor2",
+                actorType: "User",
+                entityData: customer2);
+
+            // Act
+            var events = await _eventTracker.GetAllEventsAsync();
+
+            // Assert
+            Assert.NotNull(events);
+            Assert.Equal(2, events.Count);
+            Assert.Contains(events, e => e.EntityId == "1" && e.ActorId == "actor1");
+            Assert.Contains(events, e => e.EntityId == "2" && e.ActorId == "actor2");
+        }
+
+        [Fact]
+        public async Task GetAllEventsAsync_ReturnsEmptyListWhenNoEvents()
+        {
+            // Act
+            var events = await _eventTracker.GetAllEventsAsync();
+
+            // Assert
+            Assert.NotNull(events);
+            Assert.Empty(events);
         }
 
         public void Dispose()
