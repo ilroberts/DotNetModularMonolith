@@ -1,7 +1,11 @@
 
+using Microsoft.Extensions.Logging;
+
 namespace ECommerce.BusinessEvents.Services
 {
-    public class SchemaInitializerService(SchemaRegistryService schemaRegistry)
+    public class SchemaInitializerService(
+        SchemaRegistryService schemaRegistry,
+        ILogger<SchemaInitializerService> logger)
     {
         public async Task InitializeDefaultSchemasAsync()
         {
@@ -69,6 +73,8 @@ namespace ECommerce.BusinessEvents.Services
             }";
 
             await schemaRegistry.AddSchemaAsync(entityType, version, customerSchema);
+            logger.LogInformation("Initialized default schema for {EntityType} version {Version}", entityType, version);
         }
     }
 }
+

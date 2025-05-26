@@ -1,4 +1,5 @@
 using System.Text;
+using ECommerce.BusinessEvents;
 using ECommerce.Modules.Orders;
 using ECommerce.Modules.Customers;
 using ECommerce.Modules.Products;
@@ -50,6 +51,7 @@ builder.Services.AddSwaggerGen(options =>
 builder.Services.AddOrderModule(builder.Configuration);
 builder.Services.AddCustomerModule(builder.Configuration);
 builder.Services.AddProductModule(builder.Configuration);
+builder.Services.AddBusinessEventsModule(builder.Configuration);
 builder.Services.AddScoped<IAdminService, AdminService>();
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
 

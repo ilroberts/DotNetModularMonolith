@@ -8,7 +8,7 @@ namespace ECommerce.BusinessEvents.Services
     public class EventTrackingService(
         BusinessEventDbContext dbContext,
         SchemaRegistryService schemaRegistry,
-        IJsonSchemaValidator schemaValidator)
+        IJsonSchemaValidator schemaValidator) : IEventTrackingService
     {
         public async Task TrackEventAsync(
             string entityType,

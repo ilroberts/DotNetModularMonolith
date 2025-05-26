@@ -18,6 +18,7 @@
     <ProjectReference Include="..\ECommerce.Modules.Orders\ECommerce.Modules.Orders.csproj" />
     <ProjectReference Include="..\ECommerce.Modules.Products\ECommerce.Modules.Products.csproj" />
     <ProjectReference Include="..\ECommerce.Modules.Customers\ECommerce.Modules.Customers.csproj" />
+    <ProjectReference Include="..\ECommerce.BusinessEvents\ECommerce.BusinessEvents.csproj" />
   </ItemGroup>
 
 </Project>

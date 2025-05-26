@@ -1,6 +1,7 @@
 using ECommerce.BusinessEvents.Infrastructure.Validators;
 using ECommerce.BusinessEvents.Persistence;
 using ECommerce.BusinessEvents.Services;
+using ECommerce.Contracts.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -16,7 +17,14 @@ namespace ECommerce.BusinessEvents
                 options.UseInMemoryDatabase("ECommerce.BusinessEvents");
             });
 
-            services.AddScoped<EventTrackingService>();
+            // Register SchemaRegistryService
+            services.AddScoped<SchemaRegistryService>();
+            services.AddScoped<SchemaInitializerService>();
+
+            // Register EventTrackingService and its interface
+            services.AddScoped<IEventTrackingService, EventTrackingService>();
+            // Register BusinessEventService as the IBusinessEventService for other modules
+            services.AddScoped<IBusinessEventService, BusinessEventService>();
             services.AddScoped<IJsonSchemaValidator, JsonSchemaValidator>();
 
             // Add other services as needed
