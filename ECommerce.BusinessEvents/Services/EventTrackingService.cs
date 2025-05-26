@@ -12,7 +12,7 @@ namespace ECommerce.BusinessEvents.Services
     {
         public async Task TrackEventAsync(
             string entityType,
-            int entityId,
+            string entityId,
             string eventType,
             string actorId,
             string actorType,

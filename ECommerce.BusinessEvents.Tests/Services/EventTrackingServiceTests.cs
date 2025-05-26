@@ -59,7 +59,7 @@ namespace ECommerce.BusinessEvents.Tests.Services
             // Act
             await _eventTracker.TrackEventAsync(
                 entityType: "Customer",
-                entityId: 1,
+                entityId: "1",
                 eventType: "CustomerCreated",
                 actorId: "test-user",
                 actorType: "User", // Added argument
@@ -69,7 +69,7 @@ namespace ECommerce.BusinessEvents.Tests.Services
             var savedEvent = await _context.BusinessEvents.FirstOrDefaultAsync();
             Assert.NotNull(savedEvent);
             Assert.Equal("Customer", savedEvent.EntityType);
-            Assert.Equal(1, savedEvent.EntityId);
+            Assert.Equal("1", savedEvent.EntityId);
             Assert.Equal("CustomerCreated", savedEvent.EventType);
             Assert.Equal("test-user", savedEvent.ActorId);
             Assert.Equal("User", savedEvent.ActorType); // Assert ActorType
@@ -91,7 +91,7 @@ namespace ECommerce.BusinessEvents.Tests.Services
             await Assert.ThrowsAsync<InvalidOperationException>(() =>
                 _eventTracker.TrackEventAsync(
                     entityType: "Customer",
-                    entityId: 1,
+                    entityId: "1",
                     eventType: "CustomerCreated",
                     actorId: "test-user",
                     actorType: "User", // Added argument
@@ -113,7 +113,7 @@ namespace ECommerce.BusinessEvents.Tests.Services
             await Assert.ThrowsAsync<InvalidOperationException>(() =>
                 _eventTracker.TrackEventAsync(
                     entityType: "Vehicle",  // No schema exists for Vehicle
-                    entityId: 1,
+                    entityId: "1",
                     eventType: "VehicleCreated",
                     actorId: "test-user",
                     actorType: "User", // Added argument

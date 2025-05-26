@@ -13,7 +13,7 @@ namespace ECommerce.BusinessEvents.Tests.Services
             mockEventTrackingService
                 .Setup(s => s.TrackEventAsync(
                     It.IsAny<string>(),
-                    It.IsAny<int>(),
+                    It.IsAny<string>(),
                     It.IsAny<string>(),
                     It.IsAny<string>(),
                     It.IsAny<string>(),
@@ -26,7 +26,7 @@ namespace ECommerce.BusinessEvents.Tests.Services
             // Act
             await service.TrackEventAsync(
                 "EntityType",
-                123,
+                "123",
                 "EventType",
                 "actorId",
                 "actorType",
@@ -35,7 +35,7 @@ namespace ECommerce.BusinessEvents.Tests.Services
             // Assert
             mockEventTrackingService.Verify(s => s.TrackEventAsync(
                 "EntityType",
-                123,
+                "123",
                 "EventType",
                 "actorId",
                 "actorType",

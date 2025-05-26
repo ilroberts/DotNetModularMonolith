@@ -1,7 +1,8 @@
-
 using Microsoft.EntityFrameworkCore;
 using ECommerce.BusinessEvents.Persistence;
 using ECommerce.BusinessEvents.Services;
+using Microsoft.Extensions.Logging;
+using Moq;
 
 namespace ECommerce.BusinessEvents.Tests.Services
 {
@@ -19,7 +20,10 @@ namespace ECommerce.BusinessEvents.Tests.Services
 
             _context = new BusinessEventDbContext(options);
             _schemaRegistry = new SchemaRegistryService(_context);
-            _initializerService = new SchemaInitializerService(_schemaRegistry);
+
+            // Mock ILogger<SchemaInitializerService>
+            var loggerMock = new Mock<ILogger<SchemaInitializerService>>();
+            _initializerService = new SchemaInitializerService(_schemaRegistry, loggerMock.Object);
         }
 
         [Fact]

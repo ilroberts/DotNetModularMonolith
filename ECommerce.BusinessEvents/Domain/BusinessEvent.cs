@@ -6,7 +6,7 @@ namespace ModularMonolith.Domain.BusinessEvents
     {
         public Guid EventId { get; set; }
         public string EntityType { get; set; }
-        public int EntityId { get; set; }
+        public string EntityId { get; set; }
         public string EventType { get; set; }
         public int SchemaVersion { get; set; }
         public DateTime EventTimestamp { get; set; }

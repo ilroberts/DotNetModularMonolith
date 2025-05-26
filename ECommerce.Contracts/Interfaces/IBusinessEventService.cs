@@ -6,7 +6,7 @@ public interface IBusinessEventService
 {
     Task TrackEventAsync(
         string entityType,
-        int entityId,
+        string entityId,
         string eventType,
         string actorId,
         string actorType,
