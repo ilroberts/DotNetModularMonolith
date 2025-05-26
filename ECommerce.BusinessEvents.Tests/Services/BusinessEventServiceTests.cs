@@ -1,5 +1,7 @@
 using ECommerce.BusinessEvents.Services;
+using ECommerce.Contracts.Interfaces;
 using Moq;
+using Microsoft.Extensions.Logging;
 
 namespace ECommerce.BusinessEvents.Tests.Services
 {
@@ -21,24 +23,25 @@ namespace ECommerce.BusinessEvents.Tests.Services
                 .Returns(Task.CompletedTask)
                 .Verifiable();
 
-            var service = new BusinessEventService(mockEventTrackingService.Object);
+            var loggerMock = new Mock<ILogger<BusinessEventService>>();
+            var service = new BusinessEventService(mockEventTrackingService.Object, loggerMock.Object);
 
             // Act
             await service.TrackEventAsync(
                 "EntityType",
                 "123",
-                "EventType",
+                IBusinessEventService.EventType.Created,
                 "actorId",
-                "actorType",
+                IBusinessEventService.ActorType.Admin,
                 new { Foo = "Bar" });
 
             // Assert
             mockEventTrackingService.Verify(s => s.TrackEventAsync(
                 "EntityType",
                 "123",
-                "EventType",
+                "Created",
                 "actorId",
-                "actorType",
+                "Admin",
                 It.IsAny<object>()), Times.Once);
         }
     }

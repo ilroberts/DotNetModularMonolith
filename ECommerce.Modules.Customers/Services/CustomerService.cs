@@ -30,15 +30,12 @@ public class CustomerService(
         customerDbContext.Customers.Add(customer);
         await customerDbContext.SaveChangesAsync();
 
-        // Example usage of businessEventService (optional, can be customized as needed)
-
-
         await businessEventService.TrackEventAsync(
              entityType: "Customer",
              entityId: customer.Id.ToString(),
-             eventType: "CustomerCreated",
+             eventType: IBusinessEventService.EventType.Created,
              actorId: "system",
-             actorType: "System",
+             actorType: IBusinessEventService.ActorType.System,
              entityData: customer);
 
         return customer;
@@ -60,9 +57,9 @@ public class CustomerService(
         await businessEventService.TrackEventAsync(
             entityType: "Customer",
             entityId: id.ToString(),
-            eventType: "CustomerUpdated",
+            eventType: IBusinessEventService.EventType.Updated,
             actorId: "system",
-            actorType: "System",
+            actorType: IBusinessEventService.ActorType.System,
             entityData: existingCustomer);
 
         return existingCustomer;
