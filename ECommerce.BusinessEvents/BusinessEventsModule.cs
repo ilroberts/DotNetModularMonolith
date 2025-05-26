@@ -39,5 +39,12 @@ namespace ECommerce.BusinessEvents
             context.Database.EnsureCreated();
             // Add seed logic if needed
         }
+
+        public static async Task InitializeDefaultSchemasAsync(IServiceProvider serviceProvider)
+        {
+            using var scope = serviceProvider.CreateScope();
+            var schemaInitializer = scope.ServiceProvider.GetRequiredService<SchemaInitializerService>();
+            await schemaInitializer.InitializeDefaultSchemasAsync();
+        }
     }
 }

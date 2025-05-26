@@ -32,7 +32,7 @@ namespace ECommerce.BusinessEvents.Services
                 ""type"": ""object"",
                 ""properties"": {
                     ""Id"": {
-                        ""type"": ""integer"",
+                        ""type"": ""string"",
                         ""description"": ""Unique customer identifier""
                     },
                     ""FirstName"": {

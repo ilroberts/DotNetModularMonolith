@@ -30,6 +30,8 @@ public class CustomerService(
         await customerDbContext.SaveChangesAsync();
 
         // Example usage of businessEventService (optional, can be customized as needed)
+
+
         await businessEventService.TrackEventAsync(
              entityType: "Customer",
              entityId: customer.Id.ToString(),

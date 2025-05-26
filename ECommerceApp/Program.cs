@@ -42,7 +42,7 @@ builder.Services.AddSwaggerGen(options =>
                     Id = "Bearer"
                 }
             },
-            Array.Empty<string>()
+            []
         }
     });
 });
@@ -80,6 +80,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+await BusinessEventsModule.InitializeDefaultSchemasAsync(app.Services);
 
 // After builder.Build():
 app.UseAuthentication();
