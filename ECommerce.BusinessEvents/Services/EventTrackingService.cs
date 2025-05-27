@@ -42,7 +42,7 @@ namespace ECommerce.BusinessEvents.Services
                 EntityType = businessEventDto.EntityType,
                 EntityId = businessEventDto.EntityId,
                 EventType = businessEventDto.EventType.ToString(),
-                SchemaVersion = businessEventDto.SchemaVersion,
+                SchemaVersion = schemaVersion,
                 EventTimestamp = businessEventDto.EventTimestamp == default ?
                     DateTimeOffset.UtcNow : businessEventDto.EventTimestamp,
                 CorrelationId = string.IsNullOrEmpty(businessEventDto.CorrelationId) ?
