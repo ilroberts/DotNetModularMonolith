@@ -43,12 +43,6 @@ public class BusinessEventFactory
         return this;
     }
 
-    public BusinessEventFactory WithSchemaVersion(int schemaVersion)
-    {
-        _dto.SchemaVersion = schemaVersion;
-        return this;
-    }
-
     public BusinessEventFactory WithEntityData(object entityData)
     {
         _dto.EntityData = entityData;
