@@ -1,4 +1,5 @@
 using ECommerce.Contracts.DTOs;
+using ECommerce.Contracts.Factories;
 using ECommerce.Modules.Customers.Domain;
 using ECommerce.Modules.Customers.Persistence;
 using ECommerce.Modules.Customers.Util;
@@ -12,7 +13,7 @@ public class CustomerService(
     IBusinessEventService businessEventService // Inject the interface
 ) : ICustomerService
 {
-    public async Task<Customer> GetCustomerByIdAsync(Guid customerId)
+    public async Task<Customer?> GetCustomerByIdAsync(Guid customerId)
     {
         return await customerDbContext.Customers.FindAsync(customerId);
     }
@@ -30,13 +31,17 @@ public class CustomerService(
         customerDbContext.Customers.Add(customer);
         await customerDbContext.SaveChangesAsync();
 
-        await businessEventService.TrackEventAsync(
-             entityType: "Customer",
-             entityId: customer.Id.ToString(),
-             eventType: IBusinessEventService.EventType.Created,
-             actorId: "system",
-             actorType: IBusinessEventService.ActorType.System,
-             entityData: customer);
+        var businessEvent = BusinessEventFactory.Create()
+            .WithEntityType("Customer")
+            .WithEntityId(customer.Id.ToString())
+            .WithEventType(IBusinessEventService.EventType.Created)
+            .WithSchemaVersion(1)
+            .WithActorId("system")
+            .WithActorType(IBusinessEventService.ActorType.System)
+            .WithEntityData(customer)
+            .Build();
+
+        await businessEventService.TrackEventAsync(businessEvent);
 
         return customer;
     }
@@ -54,13 +59,17 @@ public class CustomerService(
 
         await customerDbContext.SaveChangesAsync();
 
-        await businessEventService.TrackEventAsync(
-            entityType: "Customer",
-            entityId: id.ToString(),
-            eventType: IBusinessEventService.EventType.Updated,
-            actorId: "system",
-            actorType: IBusinessEventService.ActorType.System,
-            entityData: existingCustomer);
+        var businessEvent = BusinessEventFactory.Create()
+            .WithEntityType("Customer")
+            .WithEntityId(id.ToString())
+            .WithSchemaVersion(1)
+            .WithEventType(IBusinessEventService.EventType.Updated)
+            .WithActorId("system")
+            .WithActorType(IBusinessEventService.ActorType.System)
+            .WithEntityData(existingCustomer)
+            .Build();
+
+        await businessEventService.TrackEventAsync(businessEvent);
 
         return existingCustomer;
     }

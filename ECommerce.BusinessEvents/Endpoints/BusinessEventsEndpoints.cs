@@ -8,9 +8,9 @@ namespace ECommerce.BusinessEvents.Endpoints
     {
         public static void MapBusinessEventEndpoints(this WebApplication app)
         {
-            app.MapGet("/events", async (IEventTrackingService eventTrackingService) =>
+            app.MapGet("/events", async (IEventRetrievalService eventRetrieval) =>
                 {
-                    var events = await eventTrackingService.GetAllEventsAsync();
+                    var events = await eventRetrieval.GetAllEventsAsync();
                     return Results.Ok(events);
                 })
                 .WithName("GetAllBusinessEvents")

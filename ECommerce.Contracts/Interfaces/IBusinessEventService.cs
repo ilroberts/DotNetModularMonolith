@@ -1,4 +1,5 @@
 using System.Threading.Tasks;
+using ECommerce.Contracts.DTOs;
 
 namespace ECommerce.Contracts.Interfaces;
 
@@ -6,7 +7,7 @@ public interface IBusinessEventService
 {
     public enum ActorType
     {
-        Customer,
+        User,
         Admin,
         System
     }
@@ -18,11 +19,5 @@ public interface IBusinessEventService
         Viewed
     }
 
-    Task TrackEventAsync(
-        string entityType,
-        string entityId,
-        EventType eventType,
-        string actorId,
-        ActorType actorType,
-        object entityData);
+    Task TrackEventAsync(BusinessEventDto businessEventDto);
 }

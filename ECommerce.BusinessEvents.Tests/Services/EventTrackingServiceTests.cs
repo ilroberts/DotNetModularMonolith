@@ -4,6 +4,8 @@ using ECommerce.BusinessEvents.Services;
 using ECommerce.Modules.Customers.Domain;
 using ECommerce.BusinessEvents.Infrastructure.Validators;
 using Moq;
+using ECommerce.Contracts.DTOs;
+using ECommerce.Contracts.Interfaces;
 
 namespace ECommerce.BusinessEvents.Tests.Services
 {
@@ -23,11 +25,9 @@ namespace ECommerce.BusinessEvents.Tests.Services
             _context = new BusinessEventDbContext(options);
             _schemaRegistry = new SchemaRegistryService(_context);
             _schemaValidatorMock = new Mock<IJsonSchemaValidator>();
-            // Add a mock logger for EventTrackingService
             var loggerMock = new Mock<Microsoft.Extensions.Logging.ILogger<EventTrackingService>>();
             _eventTracker = new EventTrackingService(_context, _schemaRegistry, _schemaValidatorMock.Object, loggerMock.Object);
 
-            // Set up schema for testing
             InitializeTestSchema().Wait();
         }
 
@@ -58,21 +58,28 @@ namespace ECommerce.BusinessEvents.Tests.Services
                 .Setup(v => v.Validate(It.IsAny<string>(), It.IsAny<string>()))
                 .Verifiable();
 
+            var dto = new BusinessEventDto
+            {
+                EntityType = "Customer",
+                EntityId = "1",
+                EventType = IBusinessEventService.EventType.Created,
+                SchemaVersion = 1,
+                EventTimestamp = DateTimeOffset.UtcNow,
+                CorrelationId = Guid.NewGuid().ToString(),
+                ActorId = "test-user",
+                ActorType = IBusinessEventService.ActorType.User,
+                EntityData = customer
+            };
+
             // Act
-            await _eventTracker.TrackEventAsync(
-                entityType: "Customer",
-                entityId: "1",
-                eventType: "CustomerCreated",
-                actorId: "test-user",
-                actorType: "User",
-                entityData: customer);
+            await _eventTracker.TrackEventAsync(dto);
 
             // Assert
             var savedEvent = await _context.BusinessEvents.FirstOrDefaultAsync();
             Assert.NotNull(savedEvent);
             Assert.Equal("Customer", savedEvent.EntityType);
             Assert.Equal("1", savedEvent.EntityId);
-            Assert.Equal("CustomerCreated", savedEvent.EventType);
+            Assert.Equal("Created", savedEvent.EventType);
             Assert.Equal("test-user", savedEvent.ActorId);
             Assert.Equal("User", savedEvent.ActorType);
             Assert.Equal(1, savedEvent.SchemaVersion);
@@ -89,17 +96,23 @@ namespace ECommerce.BusinessEvents.Tests.Services
                 .Setup(v => v.Validate(It.IsAny<string>(), It.IsAny<string>()))
                 .Throws(new InvalidOperationException("Entity data does not match schema"));
 
+            var dto = new BusinessEventDto
+            {
+                EntityType = "Customer",
+                EntityId = "1",
+                EventType = IBusinessEventService.EventType.Created,
+                SchemaVersion = 1,
+                EventTimestamp = DateTimeOffset.UtcNow,
+                CorrelationId = Guid.NewGuid().ToString(),
+                ActorId = "test-user",
+                ActorType = IBusinessEventService.ActorType.User,
+                EntityData = invalidCustomer
+            };
+
             // Act & Assert
             await Assert.ThrowsAsync<InvalidOperationException>(() =>
-                _eventTracker.TrackEventAsync(
-                    entityType: "Customer",
-                    entityId: "1",
-                    eventType: "CustomerCreated",
-                    actorId: "test-user",
-                    actorType: "User",
-                    entityData: invalidCustomer));
+                _eventTracker.TrackEventAsync(dto));
 
-            // Verify no events were saved
             Assert.Empty(await _context.BusinessEvents.ToListAsync());
             _schemaValidatorMock.Verify(v => v.Validate(It.IsAny<string>(), It.IsAny<string>()), Times.Once);
         }
@@ -109,19 +122,23 @@ namespace ECommerce.BusinessEvents.Tests.Services
         {
             // Arrange
             var vehicle = new { Id = 1, Make = "Toyota", Model = "Corolla" };
-            // No need to setup schema validator, as schema will not be found
+            var dto = new BusinessEventDto
+            {
+                EntityType = "Vehicle",
+                EntityId = "1",
+                EventType = IBusinessEventService.EventType.Created,
+                SchemaVersion = 1,
+                EventTimestamp = DateTimeOffset.UtcNow,
+                CorrelationId = Guid.NewGuid().ToString(),
+                ActorId = "test-user",
+                ActorType = IBusinessEventService.ActorType.User,
+                EntityData = vehicle
+            };
 
             // Act & Assert
             await Assert.ThrowsAsync<InvalidOperationException>(() =>
-                _eventTracker.TrackEventAsync(
-                    entityType: "Vehicle",
-                    entityId: "1",
-                    eventType: "VehicleCreated",
-                    actorId: "test-user",
-                    actorType: "User",
-                    entityData: vehicle));
+                _eventTracker.TrackEventAsync(dto));
 
-            // Verify no events were saved
             Assert.Empty(await _context.BusinessEvents.ToListAsync());
             _schemaValidatorMock.Verify(v => v.Validate(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
         }
@@ -134,21 +151,34 @@ namespace ECommerce.BusinessEvents.Tests.Services
             Customer customer2 = new Customer("Bob", "bob@example.com");
             _schemaValidatorMock.Setup(v => v.Validate(It.IsAny<string>(), It.IsAny<string>()));
 
-            await _eventTracker.TrackEventAsync(
-                entityType: "Customer",
-                entityId: "1",
-                eventType: "CustomerCreated",
-                actorId: "actor1",
-                actorType: "User",
-                entityData: customer1);
+            var dto1 = new BusinessEventDto
+            {
+                EntityType = "Customer",
+                EntityId = "1",
+                EventType = IBusinessEventService.EventType.Created,
+                SchemaVersion = 1,
+                EventTimestamp = DateTimeOffset.UtcNow,
+                CorrelationId = Guid.NewGuid().ToString(),
+                ActorId = "actor1",
+                ActorType = IBusinessEventService.ActorType.User,
+                EntityData = customer1
+            };
 
-            await _eventTracker.TrackEventAsync(
-                entityType: "Customer",
-                entityId: "2",
-                eventType: "CustomerCreated",
-                actorId: "actor2",
-                actorType: "User",
-                entityData: customer2);
+            var dto2 = new BusinessEventDto
+            {
+                EntityType = "Customer",
+                EntityId = "2",
+                EventType = IBusinessEventService.EventType.Created,
+                SchemaVersion = 1,
+                EventTimestamp = DateTimeOffset.UtcNow,
+                CorrelationId = Guid.NewGuid().ToString(),
+                ActorId = "actor2",
+                ActorType = IBusinessEventService.ActorType.User,
+                EntityData = customer2
+            };
+
+            await _eventTracker.TrackEventAsync(dto1);
+            await _eventTracker.TrackEventAsync(dto2);
 
             // Act
             var events = await _eventTracker.GetAllEventsAsync();
@@ -156,8 +186,8 @@ namespace ECommerce.BusinessEvents.Tests.Services
             // Assert
             Assert.NotNull(events);
             Assert.Equal(2, events.Count);
-            Assert.Contains(events, e => e.EntityId == "1" && e.ActorId == "actor1");
-            Assert.Contains(events, e => e.EntityId == "2" && e.ActorId == "actor2");
+            Assert.Contains(events, e => e is { EntityId: "1", ActorId: "actor1" });
+            Assert.Contains(events, e => e is { EntityId: "2", ActorId: "actor2" });
         }
 
         [Fact]

@@ -6,6 +6,9 @@ using Microsoft.Extensions.Logging;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using ECommerce.BusinessEvents.Domain;
+using ECommerce.Contracts.DTOs;
+using ECommerce.Contracts.Interfaces;
 
 namespace ECommerce.BusinessEvents.Services
 {
@@ -13,16 +16,13 @@ namespace ECommerce.BusinessEvents.Services
         BusinessEventDbContext dbContext,
         SchemaRegistryService schemaRegistry,
         IJsonSchemaValidator schemaValidator,
-        ILogger<EventTrackingService> logger) : IEventTrackingService
+        ILogger<EventTrackingService> logger) : IBusinessEventService, IEventRetrievalService
     {
-        public async Task TrackEventAsync(
-            string entityType,
-            string entityId,
-            string eventType,
-            string actorId,
-            string actorType,
-            object entityData)
+        public async Task TrackEventAsync(BusinessEventDto businessEventDto)
         {
+            string entityType = businessEventDto.EntityType;
+            object entityData = businessEventDto.EntityData;
+
             // Get the latest schema version for this entity type
             var latestSchema = await schemaRegistry.GetLatestSchemaAsync(entityType);
             if (latestSchema == null)
@@ -41,14 +41,17 @@ namespace ECommerce.BusinessEvents.Services
 
             var businessEvent = new BusinessEvent
             {
-                EventId = Guid.NewGuid(),
-                EntityType = entityType,
-                EntityId = entityId,
-                EventType = eventType,
-                SchemaVersion = schemaVersion,
-                EventTimestamp = DateTime.UtcNow,
-                ActorId = actorId,
-                ActorType = actorType, // Set ActorType
+                EventId = businessEventDto.EventId == Guid.Empty ? Guid.NewGuid() : businessEventDto.EventId,
+                EntityType = businessEventDto.EntityType,
+                EntityId = businessEventDto.EntityId,
+                EventType = businessEventDto.EventType.ToString(),
+                SchemaVersion = businessEventDto.SchemaVersion,
+                EventTimestamp = businessEventDto.EventTimestamp == default ?
+                    DateTimeOffset.UtcNow : businessEventDto.EventTimestamp,
+                CorrelationId = string.IsNullOrEmpty(businessEventDto.CorrelationId) ?
+                    Guid.NewGuid().ToString() : businessEventDto.CorrelationId,
+                ActorId = businessEventDto.ActorId,
+                ActorType = businessEventDto.ActorType.ToString(),
                 EntityData = json
             };
 

@@ -1,17 +1,15 @@
-using System;
+namespace ECommerce.BusinessEvents.Domain;
 
-namespace ModularMonolith.Domain.BusinessEvents
+public class BusinessEvent
 {
-    public class BusinessEvent
-    {
-        public Guid EventId { get; set; }
-        public string EntityType { get; set; }
-        public string EntityId { get; set; }
-        public string EventType { get; set; }
-        public int SchemaVersion { get; set; }
-        public DateTime EventTimestamp { get; set; }
-        public string ActorId { get; set; }
-        public string ActorType { get; set; }
-        public string EntityData { get; set; }
-    }
+    public Guid EventId { get; init; }
+    public string EntityType { get; init; } = string.Empty;
+    public string EntityId { get; init; } = string.Empty;
+    public string EventType { get; init; } = string.Empty;
+    public int SchemaVersion { get; init; }
+    public DateTimeOffset EventTimestamp { get; init; }
+    public string CorrelationId { get; init; } = string.Empty;
+    public string ActorId { get; init; } = string.Empty;
+    public string ActorType { get; init; }
+    public string EntityData { get; init; }
 }

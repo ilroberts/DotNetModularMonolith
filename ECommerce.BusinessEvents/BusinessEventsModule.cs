@@ -21,11 +21,10 @@ namespace ECommerce.BusinessEvents
             services.AddScoped<SchemaRegistryService>();
             services.AddScoped<SchemaInitializerService>();
 
-            // Register EventTrackingService and its interface
-            services.AddScoped<IEventTrackingService, EventTrackingService>();
-            // Register BusinessEventService as the IBusinessEventService for other modules
-            services.AddScoped<IBusinessEventService, BusinessEventService>();
+            services.AddScoped<IBusinessEventService, EventTrackingService>();
             services.AddScoped<IJsonSchemaValidator, JsonSchemaValidator>();
+            services.AddScoped<IEventRetrievalService>(sp =>
+                (IEventRetrievalService)sp.GetRequiredService<IBusinessEventService>());
 
             // Add other services as needed
 

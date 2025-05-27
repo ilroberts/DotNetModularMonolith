@@ -1,3 +1,4 @@
+using ECommerce.BusinessEvents.Domain;
 using Microsoft.EntityFrameworkCore;
 using ModularMonolith.Domain.BusinessEvents;
 
