@@ -2,7 +2,6 @@ using ECommerce.Contracts.DTOs;
 using ECommerce.Contracts.Factories;
 using ECommerce.Modules.Customers.Domain;
 using ECommerce.Modules.Customers.Persistence;
-using ECommerce.Modules.Customers.Util;
 using Microsoft.EntityFrameworkCore;
 using ECommerce.Contracts.Interfaces; // Add this using
 
@@ -25,14 +24,11 @@ public class CustomerService(
 
     public async Task<Customer> AddCustomerAsync(Customer customer,  string userId)
     {
-        // get valid suspensions
-        var suspensionTypes = SuspensionTypeCode.GetAllSuspensionTypes();
-
         customerDbContext.Customers.Add(customer);
         await customerDbContext.SaveChangesAsync();
 
         var businessEvent = BusinessEventFactory.Create()
-            .WithEntityType("Customer")
+            .WithEntityType(nameof(Customer))
             .WithEntityId(customer.Id.ToString())
             .WithEventType(IBusinessEventService.EventType.Created)
             .WithActorId(userId)
@@ -41,7 +37,6 @@ public class CustomerService(
             .Build();
 
         await businessEventService.TrackEventAsync(businessEvent);
-
         return customer;
     }
 
@@ -59,7 +54,7 @@ public class CustomerService(
         await customerDbContext.SaveChangesAsync();
 
         var businessEvent = BusinessEventFactory.Create()
-            .WithEntityType("Customer")
+            .WithEntityType(nameof(Customer))
             .WithEntityId(id.ToString())
             .WithEventType(IBusinessEventService.EventType.Updated)
             .WithActorId(userId)
@@ -68,7 +63,6 @@ public class CustomerService(
             .Build();
 
         await businessEventService.TrackEventAsync(businessEvent);
-
         return existingCustomer;
     }
 }
