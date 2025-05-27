@@ -23,7 +23,7 @@ public class CustomerService(
         return await customerDbContext.Customers.ToListAsync();
     }
 
-    public async Task<Customer> AddCustomerAsync(Customer customer)
+    public async Task<Customer> AddCustomerAsync(Customer customer,  string userId)
     {
         // get valid suspensions
         var suspensionTypes = SuspensionTypeCode.GetAllSuspensionTypes();
@@ -36,8 +36,8 @@ public class CustomerService(
             .WithEntityId(customer.Id.ToString())
             .WithEventType(IBusinessEventService.EventType.Created)
             .WithSchemaVersion(1)
-            .WithActorId("system")
-            .WithActorType(IBusinessEventService.ActorType.System)
+            .WithActorId(userId)
+            .WithActorType(IBusinessEventService.ActorType.User)
             .WithEntityData(customer)
             .Build();
 
@@ -46,7 +46,7 @@ public class CustomerService(
         return customer;
     }
 
-    public async Task<Customer> UpdateCustomerAsync(Guid id, CustomerUpdateDto customerUpdateDto)
+    public async Task<Customer> UpdateCustomerAsync(Guid id, CustomerUpdateDto customerUpdateDto, string userId)
     {
         var existingCustomer = await customerDbContext.Customers.FindAsync(id);
         if (existingCustomer == null)
@@ -64,8 +64,8 @@ public class CustomerService(
             .WithEntityId(id.ToString())
             .WithSchemaVersion(1)
             .WithEventType(IBusinessEventService.EventType.Updated)
-            .WithActorId("system")
-            .WithActorType(IBusinessEventService.ActorType.System)
+            .WithActorId(userId)
+            .WithActorType(IBusinessEventService.ActorType.User)
             .WithEntityData(existingCustomer)
             .Build();
 

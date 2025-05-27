@@ -1,11 +1,8 @@
 using System.Text.Json;
 using ECommerce.BusinessEvents.Infrastructure.Validators;
-using ModularMonolith.Domain.BusinessEvents;
 using ECommerce.BusinessEvents.Persistence;
 using Microsoft.Extensions.Logging;
 using Microsoft.EntityFrameworkCore;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 using ECommerce.BusinessEvents.Domain;
 using ECommerce.Contracts.DTOs;
 using ECommerce.Contracts.Interfaces;

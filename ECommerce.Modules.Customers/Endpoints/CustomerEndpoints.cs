@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using ECommerce.Contracts.DTOs;
 using ECommerce.Modules.Customers.Domain;
 using ECommerce.Modules.Customers.Services;
@@ -14,10 +15,13 @@ public static class CustomerEndpoints
         var logger = app.Logger;
 
         app.MapPost("/customers", async (ICustomerService customerService,
-          Customer customer) =>
+          Customer customer, HttpContext httpContext) =>
         {
+            var user = httpContext.User;
+            var userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
+
             logger.LogInformation("Creating customer");
-            await customerService.AddCustomerAsync(customer);
+            await customerService.AddCustomerAsync(customer, userId);
             return Results.Created($"/customers/{customer.Id}", customer);
         })
         .WithName("CreateCustomer")
@@ -44,11 +48,14 @@ public static class CustomerEndpoints
         .RequireAuthorization();
 
         app.MapPut("/customers/{id}", async (ICustomerService customerService, Guid id,
-                CustomerUpdateDto customerUpdateDto) =>
+                CustomerUpdateDto customerUpdateDto, HttpContext httpContext) =>
         {
+            var user = httpContext.User;
+            var userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
+
             try
             {
-                var updatedCustomer = await customerService.UpdateCustomerAsync(id, customerUpdateDto);
+                var updatedCustomer = await customerService.UpdateCustomerAsync(id, customerUpdateDto, userId);
                 return Results.Ok(updatedCustomer);
             }
             catch (InvalidOperationException)

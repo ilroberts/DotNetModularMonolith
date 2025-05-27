@@ -7,6 +7,6 @@ public interface ICustomerService
 {
     Task<Customer?> GetCustomerByIdAsync(Guid customerId);
     Task<IEnumerable<Customer>> GetAllCustomersAsync();
-    Task<Customer> AddCustomerAsync(Customer customer);
-    Task<Customer> UpdateCustomerAsync(Guid id, CustomerUpdateDto customerUpdateDto);
+    Task<Customer> AddCustomerAsync(Customer customer, string userId);
+    Task<Customer> UpdateCustomerAsync(Guid id, CustomerUpdateDto customerUpdateDto, string userId);
 }
