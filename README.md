@@ -34,6 +34,10 @@
   - [Contributing](#contributing)
     - [Steps to Contribute](#steps-to-contribute)
   - [License](#license)
+  - [Running with Kubernetes and Skaffold](#running-with-kubernetes-and-skaffold)
+    - [Prerequisites](#prerequisites)
+    - [Steps](#steps)
+    - [Notes](#notes)
 
 ## Project Structure
 
@@ -191,3 +195,45 @@ If you'd like to contribute, feel free to fork the repository and submit a pull 
 ## License
 
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+
+## Running with Kubernetes and Skaffold
+
+You can run the application in Kubernetes using [Skaffold](https://skaffold.dev/), which automates the build, push, and deploy process for local development.
+
+### Prerequisites
+
+- Docker (or another supported container runtime)
+- Kubernetes cluster (e.g., minikube, Docker Desktop, or a remote cluster)
+- Skaffold installed ([installation guide](https://skaffold.dev/docs/install/))
+
+### Steps
+
+1. **Start your Kubernetes cluster** (if using minikube):
+
+   ```bash
+   minikube start
+   ```
+
+2. **Run Skaffold** from the project root:
+
+   ```bash
+   skaffold dev
+   ```
+
+   This will build the Docker image, deploy the manifests in `ECommerceApp/k8s/`, and watch for changes.
+
+3. **Access the Application:**
+
+   - Get the ingress IP:
+
+     ```bash
+     kubectl get ingress
+     ```
+
+   - Open `http://<INGRESS-IP>/swagger` in your browser to access the Swagger UI.
+   - If using minikube, you may need to run `minikube tunnel` to expose the ingress controller.
+
+### Notes
+
+- The manifests for deployment, service, and ingress are located in `ECommerceApp/k8s/`.
+- The Dockerfile sets `ASPNETCORE_ENVIRONMENT=Development` so Swagger is enabled by default.
