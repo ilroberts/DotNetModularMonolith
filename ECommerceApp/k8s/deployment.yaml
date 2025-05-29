@@ -17,6 +17,7 @@ spec:
       containers:
         - name: modularmonolith
           image: modularmonolith:latest
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
           env:

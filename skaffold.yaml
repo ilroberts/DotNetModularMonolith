@@ -1,0 +1,17 @@
+apiVersion: skaffold/v4beta13
+kind: Config
+metadata:
+  name: modularmonolith
+build:
+  local:
+    push: false
+    useDockerCLI: true
+  artifacts:
+    - image: modularmonolith
+      docker:
+        dockerfile: Dockerfile
+manifests:
+  rawYaml:
+    - ECommerceApp/k8s/deployment.yaml
+    - ECommerceApp/k8s/ingress.yaml
+    - ECommerceApp/k8s/service.yaml
