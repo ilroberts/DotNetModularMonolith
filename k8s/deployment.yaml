@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: modularmonolith
+  labels:
+    app: modularmonolith
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: modularmonolith
+  template:
+    metadata:
+      labels:
+        app: modularmonolith
+    spec:
+      containers:
+        - name: modularmonolith
+          image: modularmonolith:latest
+          ports:
+            - containerPort: 8080
+          env:
+            - name: ASPNETCORE_URLS
+              value: "http://+:8080"
