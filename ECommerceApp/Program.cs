@@ -76,10 +76,35 @@ builder.Services.AddAuthorization();
 
 var app = builder.Build();
 
+// Log ASPNETCORE_PATHBASE value at startup
+var logger = app.Logger;
+var pathBase = app.Configuration["ASPNETCORE_PATHBASE"] ?? Environment.GetEnvironmentVariable("ASPNETCORE_PATHBASE");
+logger.LogInformation($"ASPNETCORE_PATHBASE is set to: '{pathBase}'");
+
+// Apply the path base if it's set
+if (!string.IsNullOrEmpty(pathBase))
+{
+    app.UsePathBase(pathBase);
+    app.Use((context, next) =>
+    {
+        context.Request.PathBase = pathBase;
+        return next();
+    });
+    logger.LogInformation("Path base applied: {PathBase}", pathBase);
+}
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwaggerUI(options =>
+    {
+        if (!string.IsNullOrEmpty(pathBase))
+        {
+            // Adjust Swagger endpoint when using a path base
+            var swaggerJsonPath = string.IsNullOrEmpty(pathBase) ? "/swagger/v1/swagger.json" : $"{pathBase}/swagger/v1/swagger.json";
+            options.SwaggerEndpoint(swaggerJsonPath, "E-Commerce API V1");
+        }
+    });
 }
 
 await BusinessEventsModule.InitializeDefaultSchemasAsync(app.Services);
