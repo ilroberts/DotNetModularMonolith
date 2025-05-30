@@ -5,6 +5,7 @@ using ECommerce.Contracts.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace ECommerce.BusinessEvents
 {
@@ -12,9 +13,28 @@ namespace ECommerce.BusinessEvents
     {
         public static IServiceCollection AddBusinessEventsModule(this IServiceCollection services, IConfiguration configuration)
         {
+            var connectionString = configuration.GetConnectionString("DefaultConnection");
+            var serviceProvider = services.BuildServiceProvider();
+            var loggerFactory = serviceProvider.GetService<ILoggerFactory>();
+            var logger = loggerFactory?.CreateLogger("BusinessEventsModule");
+
             services.AddDbContext<BusinessEventDbContext>(options =>
             {
-                options.UseInMemoryDatabase("ECommerce.BusinessEvents");
+                if (!string.IsNullOrEmpty(connectionString))
+                {
+                    logger?.LogInformation("BusinessEventsModule: Using PostgreSQL connection string: {ConnectionString}",
+                        connectionString.Substring(0, Math.Min(50, connectionString.Length)) + "...");
+
+                    options.UseNpgsql(connectionString, npgsqlOptions =>
+                    {
+                        npgsqlOptions.MigrationsAssembly("ECommerce.BusinessEvents");
+                    });
+                }
+                else
+                {
+                    logger?.LogInformation("BusinessEventsModule: No connection string found, using in-memory database");
+                    options.UseInMemoryDatabase("ECommerce.BusinessEvents");
+                }
             });
 
             // Register SchemaRegistryService
