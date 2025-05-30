@@ -6,6 +6,7 @@ using ECommerce.Modules.Customers.Util;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace ECommerce.Modules.Customers;
 
@@ -13,28 +14,33 @@ public static class CustomerModule
 {
     public static IServiceCollection AddCustomerModule(this IServiceCollection services, IConfiguration configuration)
     {
+        var connectionString = configuration.GetConnectionString("DefaultConnection");
+        var serviceProvider = services.BuildServiceProvider();
+        var loggerFactory = serviceProvider.GetService<ILoggerFactory>();
+        var logger = loggerFactory?.CreateLogger("CustomerModule");
+
         services.AddDbContext<CustomerDbContext>(options =>
         {
-          options.UseInMemoryDatabase("ECommerce.Customer");
+            if (!string.IsNullOrEmpty(connectionString))
+            {
+                logger?.LogInformation("CustomerModule: Using PostgreSQL connection string: {ConnectionString}",
+                    connectionString.Substring(0, Math.Min(50, connectionString.Length)) + "...");
+
+                options.UseNpgsql(connectionString, npgsqlOptions =>
+                {
+                    npgsqlOptions.MigrationsAssembly("ECommerce.Modules.Customers");
+                });
+            }
+            else
+            {
+                logger?.LogInformation("CustomerModule: No connection string found, using in-memory database");
+                options.UseInMemoryDatabase("ECommerce.Customer");
+            }
         });
 
         services.AddScoped<ICustomerService, CustomerService>();
         services.AddScoped<ICustomerCatalogService, CustomerCatalogService>();
-        services.AddSingleton<SuspensionTypeService>();
-
-        services.AddHostedService<DatabaseSeedingHostedService>();
 
         return services;
-    }
-
-    public static void SeedData(IServiceProvider serviceProvider)
-    {
-        using var scope = serviceProvider.CreateScope();
-        var context = scope.ServiceProvider.GetRequiredService<CustomerDbContext>();
-        context.Database.EnsureCreated();
-        SuspensionTypeSeedData.Seed(context);
-
-        var suspensionTypeService = scope.ServiceProvider.GetRequiredService<SuspensionTypeService>();
-        suspensionTypeService.LoadSuspensionTypesAsync().GetAwaiter().GetResult();
     }
 }

@@ -15,3 +15,4 @@ manifests:
     - ECommerceApp/k8s/deployment.yaml
     - ECommerceApp/k8s/ingress.yaml
     - ECommerceApp/k8s/service.yaml
+    - ECommerceApp/k8s/postgres.yaml
