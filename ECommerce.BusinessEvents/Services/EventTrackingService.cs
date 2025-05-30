@@ -7,6 +7,8 @@ using ECommerce.BusinessEvents.Domain;
 using ECommerce.Contracts.DTOs;
 using ECommerce.Contracts.Interfaces;
 
+using ECommerce.Common;
+
 namespace ECommerce.BusinessEvents.Services
 {
     public class EventTrackingService(
@@ -15,26 +17,27 @@ namespace ECommerce.BusinessEvents.Services
         IJsonSchemaValidator schemaValidator,
         ILogger<EventTrackingService> logger) : IBusinessEventService, IEventRetrievalService
     {
-        public async Task TrackEventAsync(BusinessEventDto businessEventDto)
+        public async Task<Result<Unit, string>> TrackEventAsync(BusinessEventDto businessEventDto)
         {
             string entityType = businessEventDto.EntityType;
             object entityData = businessEventDto.EntityData;
 
-            // Get the latest schema version for this entity type
             var latestSchema = await schemaRegistry.GetLatestSchemaAsync(entityType);
             if (latestSchema == null)
-                throw new InvalidOperationException($"No schema found for entity type '{entityType}'. Please register a schema first.");
+                return Result<Unit, string>.Failure($"No schema found for entity type '{entityType}'. Please register a schema first.");
 
-            // Use the latest schema version
             int schemaVersion = latestSchema.Version;
-
-            // Serialize the entity data to JSON
             var serializerOptions = new JsonSerializerOptions { PropertyNamingPolicy = null };
             string json = JsonSerializer.Serialize(entityData, serializerOptions);
 
             logger.LogInformation("Serialized business event entity data: {Json}", json);
 
-            schemaValidator.Validate(json, latestSchema.SchemaDefinition);
+            var validationResult = schemaValidator.Validate(json, latestSchema.SchemaDefinition);
+            if (!validationResult.IsSuccess)
+            {
+                logger.LogError("Schema validation failed for entity type {EntityType} with data: {Json}. Error: {Error}", entityType, json, validationResult.Error);
+                return Result<Unit, string>.Failure(validationResult.Error!);
+            }
 
             var businessEvent = new BusinessEvent
             {
@@ -54,6 +57,7 @@ namespace ECommerce.BusinessEvents.Services
 
             dbContext.BusinessEvents.Add(businessEvent);
             await dbContext.SaveChangesAsync();
+            return Result<Unit, string>.Success(new Unit());
         }
 
         public async Task<List<BusinessEvent>> GetAllEventsAsync()

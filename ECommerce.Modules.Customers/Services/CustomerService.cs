@@ -4,6 +4,8 @@ using ECommerce.Modules.Customers.Domain;
 using ECommerce.Modules.Customers.Persistence;
 using Microsoft.EntityFrameworkCore;
 using ECommerce.Contracts.Interfaces; // Add this using
+using ECommerce.Contracts.Exceptions;
+using ECommerce.Common;
 
 namespace ECommerce.Modules.Customers.Services;
 
@@ -22,7 +24,7 @@ public class CustomerService(
         return await customerDbContext.Customers.ToListAsync();
     }
 
-    public async Task<Customer> AddCustomerAsync(Customer customer,  string userId)
+    public async Task<Result<Customer, string>> AddCustomerAsync(Customer customer, string userId)
     {
         customerDbContext.Customers.Add(customer);
         await customerDbContext.SaveChangesAsync();
@@ -36,8 +38,13 @@ public class CustomerService(
             .WithEntityData(customer)
             .Build();
 
-        await businessEventService.TrackEventAsync(businessEvent);
-        return customer;
+        var eventResult = await businessEventService.TrackEventAsync(businessEvent);
+        if (!eventResult.IsSuccess)
+        {
+            customerDbContext.Entry(customer).State = EntityState.Detached;
+            return Result<Customer, string>.Failure($"Customer creation failed due to business event schema validation: {eventResult.Error}");
+        }
+        return Result<Customer, string>.Success(customer);
     }
 
     public async Task<Customer> UpdateCustomerAsync(Guid id, CustomerUpdateDto customerUpdateDto, string userId)

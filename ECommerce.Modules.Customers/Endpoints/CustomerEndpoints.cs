@@ -21,8 +21,12 @@ public static class CustomerEndpoints
             var userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
 
             logger.LogInformation("Creating customer");
-            await customerService.AddCustomerAsync(customer, userId);
-            return Results.Created($"/customers/{customer.Id}", customer);
+            var result = await customerService.AddCustomerAsync(customer, userId);
+            if (!result.IsSuccess)
+            {
+                return Results.BadRequest(result.Error);
+            }
+            return Results.Created($"/customers/{result.Value!.Id}", result.Value);
         })
         .WithName("CreateCustomer")
         .WithTags("Customers")

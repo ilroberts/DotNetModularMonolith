@@ -1,3 +1,4 @@
+using ECommerce.Common;
 using ECommerce.Contracts.DTOs;
 using ECommerce.Modules.Customers.Domain;
 
@@ -7,6 +8,6 @@ public interface ICustomerService
 {
     Task<Customer?> GetCustomerByIdAsync(Guid customerId);
     Task<IEnumerable<Customer>> GetAllCustomersAsync();
-    Task<Customer> AddCustomerAsync(Customer customer, string userId);
+    Task<Result<Customer, string>> AddCustomerAsync(Customer customer, string userId);
     Task<Customer> UpdateCustomerAsync(Guid id, CustomerUpdateDto customerUpdateDto, string userId);
 }

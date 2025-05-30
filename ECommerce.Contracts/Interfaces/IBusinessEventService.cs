@@ -1,5 +1,6 @@
 using System.Threading.Tasks;
 using ECommerce.Contracts.DTOs;
+using ECommerce.Common;
 
 namespace ECommerce.Contracts.Interfaces;
 
@@ -19,5 +20,5 @@ public interface IBusinessEventService
         Viewed
     }
 
-    Task TrackEventAsync(BusinessEventDto businessEventDto);
+    Task<Result<Unit, string>> TrackEventAsync(BusinessEventDto businessEventDto);
 }
