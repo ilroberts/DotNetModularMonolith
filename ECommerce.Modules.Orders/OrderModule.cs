@@ -12,14 +12,14 @@ public static class OrderModule
     public static IServiceCollection AddOrderModule(this IServiceCollection services, IConfiguration configuration)
     {
         var connectionString = configuration.GetConnectionString("DefaultConnection");
+        var serviceProvider = services.BuildServiceProvider();
+        var loggerFactory = serviceProvider.GetService<ILoggerFactory>();
+        var logger = loggerFactory?.CreateLogger("OrderModule");
 
         services.AddDbContext<OrderDbContext>(options =>
         {
             if (!string.IsNullOrEmpty(connectionString))
             {
-                var serviceProvider = services.BuildServiceProvider();
-                var loggerFactory = serviceProvider.GetService<ILoggerFactory>();
-                var logger = loggerFactory?.CreateLogger("OrderModule");
                 logger?.LogInformation("OrderModule: Using PostgreSQL connection string: {ConnectionString}",
                     connectionString.Substring(0, Math.Min(50, connectionString.Length)) + "...");
 
@@ -30,11 +30,7 @@ public static class OrderModule
             }
             else
             {
-                var serviceProvider = services.BuildServiceProvider();
-                var loggerFactory = serviceProvider.GetService<ILoggerFactory>();
-                var logger = loggerFactory?.CreateLogger("OrderModule");
                 logger?.LogInformation("OrderModule: No connection string found, using in-memory database");
-
                 options.UseInMemoryDatabase("ECommerce.Order");
             }
         });
