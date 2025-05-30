@@ -12,7 +12,7 @@ build:
         dockerfile: Dockerfile
 manifests:
   rawYaml:
+    - ECommerceApp/k8s/secrets.yaml
     - ECommerceApp/k8s/deployment.yaml
     - ECommerceApp/k8s/ingress.yaml
     - ECommerceApp/k8s/service.yaml
-    - ECommerceApp/k8s/postgres.yaml

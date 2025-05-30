@@ -25,6 +25,11 @@ spec:
               value: "http://+:8080"
             - name: ASPNETCORE_PATHBASE
               value: "/modulith"
+            - name: ConnectionStrings__DefaultConnection
+              valueFrom:
+                secretKeyRef:
+                  name: app-secret
+                  key: connection-string
           resources:
             requests:
               cpu: "100m"
