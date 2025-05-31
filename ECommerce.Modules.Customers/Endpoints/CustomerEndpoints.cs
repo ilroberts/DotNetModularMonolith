@@ -30,6 +30,8 @@ public static class CustomerEndpoints
         })
         .WithName("CreateCustomer")
         .WithTags("Customers")
+        .Produces<Customer>(StatusCodes.Status201Created)
+        .Produces<string>(StatusCodes.Status400BadRequest)
         .RequireAuthorization();
 
         app.MapGet("/customers", async (ICustomerService customerService) =>

@@ -56,7 +56,7 @@ namespace ECommerce.BusinessEvents.Tests.Services
             Customer customer = new Customer("John Doe", "john.doe@example.com");
             _schemaValidatorMock
                 .Setup(v => v.Validate(It.IsAny<string>(), It.IsAny<string>()))
-                .Verifiable();
+                .Returns(ECommerce.Common.Result<ECommerce.Common.Unit, string>.Success(new ECommerce.Common.Unit()));
 
             var dto = new BusinessEventDto
             {
@@ -72,7 +72,8 @@ namespace ECommerce.BusinessEvents.Tests.Services
             };
 
             // Act
-            await _eventTracker.TrackEventAsync(dto);
+            var result = await _eventTracker.TrackEventAsync(dto);
+            Assert.True(result.IsSuccess, result.Error);
 
             // Assert
             var savedEvent = await _context.BusinessEvents.FirstOrDefaultAsync();
@@ -88,13 +89,13 @@ namespace ECommerce.BusinessEvents.Tests.Services
         }
 
         [Fact]
-        public async Task TrackEventAsync_InvalidData_ThrowsException()
+        public async Task TrackEventAsync_InvalidData_ReturnsFailure()
         {
             // Arrange
             var invalidCustomer = new Customer("john doe", "wrong-email-format");
             _schemaValidatorMock
                 .Setup(v => v.Validate(It.IsAny<string>(), It.IsAny<string>()))
-                .Throws(new InvalidOperationException("Entity data does not match schema"));
+                .Returns(ECommerce.Common.Result<ECommerce.Common.Unit, string>.Failure("Entity data does not match schema"));
 
             var dto = new BusinessEventDto
             {
@@ -109,16 +110,18 @@ namespace ECommerce.BusinessEvents.Tests.Services
                 EntityData = invalidCustomer
             };
 
-            // Act & Assert
-            await Assert.ThrowsAsync<InvalidOperationException>(() =>
-                _eventTracker.TrackEventAsync(dto));
+            // Act
+            var result = await _eventTracker.TrackEventAsync(dto);
 
+            // Assert
+            Assert.False(result.IsSuccess);
+            Assert.Contains("Entity data does not match schema", result.Error);
             Assert.Empty(await _context.BusinessEvents.ToListAsync());
             _schemaValidatorMock.Verify(v => v.Validate(It.IsAny<string>(), It.IsAny<string>()), Times.Once);
         }
 
         [Fact]
-        public async Task TrackEventAsync_NonExistentSchema_ThrowsException()
+        public async Task TrackEventAsync_NonExistentSchema_ReturnsFailure()
         {
             // Arrange
             var vehicle = new { Id = 1, Make = "Toyota", Model = "Corolla" };
@@ -135,10 +138,12 @@ namespace ECommerce.BusinessEvents.Tests.Services
                 EntityData = vehicle
             };
 
-            // Act & Assert
-            await Assert.ThrowsAsync<InvalidOperationException>(() =>
-                _eventTracker.TrackEventAsync(dto));
+            // Act
+            var result = await _eventTracker.TrackEventAsync(dto);
 
+            // Assert
+            Assert.False(result.IsSuccess);
+            Assert.Contains("No schema found", result.Error);
             Assert.Empty(await _context.BusinessEvents.ToListAsync());
             _schemaValidatorMock.Verify(v => v.Validate(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
         }
@@ -149,7 +154,8 @@ namespace ECommerce.BusinessEvents.Tests.Services
             // Arrange
             Customer customer1 = new Customer("Alice", "alice@example.com");
             Customer customer2 = new Customer("Bob", "bob@example.com");
-            _schemaValidatorMock.Setup(v => v.Validate(It.IsAny<string>(), It.IsAny<string>()));
+            _schemaValidatorMock.Setup(v => v.Validate(It.IsAny<string>(), It.IsAny<string>()))
+                .Returns(ECommerce.Common.Result<ECommerce.Common.Unit, string>.Success(new ECommerce.Common.Unit()));
 
             var dto1 = new BusinessEventDto
             {
@@ -177,8 +183,10 @@ namespace ECommerce.BusinessEvents.Tests.Services
                 EntityData = customer2
             };
 
-            await _eventTracker.TrackEventAsync(dto1);
-            await _eventTracker.TrackEventAsync(dto2);
+            var result1 = await _eventTracker.TrackEventAsync(dto1);
+            Assert.True(result1.IsSuccess, result1.Error);
+            var result2 = await _eventTracker.TrackEventAsync(dto2);
+            Assert.True(result2.IsSuccess, result2.Error);
 
             // Act
             var events = await _eventTracker.GetAllEventsAsync();

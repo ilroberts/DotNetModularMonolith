@@ -27,15 +27,18 @@ namespace ECommerce.BusinessEvents.Tests.Infrastructure.Validators
         }
 
         [Fact]
-        public void Validate_InvalidJson_ThrowsAndLogsWarning()
+        public void Validate_InvalidJson_ReturnsFailureAndLogsWarning()
         {
             // Arrange
             var schema = @"{ ""type"": ""object"", ""properties"": { ""name"": { ""type"": ""string"" } }, ""required"": [""name""] }";
             var json = @"{ ""notname"": ""Test"" }";
 
-            // Act & Assert
-            var ex = Assert.Throws<InvalidOperationException>(() => _validator.Validate(json, schema));
-            Assert.Contains("Validation failed", ex.Message);
+            // Act
+            var result = _validator.Validate(json, schema);
+
+            // Assert
+            Assert.False(result.IsSuccess);
+            Assert.Contains("Validation failed", result.Error);
 
             _loggerMock.Verify(
                 l => l.Log(
