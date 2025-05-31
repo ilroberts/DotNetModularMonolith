@@ -44,7 +44,7 @@ public class OrderServiceTests
       Price = 100
     };
     var customerId = Guid.NewGuid();
-    var order = new Order() { Id = Guid.NewGuid(), CustomerId = customerId, Items = [orderItem] };
+    var order = new Order(customerId, new List<OrderItem> { orderItem });
     return order;
   }
 
@@ -67,6 +67,7 @@ public class OrderServiceTests
       var product = new ProductDto() { Id = productId, Name = "Product 1", Price = 100 };
 
       _customerCatalogServiceMock.Setup(service => service.GetCustomerByIdAsync(It.IsAny<Guid>())).ReturnsAsync(customer);
+      _customerCatalogServiceMock.Setup(service => service.CustomerExistsAsync(It.IsAny<Guid>())).ReturnsAsync(true);
       _productCatalogServiceMock.Setup(service => service.GetProductByIdAsync(It.IsAny<Guid>())).ReturnsAsync(product);
 
       // Act

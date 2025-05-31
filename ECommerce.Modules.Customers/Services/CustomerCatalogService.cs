@@ -17,4 +17,10 @@ internal class CustomerCatalogService(ICustomerService customerService) : ICusto
             Email = customer.Email
         };
     }
+
+    public async Task<bool> CustomerExistsAsync(Guid id)
+    {
+        var customer = await _customerService.GetCustomerByIdAsync(id);
+        return customer != null;
+    }
 }

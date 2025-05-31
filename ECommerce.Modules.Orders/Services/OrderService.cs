@@ -29,25 +29,24 @@ internal class OrderService(OrderDbContext orderDbContext,
                 throw new KeyNotFoundException("One or more products not found");
             }
 
-            var customer = await _customerCatalogService.GetCustomerByIdAsync(customerId) ?? throw new KeyNotFoundException($"Customer with id {customerId} not found");
-            var order = new Order
+            bool customerExists = await _customerCatalogService.CustomerExistsAsync(customerId);
+            if (!customerExists)
+            {
+                throw new KeyNotFoundException($"Customer with id {customerId} not found");
+            }
+            var itemList = items.Select((item, index) => new OrderItem
             {
                 Id = Guid.NewGuid(),
-                CustomerId = customerId,
-                Items = items.Select((item, index) => new OrderItem
-                {
-                    Id = Guid.NewGuid(),
-                    ProductId = item.ProductId,
-                    Quantity = item.Quantity,
-                    Price = products[index].Price
-                }).ToList()
-            };
+                ProductId = item.ProductId,
+                Quantity = item.Quantity,
+                Price = products[index].Price
+            }).ToList();
 
+            var order = new Order(customerId, itemList);
             await _orderDbContext.Orders.AddAsync(order);
             await _orderDbContext.SaveChangesAsync();
 
             return new OrderResult(true);
-
         }
         catch (Exception ex)
         {

@@ -1,8 +1,6 @@
 using ECommerce.Contracts.Interfaces;
-using ECommerce.Modules.Customers.Domain;
 using ECommerce.Modules.Customers.Persistence;
 using ECommerce.Modules.Customers.Services;
-using ECommerce.Modules.Customers.Util;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
