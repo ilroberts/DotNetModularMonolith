@@ -1,0 +1,15 @@
+apiVersion: skaffold/v4beta13
+kind: Config
+metadata:
+  name: ecommerce.databasemigrator
+build:
+  local:
+    push: false
+    useDockerCLI: true
+  artifacts:
+    - image: ecommerce-db-migrator
+      docker:
+        dockerfile: Dockerfile
+manifests:
+  rawYaml:
+    - k8s/migrate-job.yaml

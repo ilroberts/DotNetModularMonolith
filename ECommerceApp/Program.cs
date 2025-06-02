@@ -79,7 +79,7 @@ var app = builder.Build();
 // Log ASPNETCORE_PATHBASE value at startup
 var logger = app.Logger;
 var pathBase = app.Configuration["ASPNETCORE_PATHBASE"] ?? Environment.GetEnvironmentVariable("ASPNETCORE_PATHBASE");
-logger.LogInformation($"ASPNETCORE_PATHBASE is set to: '{pathBase}'");
+logger.LogInformation("ASPNETCORE_PATHBASE is set to: \'{PathBase}\'", pathBase);
 
 // Apply the path base if it's set
 if (!string.IsNullOrEmpty(pathBase))
@@ -98,12 +98,14 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI(options =>
     {
-        if (!string.IsNullOrEmpty(pathBase))
+        if (string.IsNullOrEmpty(pathBase))
         {
-            // Adjust Swagger endpoint when using a path base
-            var swaggerJsonPath = string.IsNullOrEmpty(pathBase) ? "/swagger/v1/swagger.json" : $"{pathBase}/swagger/v1/swagger.json";
-            options.SwaggerEndpoint(swaggerJsonPath, "E-Commerce API V1");
+            return;
         }
+
+        // Adjust Swagger endpoint when using a path base
+        string swaggerJsonPath = string.IsNullOrEmpty(pathBase) ? "/swagger/v1/swagger.json" : $"{pathBase}/swagger/v1/swagger.json";
+        options.SwaggerEndpoint(swaggerJsonPath, "E-Commerce API V1");
     });
 }
 

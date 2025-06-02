@@ -1,0 +1,34 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: db-migrator
+spec:
+  template:
+    spec:
+      containers:
+        - name: migrator
+          image: ecommerce-db-migrator:latest
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: CUSTOMERS_DB_CONNECTION
+              valueFrom:
+                secretKeyRef:
+                  name: customers-db-secret
+                  key: connectionString
+            - name: ORDERS_DB_CONNECTION
+              valueFrom:
+                secretKeyRef:
+                  name: orders-db-secret
+                  key: connectionString
+            - name: PRODUCTS_DB_CONNECTION
+              valueFrom:
+                secretKeyRef:
+                  name: products-db-secret
+                  key: connectionString
+            - name: BUSINESSEVENTS_DB_CONNECTION
+              valueFrom:
+                secretKeyRef:
+                  name: businessevents-db-secret
+                  key: connectionString
+      restartPolicy: Never
+  backoffLimit: 1

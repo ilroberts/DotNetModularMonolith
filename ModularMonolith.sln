@@ -25,6 +25,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ECommerce.BusinessEvents", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ECommerce.BusinessEvents.Tests", "ECommerce.BusinessEvents.Tests\ECommerce.BusinessEvents.Tests.csproj", "{B873E2AA-F5C2-4CBA-B03C-DEE6D27EED45}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ECommerce.DatabaseMigrator", "ECommerce.DatabaseMigrator\ECommerce.DatabaseMigrator.csproj", "{760B3134-8E8E-4F9B-97F6-C3CAD7EBB3EC}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -75,6 +77,10 @@ Global
 		{B873E2AA-F5C2-4CBA-B03C-DEE6D27EED45}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B873E2AA-F5C2-4CBA-B03C-DEE6D27EED45}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B873E2AA-F5C2-4CBA-B03C-DEE6D27EED45}.Release|Any CPU.Build.0 = Release|Any CPU
+		{760B3134-8E8E-4F9B-97F6-C3CAD7EBB3EC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{760B3134-8E8E-4F9B-97F6-C3CAD7EBB3EC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{760B3134-8E8E-4F9B-97F6-C3CAD7EBB3EC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{760B3134-8E8E-4F9B-97F6-C3CAD7EBB3EC}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
