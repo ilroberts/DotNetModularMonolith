@@ -12,4 +12,5 @@ build:
         dockerfile: ./ECommerce.DatabaseMigrator/Dockerfile
 manifests:
   rawYaml:
+    - ECommerce.DatabaseMigrator/k8s/db-connection-sealedsecrets.yaml
     - ECommerce.DatabaseMigrator/k8s/migrate-job.yaml
