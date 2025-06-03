@@ -1,5 +1,5 @@
 # Modular Monolith E-Commerce Application
-
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/ilroberts/DotNetModularMonolith)
 ## Overview
 
 **ECommerceApp** is a modular monolith built with **.NET 8** that serves as an example of how to build an e-commerce system using a modular architecture. The application is structured into three primary modules:
