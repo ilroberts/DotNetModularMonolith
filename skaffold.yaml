@@ -13,6 +13,7 @@ build:
 manifests:
   rawYaml:
     - ECommerceApp/k8s/sealedsecret.yaml
+    - ECommerceApp/k8s/hpa.yaml
     - ECommerceApp/k8s/deployment.yaml
     - ECommerceApp/k8s/ingress.yaml
     - ECommerceApp/k8s/service.yaml
