@@ -10,22 +10,22 @@ spec:
           image: ecommerce-db-migrator:latest
           imagePullPolicy: IfNotPresent
           env:
-            - name: CUSTOMERS_DB_CONNECTION
+            - name: CUSTOMER_DB_CONNECTION
               valueFrom:
                 secretKeyRef:
                   name: customers-db-secret
                   key: connectionString
-            - name: ORDERS_DB_CONNECTION
+            - name: ORDER_DB_CONNECTION
               valueFrom:
                 secretKeyRef:
                   name: orders-db-secret
                   key: connectionString
-            - name: PRODUCTS_DB_CONNECTION
+            - name: PRODUCT_DB_CONNECTION
               valueFrom:
                 secretKeyRef:
                   name: products-db-secret
                   key: connectionString
-            - name: BUSINESSEVENTS_DB_CONNECTION
+            - name: BUSINESSEVENT_DB_CONNECTION
               valueFrom:
                 secretKeyRef:
                   name: businessevents-db-secret

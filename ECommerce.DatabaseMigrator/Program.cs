@@ -12,7 +12,7 @@ var connectionStrings = new Dictionary<string, string>
     ["Customers"] = GetRequiredEnv("CUSTOMER_DB_CONNECTION"),
     ["Orders"] = GetRequiredEnv("ORDER_DB_CONNECTION"),
     ["Products"] = GetRequiredEnv("PRODUCT_DB_CONNECTION"),
-    ["BusinessEvents"] = GetRequiredEnv("BUSINESSEVENTS_DB_CONNECTION"),
+    ["BusinessEvents"] = GetRequiredEnv("BUSINESSEVENT_DB_CONNECTION"),
 };
 
 var optionsCustomers = new DbContextOptionsBuilder<CustomerDbContext>()
