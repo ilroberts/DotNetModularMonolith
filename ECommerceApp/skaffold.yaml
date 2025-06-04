@@ -9,7 +9,7 @@ build:
   artifacts:
     - image: modularmonolith
       docker:
-        dockerfile: Dockerfile
+        dockerfile: ECommerceApp/Dockerfile
 manifests:
   rawYaml:
     - ECommerceApp/k8s/sealedsecret.yaml
