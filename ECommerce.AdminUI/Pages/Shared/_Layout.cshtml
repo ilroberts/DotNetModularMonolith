@@ -41,6 +41,20 @@
                             </a>
                         </li>
                     </ul>
+                    <!-- Added user menu with logout functionality -->
+                    <ul class="navbar-nav">
+                        @if (Context.Session.GetString("AuthToken") != null)
+                        {
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="bi bi-person-circle"></i> @(Context.Session.GetString("Username") ?? "User")
+                                </a>
+                                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
+                                    <li><a class="dropdown-item" asp-page="/Logout"><i class="bi bi-box-arrow-right"></i> Logout</a></li>
+                                </ul>
+                            </li>
+                        }
+                    </ul>
                 </div>
             </div>
         </nav>
