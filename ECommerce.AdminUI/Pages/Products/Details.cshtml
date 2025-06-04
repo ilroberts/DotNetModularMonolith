@@ -1,0 +1,28 @@
+@page
+@model ECommerce.AdminUI.Pages.Products.DetailsModel
+@{
+    ViewData["Title"] = "Product Details";
+}
+
+<h1>Product Details</h1>
+<hr />
+
+<div class="row">
+    <div class="col-md-6">
+        <dl class="row">
+            <dt class="col-sm-3">Name</dt>
+            <dd class="col-sm-9">@Model.Product.Name</dd>
+            
+            <dt class="col-sm-3">Price</dt>
+            <dd class="col-sm-9">@Model.Product.Price.ToString("C")</dd>
+            
+            <dt class="col-sm-3">ID</dt>
+            <dd class="col-sm-9">@Model.Product.Id</dd>
+        </dl>
+        
+        <div class="mt-3">
+            <a asp-page="./Edit" asp-route-id="@Model.Product.Id" class="btn btn-primary">Edit</a>
+            <a asp-page="./Index" class="btn btn-secondary">Back to List</a>
+        </div>
+    </div>
+</div>
