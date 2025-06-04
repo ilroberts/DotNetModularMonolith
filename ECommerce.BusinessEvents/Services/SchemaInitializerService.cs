@@ -1,4 +1,3 @@
-
 using Microsoft.Extensions.Logging;
 
 namespace ECommerce.BusinessEvents.Services
@@ -10,6 +9,7 @@ namespace ECommerce.BusinessEvents.Services
         public async Task InitializeDefaultSchemasAsync()
         {
             await InitializeCustomerSchemaAsync();
+            await InitializeProductSchemaAsync();
             // Add other entity schemas as needed
         }
 
@@ -71,6 +71,45 @@ namespace ECommerce.BusinessEvents.Services
             await schemaRegistry.AddSchemaAsync(entityType, version, customerSchema);
             logger.LogInformation("Initialized default schema for {EntityType} version {Version}", entityType, version);
         }
+
+        private async Task InitializeProductSchemaAsync()
+        {
+            const string entityType = "Product";
+            const int version = 1;
+
+            var existingSchema = await schemaRegistry.GetSchemaAsync(entityType, version);
+            if (existingSchema != null)
+            {
+                return; // Schema already exists
+            }
+
+            var productSchema = @"{
+                ""$schema"": ""https://json-schema.org/draft/2020-12/schema"",
+                ""$id"": ""https://example.com/schemas/product/v1"",
+                ""title"": ""Product"",
+                ""description"": ""A product entity"",
+                ""type"": ""object"",
+                ""properties"": {
+                    ""Id"": {
+                        ""type"": ""string"",
+                        ""description"": ""Unique product identifier""
+                    },
+                    ""Name"": {
+                        ""type"": ""string"",
+                        ""description"": ""Product name""
+                    },
+                    ""Price"": {
+                        ""type"": ""number"",
+                        ""format"": ""decimal"",
+                        ""description"": ""Product price""
+                    }
+                },
+                ""required"": [""Id"", ""Name"", ""Price""],
+                ""additionalProperties"": false
+            }";
+
+            await schemaRegistry.AddSchemaAsync(entityType, version, productSchema);
+            logger.LogInformation("Initialized default schema for {EntityType} version {Version}", entityType, version);
+        }
     }
 }
-
