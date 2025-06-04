@@ -43,7 +43,7 @@ builder.Services.AddHttpClient("ModularMonolith", client =>
     }
     client.BaseAddress = new Uri(baseUrl);
     client.DefaultRequestHeaders.Add("Accept", "application/json");
-    
+
     // Log the configured base address for debugging
     Console.WriteLine($"ModularMonolith API base address: {baseUrl}");
 })
@@ -51,7 +51,7 @@ builder.Services.AddHttpClient("ModularMonolith", client =>
 {
     return new HttpClientHandler
     {
-        ServerCertificateCustomValidationCallback = 
+        ServerCertificateCustomValidationCallback =
             (sender, cert, chain, sslPolicyErrors) => true // For development only!
     };
 });
@@ -66,13 +66,14 @@ builder.Services.AddHttpClient("TokenService", client =>
 {
     return new HttpClientHandler
     {
-        ServerCertificateCustomValidationCallback = 
+        ServerCertificateCustomValidationCallback =
             (sender, cert, chain, sslPolicyErrors) => true // For development only!
     };
 });
 
 // Register application services
 builder.Services.AddScoped<ECommerce.AdminUI.Services.CustomerService>();
+builder.Services.AddScoped<ECommerce.AdminUI.Services.ProductService>();
 builder.Services.AddScoped<ECommerce.AdminUI.Services.AuthService>();
 builder.Services.AddScoped<ECommerce.AdminUI.Services.DashboardService>();
 

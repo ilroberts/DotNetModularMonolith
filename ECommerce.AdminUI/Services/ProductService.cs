@@ -36,7 +36,7 @@ public class ProductService
             _logger.LogInformation("Getting all products from {Url}", _httpClient.BaseAddress + "products");
             var response = await _httpClient.GetAsync("products");
             response.EnsureSuccessStatusCode();
-            
+
             return await response.Content.ReadFromJsonAsync<List<ProductDto>>() ?? new List<ProductDto>();
         }
         catch (Exception ex)
@@ -53,7 +53,7 @@ public class ProductService
             AddAuthorizationHeader();
             var response = await _httpClient.GetAsync($"products/{id}");
             response.EnsureSuccessStatusCode();
-            
+
             return await response.Content.ReadFromJsonAsync<ProductDto>();
         }
         catch (Exception ex)
@@ -65,6 +65,8 @@ public class ProductService
 
     public async Task<bool> CreateProductAsync(ProductDto product)
     {
+        _logger.LogInformation("creating product with name: {ProductName}", product.Name);
+
         try
         {
             AddAuthorizationHeader();
@@ -72,11 +74,11 @@ public class ProductService
                 JsonSerializer.Serialize(product),
                 Encoding.UTF8,
                 "application/json");
-            
+
             _logger.LogInformation("Creating product at URL: {Url}", _httpClient.BaseAddress + "products");
             var response = await _httpClient.PostAsync("products", content);
             response.EnsureSuccessStatusCode();
-            
+
             return true;
         }
         catch (Exception ex)
@@ -95,10 +97,10 @@ public class ProductService
                 JsonSerializer.Serialize(product),
                 Encoding.UTF8,
                 "application/json");
-            
+
             var response = await _httpClient.PutAsync($"products/{id}", content);
             response.EnsureSuccessStatusCode();
-            
+
             return true;
         }
         catch (Exception ex)
@@ -115,7 +117,7 @@ public class ProductService
             AddAuthorizationHeader();
             var response = await _httpClient.DeleteAsync($"products/{id}");
             response.EnsureSuccessStatusCode();
-            
+
             return true;
         }
         catch (Exception ex)

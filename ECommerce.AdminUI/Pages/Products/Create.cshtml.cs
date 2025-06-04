@@ -24,8 +24,21 @@ public class CreateModel : PageModel
 
     public async Task<IActionResult> OnPostAsync()
     {
+        _logger.LogInformation("Creating a new product with name: {ProductName}", Product.Name);
         if (!ModelState.IsValid)
         {
+            // Log all errors for debugging
+            foreach (var key in ModelState.Keys)
+            {
+                var errors = ModelState[key]?.Errors;
+                if (errors != null && errors.Count > 0)
+                {
+                    foreach (var error in errors)
+                    {
+                        _logger.LogWarning("ModelState Error for '{Key}': {ErrorMessage}", key, error.ErrorMessage);
+                    }
+                }
+            }
             return Page();
         }
 

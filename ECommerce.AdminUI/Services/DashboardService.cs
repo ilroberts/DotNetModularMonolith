@@ -8,8 +8,8 @@ public class DashboardService
     private readonly ILogger<DashboardService> _logger;
     private readonly IHttpContextAccessor _httpContextAccessor;
 
-    public DashboardService(IHttpClientFactory httpClientFactory, 
-        ILogger<DashboardService> logger, 
+    public DashboardService(IHttpClientFactory httpClientFactory,
+        ILogger<DashboardService> logger,
         IHttpContextAccessor httpContextAccessor)
     {
         _httpClient = httpClientFactory.CreateClient("ModularMonolith");
@@ -30,11 +30,11 @@ public class DashboardService
     public async Task<DashboardStats> GetDashboardStatsAsync()
     {
         var stats = new DashboardStats();
-        
+
         try
         {
             AddAuthorizationHeader();
-            
+
             // Get customer count
             var customerResponse = await _httpClient.GetAsync("customers");
             if (customerResponse.IsSuccessStatusCode)
@@ -42,7 +42,15 @@ public class DashboardService
                 var customers = await customerResponse.Content.ReadFromJsonAsync<List<CustomerDto>>() ?? new List<CustomerDto>();
                 stats.CustomerCount = customers.Count;
             }
-            
+
+            // Get product count
+            var productResponse = await _httpClient.GetAsync("products");
+            if (productResponse.IsSuccessStatusCode)
+            {
+                var products = await productResponse.Content.ReadFromJsonAsync<List<ProductDto>>() ?? new List<ProductDto>();
+                stats.ProductCount = products.Count;
+            }
+
             // Get business events
             var eventsResponse = await _httpClient.GetAsync("events");
             if (eventsResponse.IsSuccessStatusCode)
@@ -50,7 +58,7 @@ public class DashboardService
                 var events = await eventsResponse.Content.ReadFromJsonAsync<List<BusinessEventDto>>() ?? new List<BusinessEventDto>();
                 stats.RecentEvents = events.OrderByDescending(e => e.EventTimestamp).Take(5).ToList();
             }
-            
+
             // Additional data could be fetched here as needed
             // For example, product count, order count, etc.
         }
@@ -58,7 +66,7 @@ public class DashboardService
         {
             _logger.LogError(ex, "Error retrieving dashboard statistics");
         }
-        
+
         return stats;
     }
 }
