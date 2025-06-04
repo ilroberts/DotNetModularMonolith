@@ -21,7 +21,9 @@ public class AuthenticationFilter : IPageFilter
     public void OnPageHandlerExecuting(PageHandlerExecutingContext context)
     {
         // Skip authentication check for Login page to avoid infinite redirect loop
-        if (context.HandlerInstance is Pages.LoginModel)
+        // Also skip for HealthCheck endpoint used by Kubernetes probes
+        if (context.HandlerInstance is Pages.LoginModel || 
+            context.HandlerInstance is Pages.HealthCheckModel)
         {
             return;
         }

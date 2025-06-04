@@ -1,5 +1,18 @@
 var builder = WebApplication.CreateBuilder(args);
 
+// Log all environment variables to help with debugging
+Console.WriteLine("=== Environment Variables ===");
+Console.WriteLine($"ModularMonolithApiUrl: {Environment.GetEnvironmentVariable("ModularMonolithApiUrl") ?? "not set"}");
+Console.WriteLine($"TokenServiceUrl: {Environment.GetEnvironmentVariable("TokenServiceUrl") ?? "not set"}");
+Console.WriteLine($"ASPNETCORE_ENVIRONMENT: {Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "not set"}");
+Console.WriteLine("==========================");
+
+// Log configuration values to help with debugging
+Console.WriteLine("=== Configuration Values ===");
+Console.WriteLine($"ModularMonolithApiUrl from config: {builder.Configuration["ModularMonolithApiUrl"] ?? "not set"}");
+Console.WriteLine($"TokenServiceUrl from config: {builder.Configuration["TokenServiceUrl"] ?? "not set"}");
+Console.WriteLine("==========================");
+
 // Add services to the container.
 builder.Services.AddRazorPages()
     .AddMvcOptions(options =>
