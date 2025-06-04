@@ -33,9 +33,15 @@ else
                     <td>@customer.Name</td>
                     <td>@customer.Email</td>
                     <td>
-                        <a asp-page="./Details" asp-route-id="@customer.Id" class="btn btn-info btn-sm">Details</a>
-                        <a asp-page="./Edit" asp-route-id="@customer.Id" class="btn btn-warning btn-sm">Edit</a>
-                        <a asp-page="./Delete" asp-route-id="@customer.Id" class="btn btn-danger btn-sm">Delete</a>
+                        <a asp-page="./Details" asp-route-id="@customer.Id" class="btn btn-info btn-sm">
+                            <i class="bi bi-info-circle"></i>
+                        </a>
+                        <a asp-page="./Edit" asp-route-id="@customer.Id" class="btn btn-warning btn-sm">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+                        <a asp-page="./Delete" asp-route-id="@customer.Id" class="btn btn-danger btn-sm">
+                            <i class="bi bi-trash"></i>
+                        </a>
                     </td>
                 </tr>
             }
