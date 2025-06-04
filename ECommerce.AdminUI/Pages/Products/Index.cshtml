@@ -6,14 +6,6 @@
 
 <h1>Products</h1>
 
-@if (TempData["SuccessMessage"] != null)
-{
-    <div class="alert alert-success alert-dismissible fade show" role="alert">
-        @TempData["SuccessMessage"]
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
-}
-
 <p>
     <a asp-page="Create" class="btn btn-primary">
         <i class="bi bi-plus-circle"></i> Add New Product
