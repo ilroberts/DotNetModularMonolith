@@ -1,0 +1,15 @@
+apiVersion: skaffold/v4beta13
+kind: Config
+metadata:
+  name: ecommerce.adminui
+build:
+  local:
+    push: false
+    useDockerCLI: true
+  artifacts:
+    - image: admin-ui
+      docker:
+        dockerfile: ECommerce.AdminUI/Dockerfile
+manifests:
+  rawYaml:
+    - ECommerce.AdminUI/k8s/deployment.yaml
