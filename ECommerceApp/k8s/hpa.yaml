@@ -1,3 +1,4 @@
+# Horizontal Pod Autoscaler for modular monolith
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
@@ -35,4 +36,3 @@ spec:
       - type: Percent
         value: 20
         periodSeconds: 60
-
