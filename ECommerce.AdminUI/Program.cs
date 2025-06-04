@@ -61,6 +61,7 @@ builder.Services.AddHttpClient("TokenService", client =>
 // Register application services
 builder.Services.AddScoped<ECommerce.AdminUI.Services.CustomerService>();
 builder.Services.AddScoped<ECommerce.AdminUI.Services.AuthService>();
+builder.Services.AddScoped<ECommerce.AdminUI.Services.DashboardService>();
 
 var app = builder.Build();
 

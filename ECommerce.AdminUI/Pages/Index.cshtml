@@ -1,10 +1,185 @@
 ﻿@page
-@model IndexModel
+@model ECommerce.AdminUI.Pages.IndexModel
 @{
-    ViewData["Title"] = "Home page";
+    ViewData["Title"] = "Dashboard";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<div class="container-fluid px-4">
+    <h1 class="mt-4">Dashboard</h1>
+    <p>Welcome, @Model.Username! Here's your ECommerce system at a glance.</p>
+
+    <div class="row mt-4">
+        <div class="col-xl-3 col-md-6">
+            <div class="card bg-primary text-white mb-4">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h2 class="display-4 mb-0">@Model.Stats.CustomerCount</h2>
+                            <div>Customers</div>
+                        </div>
+                        <div>
+                            <i class="bi bi-people fs-1"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer d-flex align-items-center justify-content-between">
+                    <a class="small text-white stretched-link" asp-page="/Customers/Index">View Details</a>
+                    <div class="small text-white"><i class="bi bi-arrow-right"></i></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6">
+            <div class="card bg-warning text-white mb-4">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h2 class="display-4 mb-0">@Model.Stats.ProductCount</h2>
+                            <div>Products</div>
+                        </div>
+                        <div>
+                            <i class="bi bi-box fs-1"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer d-flex align-items-center justify-content-between">
+                    <a class="small text-white stretched-link" asp-page="/Products/Index">View Details</a>
+                    <div class="small text-white"><i class="bi bi-arrow-right"></i></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6">
+            <div class="card bg-success text-white mb-4">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h2 class="display-4 mb-0">@Model.Stats.OrderCount</h2>
+                            <div>Orders</div>
+                        </div>
+                        <div>
+                            <i class="bi bi-cart fs-1"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer d-flex align-items-center justify-content-between">
+                    <a class="small text-white stretched-link" asp-page="/Orders/Index">View Details</a>
+                    <div class="small text-white"><i class="bi bi-arrow-right"></i></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6">
+            <div class="card bg-danger text-white mb-4">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h2 class="display-4 mb-0">$@Model.Stats.TotalSales.ToString("N0")</h2>
+                            <div>Total Sales</div>
+                        </div>
+                        <div>
+                            <i class="bi bi-currency-dollar fs-1"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer d-flex align-items-center justify-content-between">
+                    <a class="small text-white stretched-link" href="#">View Details</a>
+                    <div class="small text-white"><i class="bi bi-arrow-right"></i></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="bi bi-clipboard-data me-1"></i>
+                    System Status
+                </div>
+                <div class="card-body">
+                    <p>Your e-commerce system is running properly. Below is a quick overview of available modules:</p>
+                    <ul class="list-group">
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            Customer Management
+                            <span class="badge bg-success rounded-pill">Online</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            Product Management
+                            <span class="badge bg-success rounded-pill">Online</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            Order Management
+                            <span class="badge bg-success rounded-pill">Online</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            Business Events
+                            <span class="badge bg-success rounded-pill">Online</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="bi bi-activity me-1"></i>
+                    Recent Business Events
+                </div>
+                <div class="card-body">
+                    @if (Model.Stats.RecentEvents.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Timestamp</th>
+                                        <th>Entity Type</th>
+                                        <th>Event Type</th>
+                                        <th>Entity ID</th>
+                                        <th>Actor</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var evt in Model.Stats.RecentEvents)
+                                    {
+                                        <tr>
+                                            <td>@evt.EventTimestamp.ToString("g")</td>
+                                            <td>
+                                                <span class="badge rounded-pill bg-info">@evt.EntityType</span>
+                                            </td>
+                                            <td>
+                                                @{
+                                                    var badgeClass = evt.EventType switch
+                                                    {
+                                                        "Created" => "bg-success",
+                                                        "Updated" => "bg-warning",
+                                                        "Deleted" => "bg-danger",
+                                                        "Viewed" => "bg-info",
+                                                        _ => "bg-secondary"
+                                                    };
+                                                }
+                                                <span class="badge rounded-pill @badgeClass">@evt.EventType</span>
+                                            </td>
+                                            <td>@evt.EntityId</td>
+                                            <td>
+                                                <small>@evt.ActorId (@evt.ActorType)</small>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-info">No recent business events found.</div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
