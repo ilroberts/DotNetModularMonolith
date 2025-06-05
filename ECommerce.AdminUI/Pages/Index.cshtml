@@ -90,14 +90,34 @@
         </div>
     </div>
 
-    <div class="row">
-        <div class="col-md-12">
-            <div class="card mb-4">
-                <div class="card-header">
-                    <i class="bi bi-clipboard-data me-1"></i>
-                    System Status
+    <div class="accordion mt-4" id="dashboardAccordion">
+        <!-- Orders Over Time Accordion -->
+        <div class="accordion-item">
+            <h2 class="accordion-header" id="headingOrders">
+                <button class="accordion-button" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#collapseOrders" aria-expanded="true" aria-controls="collapseOrders">
+                    <i class="bi bi-graph-up me-2"></i> Orders Over Time
+                </button>
+            </h2>
+            <div id="collapseOrders" class="accordion-collapse collapse show" aria-labelledby="headingOrders"
+                data-bs-parent="#dashboardAccordion">
+                <div class="accordion-body">
+                    <canvas id="ordersChart" height="100"></canvas>
                 </div>
-                <div class="card-body">
+            </div>
+        </div>
+
+        <!-- System Status Accordion -->
+        <div class="accordion-item">
+            <h2 class="accordion-header" id="headingStatus">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#collapseStatus" aria-expanded="false" aria-controls="collapseStatus">
+                    <i class="bi bi-clipboard-data me-2"></i> System Status
+                </button>
+            </h2>
+            <div id="collapseStatus" class="accordion-collapse collapse" aria-labelledby="headingStatus"
+                data-bs-parent="#dashboardAccordion">
+                <div class="accordion-body">
                     <p>Your e-commerce system is running properly. Below is a quick overview of available modules:</p>
                     <ul class="list-group">
                         <li class="list-group-item d-flex justify-content-between align-items-center">
@@ -120,16 +140,18 @@
                 </div>
             </div>
         </div>
-    </div>
 
-    <div class="row">
-        <div class="col-md-12">
-            <div class="card mb-4">
-                <div class="card-header">
-                    <i class="bi bi-activity me-1"></i>
-                    Recent Business Events
-                </div>
-                <div class="card-body">
+        <!-- Recent Business Events Accordion -->
+        <div class="accordion-item">
+            <h2 class="accordion-header" id="headingEvents">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#collapseEvents" aria-expanded="false" aria-controls="collapseEvents">
+                    <i class="bi bi-activity me-2"></i> Recent Business Events
+                </button>
+            </h2>
+            <div id="collapseEvents" class="accordion-collapse collapse" aria-labelledby="headingEvents"
+                data-bs-parent="#dashboardAccordion">
+                <div class="accordion-body">
                     @if (Model.Stats.RecentEvents.Any())
                     {
                         <div class="table-responsive">
@@ -183,3 +205,104 @@
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Order statistics data from the model
+            const orderStats = @Html.Raw(Json.Serialize(Model.Stats.OrderStatistics));
+
+            // Format dates for display
+            const labels = orderStats.map(stat => {
+                const date = new Date(stat.date);
+                return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            });
+
+            // Order counts for the chart
+            const orderCounts = orderStats.map(stat => stat.orderCount);
+
+            // Total sales for the chart
+            const totalSales = orderStats.map(stat => stat.totalSales);
+
+            // Create the chart
+            const ctx = document.getElementById('ordersChart');
+            const ordersChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Orders',
+                            data: orderCounts,
+                            backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                            borderColor: 'rgba(54, 162, 235, 1)',
+                            borderWidth: 2,
+                            tension: 0.2,
+                            yAxisID: 'y'
+                        },
+                        {
+                            label: 'Sales ($)',
+                            data: totalSales,
+                            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                            borderColor: 'rgba(75, 192, 192, 1)',
+                            borderWidth: 2,
+                            tension: 0.2,
+                            yAxisID: 'y1'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                    scales: {
+                        y: {
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                            title: {
+                                display: true,
+                                text: 'Orders'
+                            }
+                        },
+                        y1: {
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            title: {
+                                display: true,
+                                text: 'Sales ($)'
+                            },
+                            grid: {
+                                drawOnChartArea: false, // only want the grid lines for one axis to show up
+                            },
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.dataset.label === 'Sales ($)') {
+                                        label += new Intl.NumberFormat('en-US', {
+                                            style: 'currency',
+                                            currency: 'USD'
+                                        }).format(context.raw);
+                                    } else {
+                                        label += context.raw;
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        });
+    </script>
+}
