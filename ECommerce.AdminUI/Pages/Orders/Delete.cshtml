@@ -1,0 +1,54 @@
+@page "{id:guid}"
+@model ECommerce.AdminUI.Pages.Orders.DeleteModel
+@{
+    ViewData["Title"] = "Delete Order";
+}
+
+<h1>Delete Order</h1>
+<div class="alert alert-danger">
+    <h4>Are you sure you want to delete this order?</h4>
+    <p>This action cannot be undone.</p>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Order #@Model.Order.Id.ToString().Substring(0, 8)</h5>
+                <span class="badge bg-@(Model.Order.Status == "Completed" ? "success" :
+                                      Model.Order.Status == "Processing" ? "primary" :
+                                      Model.Order.Status == "Cancelled" ? "danger" : "warning")">
+                    @Model.Order.Status
+                </span>
+            </div>
+            <div class="card-body">
+                <dl class="row">
+                    <dt class="col-sm-4">Created On</dt>
+                    <dd class="col-sm-8">@Model.Order.CreatedAt.ToString("g")</dd>
+
+                    <dt class="col-sm-4">Customer</dt>
+                    <dd class="col-sm-8">@Model.Order.CustomerName</dd>
+
+                    <dt class="col-sm-4">Product</dt>
+                    <dd class="col-sm-8">@Model.Order.ProductName</dd>
+
+                    <dt class="col-sm-4">Quantity</dt>
+                    <dd class="col-sm-8">@Model.Order.Quantity</dd>
+
+                    <dt class="col-sm-4">Total Price</dt>
+                    <dd class="col-sm-8">$@Model.Order.TotalPrice.ToString("0.00")</dd>
+                </dl>
+            </div>
+        </div>
+
+        <form method="post">
+            <input type="hidden" asp-for="Order.Id" />
+            <button type="submit" class="btn btn-danger">
+                <i class="bi bi-trash"></i> Delete
+            </button>
+            <a asp-page="./Index" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Cancel
+            </a>
+        </form>
+    </div>
+</div>

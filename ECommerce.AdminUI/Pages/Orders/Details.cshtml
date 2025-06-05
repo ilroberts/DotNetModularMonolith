@@ -1,0 +1,113 @@
+@page "{id:guid}"
+@model ECommerce.AdminUI.Pages.Orders.DetailsModel
+@{
+    ViewData["Title"] = "Order Details";
+}
+
+<h1>Order Details</h1>
+<hr />
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Order #@Model.Order.Id.ToString().Substring(0, 8)</h5>
+                <span class="badge bg-@(Model.Order.Status == "Completed" ? "success" :
+                                      Model.Order.Status == "Processing" ? "primary" :
+                                      Model.Order.Status == "Cancelled" ? "danger" : "warning")">
+                    @Model.Order.Status
+                </span>
+            </div>
+            <div class="card-body">
+                <dl class="row">
+                    <dt class="col-sm-4">Created On</dt>
+                    <dd class="col-sm-8">@Model.Order.CreatedAt.ToString("g")</dd>
+
+                    <dt class="col-sm-4">Customer</dt>
+                    <dd class="col-sm-8">@Model.Order.CustomerName</dd>
+
+                    <dt class="col-sm-4">Customer Email</dt>
+                    <dd class="col-sm-8">@Model.Order.CustomerEmail</dd>
+                </dl>
+            </div>
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5>Order Items</h5>
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>Product</th>
+                            <th>Price</th>
+                            <th>Quantity</th>
+                            <th class="text-end">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>@Model.Order.ProductName</td>
+                            <td>$@Model.Order.ProductPrice.ToString("0.00")</td>
+                            <td>@Model.Order.Quantity</td>
+                            <td class="text-end">$@Model.Order.TotalPrice.ToString("0.00")</td>
+                        </tr>
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <th colspan="3" class="text-end">Total:</th>
+                            <th class="text-end">$@Model.Order.TotalPrice.ToString("0.00")</th>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card mb-3">
+            <div class="card-header">
+                <h5>Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a asp-page="./Edit" asp-route-id="@Model.Order.Id" class="btn btn-warning">
+                        <i class="bi bi-pencil"></i> Edit Order
+                    </a>
+                    <a asp-page="./Delete" asp-route-id="@Model.Order.Id" class="btn btn-danger">
+                        <i class="bi bi-trash"></i> Delete Order
+                    </a>
+                    <a asp-page="./Index" class="btn btn-secondary">
+                        <i class="bi bi-arrow-left"></i> Back to List
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        @if (Model.Order.Status != "Completed" && Model.Order.Status != "Cancelled")
+        {
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h5>Update Status</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        <input type="hidden" asp-for="Order.Id" />
+                        <div class="mb-3">
+                            <label class="form-label">New Status</label>
+                            <select name="newStatus" class="form-select">
+                                <option value="Processing" selected="@(Model.Order.Status == "Pending")">Processing</option>
+                                <option value="Completed">Completed</option>
+                                <option value="Cancelled">Cancelled</option>
+                            </select>
+                        </div>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">Update Status</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        }
+    </div>
+</div>

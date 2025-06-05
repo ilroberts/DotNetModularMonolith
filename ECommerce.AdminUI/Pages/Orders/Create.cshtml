@@ -1,0 +1,165 @@
+@page
+@model ECommerce.AdminUI.Pages.Orders.CreateModel
+@{
+    ViewData["Title"] = "Create New Order";
+}
+
+<h1>Create New Order</h1>
+<hr />
+
+<div class="row">
+    <div class="col-md-8">
+        <form method="post">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+            <div class="mb-3">
+                <label asp-for="Order.CustomerId" class="form-label">Customer</label>
+                <select asp-for="Order.CustomerId" class="form-select" asp-items="Model.CustomerOptions">
+                    <option value="">-- Select Customer --</option>
+                </select>
+                <span asp-validation-for="Order.CustomerId" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Order.ProductId" class="form-label">Product</label>
+                <select asp-for="Order.ProductId" id="productSelect" class="form-select" asp-items="Model.ProductOptions"
+                        onchange="updateProductInfo(); calculateTotal();">
+                    <option value="">-- Select Product --</option>
+                </select>
+                <span asp-validation-for="Order.ProductId" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Order.Quantity" class="form-label">Quantity</label>
+                <div class="input-group">
+                    <input asp-for="Order.Quantity" id="quantity" class="form-control" type="number" min="1" value="1"
+                           onchange="calculateTotal();" oninput="calculateTotal();" />
+                    <span class="input-group-text" id="stockInfo">(in stock)</span>
+                </div>
+                <span asp-validation-for="Order.Quantity" class="text-danger"></span>
+                <div id="quantityFeedback" class="invalid-feedback"></div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Total Price</label>
+                <div class="input-group">
+                    <span class="input-group-text">$</span>
+                    <input id="totalPrice" class="form-control" readonly value="0.00" />
+                </div>
+            </div>
+
+            <input type="hidden" id="productPrice" value="0" />
+            <input type="hidden" asp-for="Order.TotalPrice" id="orderTotalPrice" value="0" />
+
+            <div class="mb-3">
+                <button type="submit" class="btn btn-primary">Create Order</button>
+                <a asp-page="Index" class="btn btn-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5>Order Summary</h5>
+            </div>
+            <div class="card-body">
+                <div id="orderSummary">
+                    <p>Please select a customer and product to see the order summary.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script>
+        // Store product data for client-side calculations
+        const products = @Html.Raw(Json.Serialize(Model.ProductData));
+
+        function getSelectedProduct() {
+            const productId = document.getElementById('productSelect').value;
+            return products.find(p => p.id === productId);
+        }
+
+        function updateProductInfo() {
+            const product = getSelectedProduct();
+            const stockInfo = document.getElementById('stockInfo');
+            const productPrice = document.getElementById('productPrice');
+
+            if (product) {
+                stockInfo.textContent = `(${product.stock} in stock)`;
+                productPrice.value = product.price;
+
+                // Set max quantity to available stock
+                document.getElementById('quantity').max = product.stock;
+            } else {
+                stockInfo.textContent = '(in stock)';
+                productPrice.value = 0;
+            }
+
+            updateOrderSummary();
+        }
+
+        function calculateTotal() {
+            const quantity = parseInt(document.getElementById('quantity').value) || 0;
+            const price = parseFloat(document.getElementById('productPrice').value) || 0;
+
+            // Validate quantity against stock
+            const product = getSelectedProduct();
+            const quantityInput = document.getElementById('quantity');
+            const feedback = document.getElementById('quantityFeedback');
+
+            if (product && quantity > product.stock) {
+                quantityInput.classList.add('is-invalid');
+                feedback.textContent = `Maximum available quantity is ${product.stock}`;
+                // Cap at maximum stock
+                quantityInput.value = product.stock;
+            } else if (quantity < 1) {
+                quantityInput.classList.add('is-invalid');
+                feedback.textContent = 'Minimum quantity is 1';
+                quantityInput.value = 1;
+            } else {
+                quantityInput.classList.remove('is-invalid');
+            }
+
+            const total = quantity * price;
+            document.getElementById('totalPrice').value = total.toFixed(2);
+            document.getElementById('orderTotalPrice').value = total.toFixed(2);
+
+            updateOrderSummary();
+        }
+
+        function updateOrderSummary() {
+            const customerSelect = document.getElementById('Order_CustomerId');
+            const productSelect = document.getElementById('productSelect');
+            const quantity = document.getElementById('quantity').value;
+            const total = document.getElementById('totalPrice').value;
+
+            const customerText = customerSelect.options[customerSelect.selectedIndex]?.text || 'None selected';
+            const product = getSelectedProduct();
+            const productText = product ? product.name : 'None selected';
+
+            let summaryHtml = '';
+            if (customerSelect.value && productSelect.value) {
+                summaryHtml = `
+                    <p><strong>Customer:</strong> ${customerText}</p>
+                    <p><strong>Product:</strong> ${productText}</p>
+                    <p><strong>Quantity:</strong> ${quantity}</p>
+                    <p><strong>Total:</strong> $${total}</p>
+                `;
+            } else {
+                summaryHtml = '<p>Please select a customer and product to see the order summary.</p>';
+            }
+
+            document.getElementById('orderSummary').innerHTML = summaryHtml;
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            updateProductInfo();
+            calculateTotal();
+        });
+    </script>
+}

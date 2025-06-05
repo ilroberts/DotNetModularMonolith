@@ -76,6 +76,7 @@ builder.Services.AddScoped<ECommerce.AdminUI.Services.CustomerService>();
 builder.Services.AddScoped<ECommerce.AdminUI.Services.ProductService>();
 builder.Services.AddScoped<ECommerce.AdminUI.Services.AuthService>();
 builder.Services.AddScoped<ECommerce.AdminUI.Services.DashboardService>();
+builder.Services.AddScoped<ECommerce.AdminUI.Services.OrderService>();
 
 var app = builder.Build();
 
