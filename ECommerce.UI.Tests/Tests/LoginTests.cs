@@ -12,7 +12,7 @@ public class LoginTests : BaseTest
     private DashboardPage _dashboardPage;
 
     [SetUp]
-    public async Task SetUp()
+    public void SetUp()
     {
         // Initialize page objects
         _loginPage = new LoginPage(Page);
@@ -37,7 +37,7 @@ public class LoginTests : BaseTest
         Assert.That(await _dashboardPage.IsDisplayed(), Is.True, "Dashboard not displayed after login");
 
         // Verify welcome message includes username
-        string welcomeMessage = await _dashboardPage.GetWelcomeMessage();
+        string? welcomeMessage = await _dashboardPage.GetWelcomeMessage();
         Assert.That(welcomeMessage, Contains.Substring("Welcome"), "Welcome message not displayed");
 
         // Take a screenshot of successful login

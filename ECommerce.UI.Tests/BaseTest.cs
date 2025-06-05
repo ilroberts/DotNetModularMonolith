@@ -1,7 +1,6 @@
 using Microsoft.Playwright;
 using Microsoft.Playwright.NUnit;
 using ECommerce.UI.Tests.Config;
-using ECommerce.UI.Tests.Helpers;
 using Microsoft.Extensions.Logging;
 
 namespace ECommerce.UI.Tests;
@@ -45,7 +44,11 @@ public class BaseTest : PageTest
             string tracePath = Path.Combine(TestContext.CurrentContext.WorkDirectory, "test-results", traceFileName);
 
             // Ensure directory exists
-            Directory.CreateDirectory(Path.GetDirectoryName(tracePath));
+            string? traceDir = Path.GetDirectoryName(tracePath);
+            if (!string.IsNullOrEmpty(traceDir))
+            {
+                Directory.CreateDirectory(traceDir);
+            }
 
             // Save trace for debugging
             await Context.Tracing.StopAsync(new() { Path = tracePath });
@@ -83,7 +86,7 @@ public class BaseTest : PageTest
     {
         username ??= TestSettings.DefaultUsername;
 
-        _logger.LogInformation($"Navigating to {StartUrl}/login");
+        _logger.LogInformation("Navigating to {StartUrl}/login", StartUrl);
         await Page.GotoAsync($"{StartUrl}/login");
         await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
@@ -110,7 +113,7 @@ public class BaseTest : PageTest
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError($"Failed to find username field: {ex.Message}");
+                    _logger.LogError("Failed to find username field: {ExMessage}", ex.Message);
 
                     // Take screenshot for debugging
                     var screenshotPath = Path.Combine(TestContext.CurrentContext.WorkDirectory, "login-debug.png");
@@ -119,7 +122,7 @@ public class BaseTest : PageTest
 
                     // Get HTML content for debugging
                     var html = await Page.ContentAsync();
-                    _logger.LogInformation($"Page HTML: {html}");
+                    _logger.LogInformation("Page HTML: {Html}", html);
 
                     throw;
                 }
