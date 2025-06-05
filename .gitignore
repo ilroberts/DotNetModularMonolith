@@ -10,6 +10,7 @@ nupkg/
 **/docs/
 # Visual Studio Code
 .vscode/
+**/node_modules/
 
 # Rider
 .idea/
