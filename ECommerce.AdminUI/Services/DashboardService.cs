@@ -51,6 +51,14 @@ public class DashboardService
                 stats.ProductCount = products.Count;
             }
 
+            // Get order count
+            var orderResponse = await _httpClient.GetAsync("orders");
+            if (orderResponse.IsSuccessStatusCode)
+            {
+                var orders = await orderResponse.Content.ReadFromJsonAsync<List<OrderDto>>() ?? new List<OrderDto>();
+                stats.OrderCount = orders.Count;
+            }
+
             // Get business events
             var eventsResponse = await _httpClient.GetAsync("events");
             if (eventsResponse.IsSuccessStatusCode)
