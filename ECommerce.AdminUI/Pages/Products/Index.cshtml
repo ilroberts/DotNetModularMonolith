@@ -34,7 +34,7 @@ else
                 {
                     <tr>
                         <td>@product.Name</td>
-                        <td>@product.Price.ToString("C")</td>
+                        <td>$@product.Price.ToString("0.00")</td>
                         <td>
                             <a asp-page="./Details" asp-route-id="@product.Id" class="btn btn-info btn-sm">
                                 <i class="bi bi-info-circle"></i>
