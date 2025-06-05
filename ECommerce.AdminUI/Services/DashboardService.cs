@@ -87,8 +87,8 @@ public class DashboardService
             return GenerateSampleOrderStatistics();
         }
 
-        // Group orders by day for the last 30 days
-        var startDate = DateTime.UtcNow.AddDays(-30);
+        // Group orders by day for the last 7 days (week) instead of 30 days
+        var startDate = DateTime.UtcNow.AddDays(-7);
         var ordersByDay = orders
             .Where(o => o.CreatedAt >= startDate)
             .GroupBy(o => o.CreatedAt.Date)
@@ -124,8 +124,8 @@ public class DashboardService
         var random = new Random();
         var result = new List<OrderStatistic>();
 
-        // Generate 30 days of sample data
-        for (int i = 30; i >= 0; i--)
+        // Generate 7 days of sample data instead of 30
+        for (int i = 7; i >= 0; i--)
         {
             var date = DateTime.UtcNow.Date.AddDays(-i);
             var orderCount = random.Next(1, 10); // Random number of orders between 1-10
