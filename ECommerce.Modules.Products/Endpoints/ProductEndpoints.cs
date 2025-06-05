@@ -14,55 +14,60 @@ public static class ProductEndpoints
     var logger = app.Logger;
 
     app.MapPost("/products", async (IProductService productService,
-      Product product, ClaimsPrincipal user) =>
-    {
-      logger.LogInformation("Creating product");
-      var userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "anonymous";
-      var result = await productService.AddProductAsync(product, userId);
+            Product product, ClaimsPrincipal user) =>
+        {
+            logger.LogInformation("Creating product");
+            var userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "anonymous";
+            var result = await productService.AddProductAsync(product, userId);
 
-      if (!result.IsSuccess)
-      {
-        return Results.BadRequest(result.Error);
-      }
+            if (!result.IsSuccess)
+            {
+                return Results.BadRequest(result.Error);
+            }
 
-      return Results.Created($"/products/{result.Value.Id}", result.Value);
-    })
-    .WithName("CreateProduct")
-    .WithTags("Products");
+            return Results.Created($"/products/{result.Value.Id}", result.Value);
+        })
+        .WithName("CreateProduct")
+        .WithTags("Products")
+        .RequireAuthorization();
 
     app.MapGet("/products", async (IProductService productService) =>
-    {
-      var products = await productService.GetAllProductsAsync();
-      logger.LogInformation($"Number of products to be returned: {products.Count()}");
-      return Results.Ok(products);
-    })
-    .WithName("GetAllProducts")
-    .WithTags("Products");
+        {
+            var products = await productService.GetAllProductsAsync();
+            logger.LogInformation($"Number of products to be returned: {products.Count()}");
+            return Results.Ok(products);
+        })
+        .WithName("GetAllProducts")
+        .WithTags("Products")
+        .RequireAuthorization();
 
     app.MapGet("/products/{id}", async (IProductService productService, Guid id) =>
-    {
-      var product = await productService.GetProductByIdAsync(id);
-      return product is not null ? Results.Ok(product) : Results.NotFound();
-    })
-    .WithName("GetProductById")
-    .WithTags("Products");
+        {
+            var product = await productService.GetProductByIdAsync(id);
+            return product is not null ? Results.Ok(product) : Results.NotFound();
+        })
+        .WithName("GetProductById")
+        .WithTags("Products")
+        .RequireAuthorization();
 
-    app.MapPut("/products/{id}", async (IProductService productService, Guid id, Product updatedProduct, ClaimsPrincipal user) =>
-    {
-      logger.LogInformation("Updating product with ID: {ProductId}", id);
-      var userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "anonymous";
-      var result = await productService.UpdateProductAsync(id, updatedProduct, userId);
+    app.MapPut("/products/{id}",
+            async (IProductService productService, Guid id, Product updatedProduct, ClaimsPrincipal user) =>
+            {
+                logger.LogInformation("Updating product with ID: {ProductId}", id);
+                var userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "anonymous";
+                var result = await productService.UpdateProductAsync(id, updatedProduct, userId);
 
-      if (!result.IsSuccess)
-      {
-        return result.Error == "Product not found." ?
-          Results.NotFound(result.Error) :
-          Results.BadRequest(result.Error);
-      }
+                if (!result.IsSuccess)
+                {
+                    return result.Error == "Product not found."
+                        ? Results.NotFound(result.Error)
+                        : Results.BadRequest(result.Error);
+                }
 
-      return Results.Ok(result.Value);
-    })
-    .WithName("UpdateProduct")
-    .WithTags("Products");
+                return Results.Ok(result.Value);
+            })
+        .WithName("UpdateProduct")
+        .WithTags("Products")
+        .RequireAuthorization();
   }
 }

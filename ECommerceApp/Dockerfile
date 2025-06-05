@@ -16,6 +16,7 @@ COPY ECommerce.BusinessEvents.Tests/ECommerce.BusinessEvents.Tests.csproj ./ECom
 COPY ECommerce.Modules.Products/*.csproj ./ECommerce.Modules.Products/
 COPY ECommerceApp/*.csproj ./ECommerceApp/
 COPY ECommerce.DatabaseMigrator/*.csproj ./ECommerce.DatabaseMigrator/
+COPY ECommerce.UI.Tests/ECommerce.UI.Tests.csproj ./ECommerce.UI.Tests/
 RUN dotnet restore
 
 # Copy everything else and build
