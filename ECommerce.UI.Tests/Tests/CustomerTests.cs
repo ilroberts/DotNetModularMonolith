@@ -13,6 +13,7 @@ public class CustomerTests : BaseTest
     private DashboardPage _dashboardPage;
     private CustomersPage _customersPage;
     private CreateCustomerPage _createCustomerPage;
+    private EditCustomerPage _editCustomerPage;
     private ILogger<CustomerTests> _logger;
 
     [SetUp]
@@ -32,6 +33,7 @@ public class CustomerTests : BaseTest
         _dashboardPage = new DashboardPage(Page);
         _customersPage = new CustomersPage(Page);
         _createCustomerPage = new CreateCustomerPage(Page);
+        _editCustomerPage = new EditCustomerPage(Page);
     }
 
     [Test]
@@ -169,6 +171,104 @@ public class CustomerTests : BaseTest
         // Assert
         Assert.That(await _createCustomerPage.IsDisplayed(), Is.True, "Should remain on create customer page");
         Assert.That(await _createCustomerPage.HasValidationErrors(), Is.True, "Validation errors should be displayed");
+    }
+
+    [Test]
+    public async Task Should_UpdateCustomer_When_ValidDataProvided()
+    {
+        try
+        {
+            _logger.LogInformation("Starting customer update test");
+
+            // Arrange - First create a customer that we can then update
+            _logger.LogInformation("Navigating to the login page");
+            await _loginPage.NavigateAsync(TestSettings.BaseUrl);
+            await _loginPage.Login(TestSettings.DefaultUsername);
+
+            // Navigate to Customers page
+            _logger.LogInformation("Navigating to Customers page");
+            await _dashboardPage.NavigateToCustomers();
+
+            // Create a customer to update
+            string timestamp = DateTime.Now.ToString("yyyyMMddHHmmss");
+            string originalName = $"Update Test {timestamp}";
+            string originalEmail = $"update.test.{timestamp}@example.com";
+
+            _logger.LogInformation("Creating a test customer to update: {Name}, {Email}", originalName, originalEmail);
+            await _customersPage.ClickAddNewCustomer();
+            bool createResult = await _createCustomerPage.CreateCustomer(originalName, originalEmail);
+
+            if (!createResult || !await _customersPage.CustomerExists(originalName))
+            {
+                _logger.LogError("Failed to create test customer for update test");
+                await TakeDebugScreenshot("create-test-customer-failed");
+                Assert.Fail("Could not create test customer for update test");
+                return;
+            }
+
+            // Act - Update the customer we just created
+            _logger.LogInformation("Finding and editing the test customer");
+            await _customersPage.ClickEditCustomer(originalName);
+
+            if (!await _editCustomerPage.IsDisplayed())
+            {
+                _logger.LogError("Edit customer page not displayed");
+                await TakeDebugScreenshot("edit-page-not-displayed");
+                Assert.Fail("Edit customer page did not load");
+                return;
+            }
+
+            // Verify current values
+            string currentName = await _editCustomerPage.GetCurrentName();
+            string currentEmail = await _editCustomerPage.GetCurrentEmail();
+
+            _logger.LogInformation("Current values - Name: {Name}, Email: {Email}", currentName, currentEmail);
+            Assert.That(currentName, Is.EqualTo(originalName), "Original name not displayed in edit form");
+            Assert.That(currentEmail, Is.EqualTo(originalEmail), "Original email not displayed in edit form");
+
+            // Update with new values
+            string updatedName = $"Updated {originalName}";
+            string updatedEmail = $"updated.{originalEmail}";
+
+            _logger.LogInformation("Updating customer with new values - Name: {Name}, Email: {Email}", updatedName, updatedEmail);
+            bool updateResult = await _editCustomerPage.UpdateCustomer(updatedName, updatedEmail);
+
+            // Assert - Verify customer was updated
+            if (!updateResult)
+            {
+                _logger.LogError("Failed to update customer - form submission failed");
+                await TakeDebugScreenshot("customer-update-failed");
+            }
+            Assert.That(updateResult, Is.True, "Failed to update customer");
+
+            if (!await _customersPage.IsDisplayed())
+            {
+                _logger.LogError("Not redirected to customers page after update");
+                await TakeDebugScreenshot("not-redirected-after-update");
+            }
+            Assert.That(await _customersPage.IsDisplayed(), Is.True, "Not redirected to customers page after update");
+
+            // Check that customer with new name exists in list
+            if (!await _customersPage.CustomerExists(updatedName))
+            {
+                _logger.LogError("Updated customer '{CustomerName}' not found in the list", updatedName);
+                await TakeDebugScreenshot("updated-customer-not-in-list");
+            }
+            Assert.That(await _customersPage.CustomerExists(updatedName), Is.True, $"Updated customer '{updatedName}' not found in the list");
+
+            // Verify success message
+            string successMessage = await _customersPage.GetSuccessMessage();
+            _logger.LogInformation("Success message found: {Message}", successMessage);
+            Assert.That(successMessage, Contains.Substring("updated successfully"), "Success message not displayed");
+
+            _logger.LogInformation("Customer update test completed successfully");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Customer update test failed with exception");
+            await TakeDebugScreenshot("update-unexpected-error");
+            throw;
+        }
     }
 
     // Helper method for taking debug screenshots
