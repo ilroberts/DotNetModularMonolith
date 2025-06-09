@@ -7,15 +7,11 @@ using Xunit.Abstractions;
 
 namespace ECommerce.Pact.ConsumerTests;
 
-public class CustomerConsumerTests : PactConsumerTestBase, IDisposable
+public class CustomerConsumerTests(ITestOutputHelper output)
+    : PactConsumerTestBase(output, "ECommerce-CustomerAPI-Consumer"), IDisposable
 {
-    private readonly HttpClient _httpClient;
+    private readonly HttpClient _httpClient = new() { BaseAddress = new Uri("http://localhost:9222") };
     private const string AuthToken = "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.test.token";
-
-    public CustomerConsumerTests(ITestOutputHelper output) : base(output, "ECommerce-CustomerAPI-Consumer")
-    {
-        _httpClient = new HttpClient { BaseAddress = new Uri("http://localhost:9222") };
-    }
 
     [Fact]
     public async Task CreateCustomer_ShouldReturnCreatedCustomer_WhenValidCustomerIsProvided()
@@ -39,7 +35,7 @@ public class CustomerConsumerTests : PactConsumerTestBase, IDisposable
             .Given("No existing customers")
             .WithRequest(HttpMethod.Post, "/modulith/customers")
             .WithHeader("Content-Type", "application/json")
-            .WithHeader("Authorization", AuthToken)
+            .WithHeader("Authorization", Match.Type(AuthToken))
             .WithJsonBody(customer)
             .WillRespond()
             .WithStatus(HttpStatusCode.Created)
@@ -84,7 +80,7 @@ public class CustomerConsumerTests : PactConsumerTestBase, IDisposable
             .Given("No existing customers")
             .WithRequest(HttpMethod.Post, "/modulith/customers")
             .WithHeader("Content-Type", "application/json")
-            .WithHeader("Authorization", AuthToken)
+            .WithHeader("Authorization", Match.Type(AuthToken))
             .WithJsonBody(invalidCustomer)
             .WillRespond()
             .WithStatus(HttpStatusCode.BadRequest)
@@ -165,7 +161,7 @@ public class CustomerConsumerTests : PactConsumerTestBase, IDisposable
             .UponReceiving("A request to get all customers")
             .Given("Customers exist in the system")
             .WithRequest(HttpMethod.Get, "/modulith/customers")
-            .WithHeader("Authorization", AuthToken)
+            .WithHeader("Authorization", Match.Type(AuthToken))
             .WillRespond()
             .WithStatus(HttpStatusCode.OK)
             .WithHeader("Content-Type", "application/json")
@@ -198,7 +194,7 @@ public class CustomerConsumerTests : PactConsumerTestBase, IDisposable
             .UponReceiving("A request to get all customers when none exist")
             .Given("No customers exist in the system")
             .WithRequest(HttpMethod.Get, "/modulith/customers")
-            .WithHeader("Authorization", AuthToken)
+            .WithHeader("Authorization", Match.Type(AuthToken))
             .WillRespond()
             .WithStatus(HttpStatusCode.OK)
             .WithHeader("Content-Type", "application/json")
@@ -239,7 +235,7 @@ public class CustomerConsumerTests : PactConsumerTestBase, IDisposable
             .UponReceiving("A request to get a customer by ID")
             .Given($"Customer with ID {customerId} exists")
             .WithRequest(HttpMethod.Get, $"/modulith/customers/{customerId}")
-            .WithHeader("Authorization", AuthToken)
+            .WithHeader("Authorization", Match.Type(AuthToken))
             .WillRespond()
             .WithStatus(HttpStatusCode.OK)
             .WithHeader("Content-Type", "application/json")
@@ -276,7 +272,7 @@ public class CustomerConsumerTests : PactConsumerTestBase, IDisposable
             .UponReceiving("A request to get a customer by ID that doesn't exist")
             .Given($"Customer with ID {customerId} does not exist")
             .WithRequest(HttpMethod.Get, $"/modulith/customers/{customerId}")
-            .WithHeader("Authorization", AuthToken)
+            .WithHeader("Authorization", Match.Type(AuthToken))
             .WillRespond()
             .WithStatus(HttpStatusCode.NotFound);
 
@@ -316,7 +312,7 @@ public class CustomerConsumerTests : PactConsumerTestBase, IDisposable
             .Given($"Customer with ID {customerId} exists")
             .WithRequest(HttpMethod.Put, $"/modulith/customers/{customerId}")
             .WithHeader("Content-Type", "application/json")
-            .WithHeader("Authorization", AuthToken)
+            .WithHeader("Authorization", Match.Type(AuthToken))
             .WithJsonBody(updateRequest)
             .WillRespond()
             .WithStatus(HttpStatusCode.OK)
@@ -363,7 +359,7 @@ public class CustomerConsumerTests : PactConsumerTestBase, IDisposable
             .Given($"Customer with ID {customerId} does not exist")
             .WithRequest(HttpMethod.Put, $"/modulith/customers/{customerId}")
             .WithHeader("Content-Type", "application/json")
-            .WithHeader("Authorization", AuthToken)
+            .WithHeader("Authorization", Match.Type(AuthToken))
             .WithJsonBody(updateRequest)
             .WillRespond()
             .WithStatus(HttpStatusCode.NotFound);
@@ -482,7 +478,7 @@ public class CustomerConsumerTests : PactConsumerTestBase, IDisposable
             .Given("No existing customers")
             .WithRequest(HttpMethod.Post, "/modulith/customers")
             .WithHeader("Content-Type", "application/json")
-            .WithHeader("Authorization", AuthToken)
+            .WithHeader("Authorization", Match.Type(AuthToken))
             .WithJsonBody(invalidCustomer)
             .WillRespond()
             .WithStatus(HttpStatusCode.BadRequest)
@@ -521,7 +517,7 @@ public class CustomerConsumerTests : PactConsumerTestBase, IDisposable
             .Given($"Customer with ID {customerId} exists")
             .WithRequest(HttpMethod.Put, $"/modulith/customers/{customerId}")
             .WithHeader("Content-Type", "application/json")
-            .WithHeader("Authorization", AuthToken)
+            .WithHeader("Authorization", Match.Type(AuthToken))
             .WithJsonBody(invalidUpdateRequest)
             .WillRespond()
             .WithStatus(HttpStatusCode.BadRequest)

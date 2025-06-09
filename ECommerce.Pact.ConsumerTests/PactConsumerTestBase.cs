@@ -14,7 +14,7 @@ public abstract class PactConsumerTestBase
         var config = new PactConfig
         {
            LogLevel = PactLogLevel.Debug,
-           PactDir = "pacts",
+           PactDir = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "../TestResults/pacts")),
            Outputters = [new XunitOutput(output)]
         };
         PactBuilder = V3(consumerName, "ECommerceAPI", config).WithHttpInteractions(9222);
