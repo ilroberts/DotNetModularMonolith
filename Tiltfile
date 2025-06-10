@@ -20,8 +20,10 @@ k8s_yaml([
     'ECommerceApp/k8s/deployment.yaml',
     'ECommerceApp/k8s/ingress.yaml',
     'ECommerceApp/k8s/service.yaml',
-    'ECommerce.AdminUI/k8s/deployment.yaml',
 ])
+
+# Use kustomize for AdminUI
+k8s_yaml(kustomize('ECommerce.AdminUI/k8s/overlays/dev'))
 
 # Resource configuration
 k8s_resource(
@@ -31,7 +33,7 @@ k8s_resource(
 )
 
 k8s_resource(
-    'admin-ui',  # This should match the name in the AdminUI deployment.yaml
+    'dev-admin-ui',  # Updated to match the namePrefix in kustomize
     port_forwards=['8081:8080'],
     labels=["app"]
 )

@@ -1,0 +1,87 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: admin-ui-config
+  labels:
+    app: admin-ui
+data:
+  ModularMonolithApiUrl: "http://modularmonolith:8080/modulith"
+  TokenServiceUrl: "http://modularmonolith:8080"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: admin-ui
+  labels:
+    app: admin-ui
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: admin-ui
+  template:
+    metadata:
+      labels:
+        app: admin-ui
+    spec:
+      containers:
+        - name: admin-ui
+          image: admin-ui:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          env:
+            - name: ASPNETCORE_URLS
+              value: "http://+:8080"
+            - name: ModularMonolithApiUrl
+              valueFrom:
+                configMapKeyRef:
+                  name: admin-ui-config
+                  key: ModularMonolithApiUrl
+            - name: TokenServiceUrl
+              valueFrom:
+                configMapKeyRef:
+                  name: admin-ui-config
+                  key: TokenServiceUrl
+          livenessProbe:
+            httpGet:
+              path: /HealthCheck
+              port: 8080
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /HealthCheck
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          startupProbe:
+            httpGet:
+              path: /HealthCheck
+              port: 8080
+            failureThreshold: 30
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "300m"
+              memory: "256Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: admin-ui
+  labels:
+    app: admin-ui
+spec:
+  ports:
+    - port: 80
+      targetPort: 8080
+      protocol: TCP
+      name: http
+  selector:
+    app: admin-ui
+  type: ClusterIP
+

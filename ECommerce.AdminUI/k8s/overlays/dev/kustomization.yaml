@@ -1,0 +1,19 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+- ../../base
+
+namePrefix: dev-
+
+replicas:
+- name: admin-ui
+  count: 2
+
+patches:
+- path: configmap.yaml
+
+images:
+- name: admin-ui
+  newName: admin-ui
+  newTag: dev
