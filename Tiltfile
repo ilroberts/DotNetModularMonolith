@@ -49,8 +49,7 @@ k8s_resource(
 
 k8s_resource(
     'db-migrator',  # This should match the name in migrate-job.yaml
-    labels=["migrations"],
-    resource_deps=['modularmonolith']  # Make migrations depend on the main application
+    labels=["migrations"]
 )
 
 # Enable file watching for live updates
