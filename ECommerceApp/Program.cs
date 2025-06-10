@@ -1,11 +1,11 @@
 using System.Text;
 using ECommerce.BusinessEvents;
 using ECommerce.BusinessEvents.Endpoints;
-using ECommerce.Modules.Orders;
 using ECommerce.Modules.Customers;
-using ECommerce.Modules.Products;
-using ECommerce.Modules.Orders.Endpoints;
 using ECommerce.Modules.Customers.Endpoints;
+using ECommerce.Modules.Orders;
+using ECommerce.Modules.Orders.Endpoints;
+using ECommerce.Modules.Products;
 using ECommerce.Modules.Products.Endpoints;
 using ECommerceApp.Endpoints;
 using ECommerceApp.Services;
@@ -14,112 +14,120 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 
-var builder = WebApplication.CreateBuilder(args);
+namespace ECommerceApp;
 
-builder.Logging.ClearProviders();
-builder.Logging.AddConsole();
-
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen(options =>
+public partial class Program
 {
-    options.SwaggerDoc("v1", new() { Title = "E-Commerce API", Version = "v1" });
-    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    public static async Task  Main(string[] args)
     {
-        Scheme = "Bearer",
-        BearerFormat = "JWT",
-        In = ParameterLocation.Header,
-        Name = "Authorization",
-        Description = "Bearer Authentication with JWT token",
-        Type = SecuritySchemeType.Http
-    });
-    options.AddSecurityRequirement(new OpenApiSecurityRequirement
-    {
+        var builder = WebApplication.CreateBuilder(args);
+
+        builder.Logging.ClearProviders();
+        builder.Logging.AddConsole();
+
+        builder.Services.AddEndpointsApiExplorer();
+        builder.Services.AddSwaggerGen(options =>
         {
-            new OpenApiSecurityScheme
+            options.SwaggerDoc("v1", new() { Title = "E-Commerce API", Version = "v1" });
+            options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
             {
-                Reference = new OpenApiReference
+                Scheme = "Bearer",
+                BearerFormat = "JWT",
+                In = ParameterLocation.Header,
+                Name = "Authorization",
+                Description = "Bearer Authentication with JWT token",
+                Type = SecuritySchemeType.Http
+            });
+            options.AddSecurityRequirement(new OpenApiSecurityRequirement
+            {
                 {
-                    Type = ReferenceType.SecurityScheme,
-                    Id = "Bearer"
+                    new OpenApiSecurityScheme
+                    {
+                        Reference = new OpenApiReference
+                        {
+                            Type = ReferenceType.SecurityScheme,
+                            Id = "Bearer"
+                        }
+                    },
+                    []
                 }
-            },
-            []
-        }
-    });
-});
+            });
+        });
 
-// Register services
-builder.Services.AddOrderModule(builder.Configuration);
-builder.Services.AddCustomerModule(builder.Configuration);
-builder.Services.AddProductModule(builder.Configuration);
-builder.Services.AddBusinessEventsModule(builder.Configuration);
-builder.Services.AddScoped<IAdminService, AdminService>();
-builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
+        // Register services
+        builder.Services.AddOrderModule(builder.Configuration);
+        builder.Services.AddCustomerModule(builder.Configuration);
+        builder.Services.AddProductModule(builder.Configuration);
+        builder.Services.AddBusinessEventsModule(builder.Configuration);
+        builder.Services.AddScoped<IAdminService, AdminService>();
+        builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
 
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
-    {
-        options.TokenValidationParameters = new TokenValidationParameters
+        builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+            .AddJwtBearer(options =>
+            {
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer = true,
+                    ValidateAudience = true,
+                    ValidateLifetime = true,
+                    ValidateIssuerSigningKey = true,
+                    ValidIssuer = builder.Configuration["Jwt:Issuer"],
+                    ValidAudience = builder.Configuration["Jwt:Audience"],
+                    IssuerSigningKey = new SymmetricSecurityKey(
+                        Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Secret"] ?? string.Empty))
+                };
+            });
+
+        builder.Services.AddAuthorization();
+
+        var app = builder.Build();
+
+        // Log ASPNETCORE_PATHBASE value at startup
+        var logger = app.Logger;
+        var pathBase = app.Configuration["ASPNETCORE_PATHBASE"] ?? Environment.GetEnvironmentVariable("ASPNETCORE_PATHBASE");
+        logger.LogInformation("ASPNETCORE_PATHBASE is set to: \'{PathBase}\'", pathBase);
+
+        // Apply the path base if it's set
+        if (!string.IsNullOrEmpty(pathBase))
         {
-            ValidateIssuer = true,
-            ValidateAudience = true,
-            ValidateLifetime = true,
-            ValidateIssuerSigningKey = true,
-            ValidIssuer = builder.Configuration["Jwt:Issuer"],
-            ValidAudience = builder.Configuration["Jwt:Audience"],
-            IssuerSigningKey = new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Secret"] ?? string.Empty))
-        };
-    });
-
-builder.Services.AddAuthorization();
-
-var app = builder.Build();
-
-// Log ASPNETCORE_PATHBASE value at startup
-var logger = app.Logger;
-var pathBase = app.Configuration["ASPNETCORE_PATHBASE"] ?? Environment.GetEnvironmentVariable("ASPNETCORE_PATHBASE");
-logger.LogInformation("ASPNETCORE_PATHBASE is set to: \'{PathBase}\'", pathBase);
-
-// Apply the path base if it's set
-if (!string.IsNullOrEmpty(pathBase))
-{
-    app.UsePathBase(pathBase);
-    app.Use((context, next) =>
-    {
-        context.Request.PathBase = pathBase;
-        return next();
-    });
-    logger.LogInformation("Path base applied: {PathBase}", pathBase);
-}
-
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI(options =>
-    {
-        if (string.IsNullOrEmpty(pathBase))
-        {
-            return;
+            app.UsePathBase(pathBase);
+            app.Use((context, next) =>
+            {
+                context.Request.PathBase = pathBase;
+                return next();
+            });
+            logger.LogInformation("Path base applied: {PathBase}", pathBase);
         }
 
-        // Adjust Swagger endpoint when using a path base
-        string swaggerJsonPath = string.IsNullOrEmpty(pathBase) ? "/swagger/v1/swagger.json" : $"{pathBase}/swagger/v1/swagger.json";
-        options.SwaggerEndpoint(swaggerJsonPath, "E-Commerce API V1");
-    });
+        if (app.Environment.IsDevelopment())
+        {
+            app.UseSwagger();
+            app.UseSwaggerUI(options =>
+            {
+                if (string.IsNullOrEmpty(pathBase))
+                {
+                    return;
+                }
+
+                // Adjust Swagger endpoint when using a path base
+                string swaggerJsonPath = string.IsNullOrEmpty(pathBase) ? "/swagger/v1/swagger.json" : $"{pathBase}/swagger/v1/swagger.json";
+                options.SwaggerEndpoint(swaggerJsonPath, "E-Commerce API V1");
+            });
+        }
+
+        await BusinessEventsModule.InitializeDefaultSchemasAsync(app.Services);
+
+        // After builder.Build():
+        app.UseAuthentication();
+        app.UseAuthorization();
+
+        app.MapGet("/", () => "E-Commerce Modular Monolith with .NET 8!").WithTags("Home");
+        app.MapOrderEndpoints();
+        app.MapCustomerEndpoints();
+        app.MapProductEndpoints();
+        app.MapBusinessEventEndpoints();
+        app.MapAdminEndpoints();
+
+        app.Run();
+    }
 }
-
-await BusinessEventsModule.InitializeDefaultSchemasAsync(app.Services);
-
-// After builder.Build():
-app.UseAuthentication();
-app.UseAuthorization();
-
-app.MapGet("/", () => "E-Commerce Modular Monolith with .NET 8!").WithTags("Home");
-app.MapOrderEndpoints();
-app.MapCustomerEndpoints();
-app.MapProductEndpoints();
-app.MapBusinessEventEndpoints();
-app.MapAdminEndpoints();
-
-app.Run();

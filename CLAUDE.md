@@ -79,6 +79,7 @@ Modules communicate through interfaces defined in `ECommerce.Contracts`, which a
 
 - Unit tests per module (e.g., `ECommerce.Modules.Orders.Tests`)
 - Architecture tests to enforce design rules (`ECommerce.ArchitectureTests`)
+- Pact Consumer tests are located in ECommerce.Pact.ConsumerTests
 
 ### Deployment
 
