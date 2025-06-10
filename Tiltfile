@@ -13,6 +13,13 @@ docker_build(
     dockerfile='ECommerce.AdminUI/Dockerfile'
 )
 
+# Adding database migrator with correct image name to match migrate-job.yaml
+docker_build(
+    'ecommerce-db-migrator',  # Match the image name in migrate-job.yaml
+    '.',
+    dockerfile='ECommerce.DatabaseMigrator/Dockerfile'
+)
+
 # Apply Kubernetes manifests
 k8s_yaml([
     'ECommerceApp/k8s/sealedsecret.yaml',
@@ -20,6 +27,8 @@ k8s_yaml([
     'ECommerceApp/k8s/deployment.yaml',
     'ECommerceApp/k8s/ingress.yaml',
     'ECommerceApp/k8s/service.yaml',
+    'ECommerce.DatabaseMigrator/k8s/db-connection-sealedsecrets.yaml',
+    'ECommerce.DatabaseMigrator/k8s/migrate-job.yaml',
 ])
 
 # Use kustomize for AdminUI
@@ -38,6 +47,12 @@ k8s_resource(
     labels=["app"]
 )
 
+k8s_resource(
+    'db-migrator',  # This should match the name in migrate-job.yaml
+    labels=["migrations"],
+    resource_deps=['modularmonolith']  # Make migrations depend on the main application
+)
+
 # Enable file watching for live updates
 watch_file('ECommerceApp/**')
 watch_file('ECommerce.Common/**')
@@ -47,6 +62,7 @@ watch_file('ECommerce.Modules.Customers/**')
 watch_file('ECommerce.Modules.Orders/**')
 watch_file('ECommerce.Modules.Products/**')
 watch_file('ECommerce.AdminUI/**')
+watch_file('ECommerce.DatabaseMigrator/**')
 
 # Specify where to find logs
 k8s_resource(
