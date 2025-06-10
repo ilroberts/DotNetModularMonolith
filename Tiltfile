@@ -1,10 +1,16 @@
 # Tiltfile for ModularMonolith ECommerceApp
 
-# Load Docker image
+# Load Docker images
 docker_build(
     'modularmonolith',
     '.',
     dockerfile='ECommerceApp/Dockerfile'
+)
+
+docker_build(
+    'admin-ui',
+    '.',
+    dockerfile='ECommerce.AdminUI/Dockerfile'
 )
 
 # Apply Kubernetes manifests
@@ -14,12 +20,19 @@ k8s_yaml([
     'ECommerceApp/k8s/deployment.yaml',
     'ECommerceApp/k8s/ingress.yaml',
     'ECommerceApp/k8s/service.yaml',
+    'ECommerce.AdminUI/k8s/deployment.yaml',
 ])
 
 # Resource configuration
 k8s_resource(
     'modularmonolith',  # This should match the name in your deployment.yaml
     port_forwards=['8080:8080'],
+    labels=["app"]
+)
+
+k8s_resource(
+    'admin-ui',  # This should match the name in the AdminUI deployment.yaml
+    port_forwards=['8081:8080'],
     labels=["app"]
 )
 
@@ -31,6 +44,7 @@ watch_file('ECommerce.BusinessEvents/**')
 watch_file('ECommerce.Modules.Customers/**')
 watch_file('ECommerce.Modules.Orders/**')
 watch_file('ECommerce.Modules.Products/**')
+watch_file('ECommerce.AdminUI/**')
 
 # Specify where to find logs
 k8s_resource(
