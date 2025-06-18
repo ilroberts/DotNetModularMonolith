@@ -7,12 +7,11 @@ docker_build(
     dockerfile='ECommerceApp/Dockerfile'
 )
 
-# TEMPORARILY DISABLED: admin-ui building
-# docker_build(
-#    'admin-ui',
-#    '.',
-#    dockerfile='ECommerce.AdminUI/Dockerfile'
-# )
+docker_build(
+    'admin-ui',
+    '.',
+    dockerfile='ECommerce.AdminUI/Dockerfile'
+)
 
 # Adding database migrator with correct image name to match migrate-job.yaml
 docker_build(
@@ -46,7 +45,6 @@ k8s_resource(
     'dev-admin-ui',  # Updated to match the namePrefix in kustomize
     port_forwards=['8081:8080'],
     labels=["app"],
-    # TEMPORARILY DISABLED: Turn off auto-updates for admin-ui
     trigger_mode=TRIGGER_MODE_MANUAL
 )
 
@@ -63,8 +61,7 @@ watch_file('ECommerce.BusinessEvents/**')
 watch_file('ECommerce.Modules.Customers/**')
 watch_file('ECommerce.Modules.Orders/**')
 watch_file('ECommerce.Modules.Products/**')
-# TEMPORARILY DISABLED: Watch for AdminUI changes
-# watch_file('ECommerce.AdminUI/**')
+watch_file('ECommerce.AdminUI/**')
 watch_file('ECommerce.DatabaseMigrator/**')
 
 # Specify where to find logs

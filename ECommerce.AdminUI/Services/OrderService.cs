@@ -1,35 +1,20 @@
-using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
-using Microsoft.AspNetCore.Http;
 
 namespace ECommerce.AdminUI.Services
 {
-    public class OrderService
+    public class OrderService(
+        IHttpClientFactory httpClientFactory,
+        ILogger<OrderService> logger,
+        IHttpContextAccessor httpContextAccessor,
+        CustomerService customerService,
+        ProductService productService)
     {
-        private readonly HttpClient _httpClient;
-        private readonly ILogger<OrderService> _logger;
-        private readonly IHttpContextAccessor _httpContextAccessor;
-        private readonly CustomerService _customerService;
-        private readonly ProductService _productService;
-
-        public OrderService(
-            IHttpClientFactory httpClientFactory,
-            ILogger<OrderService> logger,
-            IHttpContextAccessor httpContextAccessor,
-            CustomerService customerService,
-            ProductService productService)
-        {
-            _httpClient = httpClientFactory.CreateClient("ModularMonolith");
-            _logger = logger;
-            _httpContextAccessor = httpContextAccessor;
-            _customerService = customerService;
-            _productService = productService;
-        }
+        private readonly HttpClient _httpClient = httpClientFactory.CreateClient("ModularMonolith");
 
         private void AddAuthorizationHeader()
         {
-            var token = _httpContextAccessor.HttpContext?.Session.GetString("AuthToken");
+            var token = httpContextAccessor.HttpContext?.Session.GetString("AuthToken");
             if (!string.IsNullOrEmpty(token))
             {
                 _httpClient.DefaultRequestHeaders.Remove("Authorization");
@@ -64,7 +49,7 @@ namespace ECommerce.AdminUI.Services
                             Quantity = item.Quantity,
                             ProductPrice = item.Price,
                             TotalPrice = item.Price * item.Quantity,
-                            CreatedAt = DateTime.UtcNow, // API doesn't provide creation date yet
+                            CreatedAt = apiOrder.CreatedAt, // Use actual creation date from API
                             Status = "Completed" // Default status as API doesn't provide it yet
                         };
 
@@ -82,7 +67,7 @@ namespace ECommerce.AdminUI.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error retrieving orders");
+                logger.LogError(ex, "Error retrieving orders");
                 return new List<OrderDto>();
             }
         }
@@ -112,7 +97,7 @@ namespace ECommerce.AdminUI.Services
                     Quantity = item.Quantity,
                     ProductPrice = item.Price,
                     TotalPrice = item.Price * item.Quantity,
-                    CreatedAt = DateTime.UtcNow, // API doesn't provide creation date yet
+                    CreatedAt = apiOrder.CreatedAt, // Use actual creation date from API
                     Status = "Completed" // Default status as API doesn't provide it yet
                 };
 
@@ -122,7 +107,7 @@ namespace ECommerce.AdminUI.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error retrieving order {OrderId}", id);
+                logger.LogError(ex, "Error retrieving order {OrderId}", id);
                 return null;
             }
         }
@@ -132,7 +117,7 @@ namespace ECommerce.AdminUI.Services
             // Fetch customer details
             if (order.CustomerId != Guid.Empty)
             {
-                var customer = await _customerService.GetCustomerByIdAsync(order.CustomerId);
+                var customer = await customerService.GetCustomerByIdAsync(order.CustomerId);
                 if (customer != null)
                 {
                     order.CustomerName = customer.Name;
@@ -143,7 +128,7 @@ namespace ECommerce.AdminUI.Services
             // Fetch product details
             if (order.ProductId != Guid.Empty)
             {
-                var product = await _productService.GetProductByIdAsync(order.ProductId);
+                var product = await productService.GetProductByIdAsync(order.ProductId);
                 if (product != null)
                 {
                     order.ProductName = product.Name;
@@ -186,7 +171,7 @@ namespace ECommerce.AdminUI.Services
 
                 // Add customerId as a query parameter
                 var url = $"orders?customerId={order.CustomerId}";
-                _logger.LogInformation("Creating order at URL: {Url} with data: {OrderData}",
+                logger.LogInformation("Creating order at URL: {Url} with data: {OrderData}",
                     _httpClient.BaseAddress + url, JsonSerializer.Serialize(orderItems));
 
                 var response = await _httpClient.PostAsync(url, content);
@@ -196,7 +181,7 @@ namespace ECommerce.AdminUI.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error creating order for customer {CustomerId}", order.CustomerId);
+                logger.LogError(ex, "Error creating order for customer {CustomerId}", order.CustomerId);
                 return false;
             }
         }
@@ -222,7 +207,7 @@ namespace ECommerce.AdminUI.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error updating order {OrderId}", id);
+                logger.LogError(ex, "Error updating order {OrderId}", id);
                 return false;
             }
         }
@@ -239,7 +224,7 @@ namespace ECommerce.AdminUI.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error deleting order {OrderId}", id);
+                logger.LogError(ex, "Error deleting order {OrderId}", id);
                 return false;
             }
         }

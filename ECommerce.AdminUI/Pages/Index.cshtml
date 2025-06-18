@@ -143,7 +143,7 @@
             <h2 class="accordion-header" id="headingOrders">
                 <button class="accordion-button" type="button" data-bs-toggle="collapse"
                     data-bs-target="#collapseOrders" aria-expanded="true" aria-controls="collapseOrders">
-                    <i class="bi bi-graph-up me-2"></i> Orders Over Time
+                    <i class="bi bi-graph-up me-2"></i> Sales Over Time
                 </button>
             </h2>
             <div id="collapseOrders" class="accordion-collapse collapse show" aria-labelledby="headingOrders"
@@ -259,75 +259,53 @@
             // Order statistics data from the model
             const orderStats = @Html.Raw(Json.Serialize(Model.Stats.OrderStatistics));
 
-            // Format dates for display
+            console.log("Chart data:", orderStats); // Log data for debugging
+
+            // Format dates for display - improved to handle timezone issues
             const labels = orderStats.map(stat => {
-                const date = new Date(stat.date);
+                // Parse the date with explicit handling of UTC dates
+                const dateParts = stat.date.split('T')[0].split('-');
+                const year = parseInt(dateParts[0]);
+                const month = parseInt(dateParts[1]) - 1; // JavaScript months are 0-indexed
+                const day = parseInt(dateParts[2]);
+
+                // Create date object using UTC to avoid timezone shifts
+                const date = new Date(Date.UTC(year, month, day));
                 return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
             });
-
-            // Order counts for the chart
-            const orderCounts = orderStats.map(stat => stat.orderCount);
 
             // Total sales for the chart
             const totalSales = orderStats.map(stat => stat.totalSales);
 
+            console.log("Chart labels:", labels); // Log formatted labels for debugging
+            console.log("Chart values:", totalSales); // Log values for debugging
+
             // Create the chart
             const ctx = document.getElementById('ordersChart');
-            const ordersChart = new Chart(ctx, {
-                type: 'line',
+            const salesChart = new Chart(ctx, {
+                type: 'bar',
                 data: {
                     labels: labels,
                     datasets: [
                         {
-                            label: 'Orders',
-                            data: orderCounts,
-                            backgroundColor: 'rgba(54, 162, 235, 0.2)',
-                            borderColor: 'rgba(54, 162, 235, 1)',
-                            borderWidth: 2,
-                            tension: 0.2,
-                            yAxisID: 'y'
-                        },
-                        {
-                            label: 'Sales ($)',
+                            label: 'Daily Sales ($)',
                             data: totalSales,
-                            backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                            borderColor: 'rgba(75, 192, 192, 1)',
-                            borderWidth: 2,
-                            tension: 0.2,
-                            yAxisID: 'y1'
+                            backgroundColor: 'rgba(46, 204, 113, 0.6)',
+                            borderColor: 'rgba(39, 174, 96, 1)',
+                            borderWidth: 1
                         }
                     ]
                 },
                 options: {
                     responsive: true,
-                    interaction: {
-                        mode: 'index',
-                        intersect: false,
-                    },
-                    scales: {
-                        y: {
-                            type: 'linear',
-                            display: true,
-                            position: 'left',
-                            title: {
-                                display: true,
-                                text: 'Orders'
-                            }
-                        },
-                        y1: {
-                            type: 'linear',
-                            display: true,
-                            position: 'right',
-                            title: {
-                                display: true,
-                                text: 'Sales ($)'
-                            },
-                            grid: {
-                                drawOnChartArea: false, // only want the grid lines for one axis to show up
-                            },
-                        }
-                    },
                     plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        title: {
+                            display: true,
+                            text: 'Total Sales for the Last 7 Days'
+                        },
                         tooltip: {
                             callbacks: {
                                 label: function(context) {
@@ -335,16 +313,32 @@
                                     if (label) {
                                         label += ': ';
                                     }
-                                    if (context.dataset.label === 'Sales ($)') {
-                                        label += new Intl.NumberFormat('en-US', {
-                                            style: 'currency',
-                                            currency: 'USD'
-                                        }).format(context.raw);
-                                    } else {
-                                        label += context.raw;
-                                    }
+                                    label += new Intl.NumberFormat('en-US', {
+                                        style: 'currency',
+                                        currency: 'USD'
+                                    }).format(context.raw);
                                     return label;
                                 }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Sales Amount ($)'
+                            },
+                            ticks: {
+                                callback: function(value) {
+                                    return '$' + value.toLocaleString();
+                                }
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Date'
                             }
                         }
                     }

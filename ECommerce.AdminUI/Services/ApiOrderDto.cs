@@ -9,6 +9,7 @@ namespace ECommerce.AdminUI.Services
     {
         public Guid Id { get; set; }
         public Guid CustomerId { get; set; }
+        public DateTime CreatedAt { get; set; }
         public List<ApiOrderItemDto> Items { get; set; } = new List<ApiOrderItemDto>();
     }
 

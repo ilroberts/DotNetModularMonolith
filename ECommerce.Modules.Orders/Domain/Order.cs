@@ -6,6 +6,7 @@ namespace ECommerce.Modules.Orders.Domain
     public class Order : Entity
     {
         public Guid CustomerId { get; set; }
+        public DateTime CreatedAt { get; set; }
         public ICollection<OrderItem> Items { get; set; }
 
         // Parameterless constructor for EF Core
@@ -15,6 +16,7 @@ namespace ECommerce.Modules.Orders.Domain
         {
             Id = Guid.NewGuid();
             CustomerId = customerId;
+            CreatedAt = DateTime.UtcNow;
             Items = items ?? throw new ArgumentNullException(nameof(items), "Items cannot be null");
         }
     }
