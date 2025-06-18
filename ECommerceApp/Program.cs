@@ -21,7 +21,7 @@ public partial class Program
     public static async Task  Main(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
-
+        // test
         builder.Logging.ClearProviders();
         builder.Logging.AddConsole();
         builder.Services.AddEndpointsApiExplorer();

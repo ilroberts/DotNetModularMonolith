@@ -1,11 +1,11 @@
-using ECommerce.Modules.Orders.Services;
 using ECommerce.Modules.Orders.Domain;
-using Moq;
-using Microsoft.Extensions.Logging;
+using ECommerce.Modules.Orders.Services;
+using ECommerce.Modules.Orders.Persistence;
 using ECommerce.Contracts.Interfaces;
 using ECommerce.Contracts.DTOs;
-using ECommerce.Modules.Orders.Persistence;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using Moq;
 
 namespace ECommerce.Modules.Orders.Tests.Services;
 
