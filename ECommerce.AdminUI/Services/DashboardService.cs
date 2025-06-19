@@ -197,4 +197,5 @@ public class BusinessEventDto
     public DateTimeOffset EventTimestamp { get; set; }
     public string ActorId { get; set; } = string.Empty;
     public string ActorType { get; set; } = string.Empty;
+    public string EntityData { get; set; } = string.Empty; // Added to store entity data
 }

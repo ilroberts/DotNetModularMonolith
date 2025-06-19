@@ -49,6 +49,11 @@
     .card-footer {
         border-top: none !important;
     }
+
+    /* Cursor pointer for clickable rows */
+    .event-row {
+        cursor: pointer;
+    }
 </style>
 
 <div class="container-fluid px-4">
@@ -215,7 +220,7 @@
                                 <tbody>
                                     @foreach (var evt in Model.Stats.RecentEvents)
                                     {
-                                        <tr>
+                                        <tr class="event-row" style="cursor:pointer;" data-event='@Html.Raw(Json.Serialize(evt))'>
                                             <td>@evt.EventTimestamp.ToString("g")</td>
                                             <td>
                                                 <span class="badge rounded-pill bg-info">@evt.EntityType</span>
@@ -251,6 +256,44 @@
             </div>
         </div>
     </div>
+</div>
+
+<!-- Event Details Modal -->
+<div class="modal fade" id="eventDetailsModal" tabindex="-1" aria-labelledby="eventDetailsModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="eventDetailsModalLabel">Event Details</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <dl class="row">
+          <dt class="col-sm-3">Timestamp</dt>
+          <dd class="col-sm-9" id="eventDetailTimestamp"></dd>
+
+          <dt class="col-sm-3">Entity Type</dt>
+          <dd class="col-sm-9" id="eventDetailEntityType"></dd>
+
+          <dt class="col-sm-3">Event Type</dt>
+          <dd class="col-sm-9" id="eventDetailEventType"></dd>
+
+          <dt class="col-sm-3">Entity ID</dt>
+          <dd class="col-sm-9" id="eventDetailEntityId"></dd>
+
+          <dt class="col-sm-3">Actor</dt>
+          <dd class="col-sm-9" id="eventDetailActor"></dd>
+
+          <dt class="col-sm-3">Entity Data</dt>
+          <dd class="col-sm-9">
+            <pre id="eventDetailEntityData" class="bg-light p-2" style="max-height: 300px; overflow-y: auto;"></pre>
+          </dd>
+        </dl>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
 </div>
 
 @section Scripts {
@@ -343,6 +386,49 @@
                         }
                     }
                 }
+            });
+
+            // Event row click handler
+            document.querySelectorAll('.event-row').forEach(row => {
+                row.addEventListener('click', function() {
+                    const eventData = JSON.parse(this.getAttribute('data-event'));
+                    console.log('Event object structure:', eventData); // Debug log to see property names
+
+                    // Populate the modal with event data - handle different property name formats
+                    document.getElementById('eventDetailTimestamp').innerText = new Date(eventData.eventTimestamp || eventData.EventTimestamp).toLocaleString();
+                    document.getElementById('eventDetailEntityType').innerText = eventData.entityType || eventData.EntityType || '-';
+                    document.getElementById('eventDetailEventType').innerText = eventData.eventType || eventData.EventType || '-';
+                    document.getElementById('eventDetailEntityId').innerText = eventData.entityId || eventData.EntityId || '-';
+                    document.getElementById('eventDetailActor').innerText = (eventData.actorId || eventData.ActorId || '-') + ' (' + (eventData.actorType || eventData.ActorType || '-') + ')';
+
+                    // Handle entityData display with fallbacks for different property names
+                    const entityData = eventData.entityData || eventData.EntityData || eventData.data || eventData.Data;
+                    console.log('Entity data value:', entityData);
+                    console.log('Entity data type:', typeof entityData);
+                    console.log('Full event object keys:', Object.keys(eventData));
+                    let formattedData = 'No entity data available';
+
+                    if (entityData) {
+                        try {
+                            if (typeof entityData === 'string') {
+                                // Try to parse if it's a JSON string
+                                const parsedData = JSON.parse(entityData);
+                                formattedData = JSON.stringify(parsedData, null, 2);
+                            } else {
+                                formattedData = JSON.stringify(entityData, null, 2);
+                            }
+                        } catch (e) {
+                            console.error('Error formatting entity data:', e);
+                            formattedData = String(entityData);
+                        }
+                    }
+
+                    document.getElementById('eventDetailEntityData').innerText = formattedData;
+
+                    // Show the modal
+                    const modal = new bootstrap.Modal(document.getElementById('eventDetailsModal'));
+                    modal.show();
+                });
             });
         });
     </script>
