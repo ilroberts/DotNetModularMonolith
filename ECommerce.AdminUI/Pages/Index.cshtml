@@ -272,7 +272,7 @@
           <dd class="col-sm-9" id="eventDetailTimestamp"></dd>
 
           <dt class="col-sm-3">Entity Type</dt>
-          <dd class="col-sm-9" id="eventDetailEntityType"></dd>
+          <dd class="col-sm-9" id="eventDetailEntityType"><i class="bi me-2" id="entityTypeIcon"></i><span id="entityTypeName"></span></dd>
 
           <dt class="col-sm-3">Event Type</dt>
           <dd class="col-sm-9" id="eventDetailEventType"></dd>
@@ -392,16 +392,40 @@
             document.querySelectorAll('.event-row').forEach(row => {
                 row.addEventListener('click', function() {
                     const eventData = JSON.parse(this.getAttribute('data-event'));
-                    console.log('Event object structure:', eventData); // Debug log to see property names
+                    console.log('Event object structure:', eventData);
 
-                    // Populate the modal with event data - handle different property name formats
+                    // Populate timestamp
                     document.getElementById('eventDetailTimestamp').innerText = new Date(eventData.eventTimestamp || eventData.EventTimestamp).toLocaleString();
-                    document.getElementById('eventDetailEntityType').innerText = eventData.entityType || eventData.EntityType || '-';
+
+                    // Handle entity type and icon
+                    const entityType = eventData.entityType || eventData.EntityType || '-';
+                    document.getElementById('entityTypeName').innerText = entityType;
+
+                    // Set appropriate icon based on entity type
+                    const iconElement = document.getElementById('entityTypeIcon');
+                    switch(entityType.toLowerCase()) {
+                        case 'customer':
+                            iconElement.className = 'bi bi-people me-2';
+                            break;
+                        case 'product':
+                            iconElement.className = 'bi bi-box me-2';
+                            break;
+                        case 'order':
+                            iconElement.className = 'bi bi-cart me-2';
+                            break;
+                        case 'payment':
+                            iconElement.className = 'bi bi-currency-dollar me-2';
+                            break;
+                        default:
+                            iconElement.className = 'bi bi-file-earmark me-2';
+                    }
+
+                    // Populate other fields
                     document.getElementById('eventDetailEventType').innerText = eventData.eventType || eventData.EventType || '-';
                     document.getElementById('eventDetailEntityId').innerText = eventData.entityId || eventData.EntityId || '-';
                     document.getElementById('eventDetailActor').innerText = (eventData.actorId || eventData.ActorId || '-') + ' (' + (eventData.actorType || eventData.ActorType || '-') + ')';
 
-                    // Handle entityData display with fallbacks for different property names
+                    // Handle entity data
                     const entityData = eventData.entityData || eventData.EntityData || eventData.data || eventData.Data;
                     console.log('Entity data value:', entityData);
                     console.log('Entity data type:', typeof entityData);
