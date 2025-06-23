@@ -1,0 +1,19 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: admin-ui
+  labels:
+    app: admin-ui
+    release: prometheus  # Ensure this matches your Prometheus operator labels
+spec:
+  selector:
+    matchLabels:
+      app: admin-ui
+  endpoints:
+  - port: http  # Changed from targetPort: 8080 to port: http to match the service port name
+    interval: 30s
+    path: /metrics
+    scheme: http
+  namespaceSelector:
+    matchNames:
+      - default

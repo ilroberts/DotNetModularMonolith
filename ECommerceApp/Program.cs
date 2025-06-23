@@ -13,6 +13,7 @@ using ECommerceApp.Services.Interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using Prometheus;
 
 namespace ECommerceApp;
 
@@ -81,6 +82,9 @@ public partial class Program
 
         var app = builder.Build();
 
+        // Enable Prometheus metrics
+        app.UseHttpMetrics();
+
         // Log ASPNETCORE_PATHBASE value at startup
         var logger = app.Logger;
         var pathBase = app.Configuration["ASPNETCORE_PATHBASE"] ?? Environment.GetEnvironmentVariable("ASPNETCORE_PATHBASE");
@@ -113,6 +117,9 @@ public partial class Program
                 options.SwaggerEndpoint(swaggerJsonPath, "E-Commerce API V1");
             });
         }
+
+        // Expose /metrics endpoint for Prometheus
+        app.MapMetrics();
 
         await BusinessEventsModule.InitializeDefaultSchemasAsync(app.Services);
 

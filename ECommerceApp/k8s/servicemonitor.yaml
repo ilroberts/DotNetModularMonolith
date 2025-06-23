@@ -1,0 +1,19 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: modularmonolith
+  labels:
+    app: modularmonolith
+    release: prometheus  # Ensure this matches your Prometheus operator labels
+spec:
+  selector:
+    matchLabels:
+      app: modularmonolith
+  endpoints:
+  - targetPort: 8080
+    interval: 30s
+    path: /metrics
+    scheme: http
+  namespaceSelector:
+    matchNames:
+      - default

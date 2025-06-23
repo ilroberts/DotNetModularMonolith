@@ -3,6 +3,6 @@ kind: ConfigMap
 metadata:
   name: admin-ui-config
 data:
-  ModularMonolithApiUrl: "http://dev-modularmonolith:8080/modulith"
-  TokenServiceUrl: "http://dev-modularmonolith:8080"
+  ModularMonolithApiUrl: "http://modularmonolith:8080/modulith"
+  TokenServiceUrl: "http://modularmonolith:8080"
 

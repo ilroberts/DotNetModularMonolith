@@ -29,6 +29,7 @@ k8s_yaml([
     'ECommerceApp/k8s/service.yaml',
     'ECommerce.DatabaseMigrator/k8s/db-connection-sealedsecrets.yaml',
     'ECommerce.DatabaseMigrator/k8s/migrate-job.yaml',
+    'EcommerceApp/k8s/servicemonitor.yaml',
 ])
 
 # Use kustomize for AdminUI
@@ -38,11 +39,12 @@ k8s_yaml(kustomize('ECommerce.AdminUI/k8s/overlays/dev'))
 k8s_resource(
     'modularmonolith',  # This should match the name in your deployment.yaml
     port_forwards=['8080:8080'],
-    labels=["app"]
+    labels=["app"],
+    trigger_mode=TRIGGER_MODE_MANUAL
 )
 
 k8s_resource(
-    'dev-admin-ui',  # Updated to match the namePrefix in kustomize
+    'admin-ui', 
     port_forwards=['8081:8080'],
     labels=["app"],
     trigger_mode=TRIGGER_MODE_MANUAL
@@ -50,7 +52,8 @@ k8s_resource(
 
 k8s_resource(
     'db-migrator',  # This should match the name in migrate-job.yaml
-    labels=["migrations"]
+    labels=["migrations"],
+    trigger_mode=TRIGGER_MODE_MANUAL
 )
 
 # Enable file watching for live updates

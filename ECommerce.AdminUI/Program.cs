@@ -1,3 +1,6 @@
+using Prometheus;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Log all environment variables to help with debugging
@@ -12,6 +15,9 @@ Console.WriteLine("=== Configuration Values ===");
 Console.WriteLine($"ModularMonolithApiUrl from config: {builder.Configuration["ModularMonolithApiUrl"] ?? "not set"}");
 Console.WriteLine($"TokenServiceUrl from config: {builder.Configuration["TokenServiceUrl"] ?? "not set"}");
 Console.WriteLine("==========================");
+
+// Add Prometheus metrics
+builder.Services.AddHealthChecks();
 
 // Add services to the container.
 builder.Services.AddRazorPages()
@@ -88,6 +94,7 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
+// Add Prometheus metrics endpoint
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 
@@ -96,6 +103,11 @@ app.UseSession(); // Enable session middleware
 
 app.UseAuthorization();
 
+// Configure metrics endpoint before mapping controllers
+app.UseMetricServer("/metrics"); // This exposes the metrics endpoint
+app.UseHttpMetrics(); // Collect HTTP metrics
+
 app.MapRazorPages();
+app.MapHealthChecks("/health");
 
 app.Run();
