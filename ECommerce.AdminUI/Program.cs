@@ -42,6 +42,7 @@ builder.Services.AddSession(options =>
     options.IdleTimeout = TimeSpan.FromHours(2);
     options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true;
+    options.Cookie.Path = Environment.GetEnvironmentVariable("ASPNETCORE_PATHBASE") ?? "/";
 });
 
 // Add HttpContextAccessor for accessing session in services

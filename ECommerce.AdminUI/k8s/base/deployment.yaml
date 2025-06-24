@@ -5,8 +5,8 @@ metadata:
   labels:
     app: admin-ui
 data:
-  ModularMonolithApiUrl: "http://modularmonolith:8080/modulith"
-  TokenServiceUrl: "http://modularmonolith:8080"
+  ModularMonolithApiUrl: "http://modularmonolith-service:8080/modulith"
+  TokenServiceUrl: "http://modularmonolith-service:8080"
 ---
 apiVersion: apps/v1
 kind: Deployment
