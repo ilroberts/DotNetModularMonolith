@@ -94,6 +94,23 @@ builder.Services.AddScoped<ECommerce.AdminUI.Services.DashboardService>();
 builder.Services.AddScoped<ECommerce.AdminUI.Services.OrderService>();
 
 var app = builder.Build();
+var logger = app.Logger;
+
+// Log ASPNETCORE_PATHBASE value at startup
+string? pathBase = app.Configuration["ASPNETCORE_PATHBASE"] ?? Environment.GetEnvironmentVariable("ASPNETCORE_PATHBASE");
+logger.LogInformation("ASPNETCORE_PATHBASE is set to: \'{PathBase}\'", pathBase);
+
+// Apply the path base if it's set
+if (!string.IsNullOrEmpty(pathBase))
+{
+    app.UsePathBase(pathBase);
+    app.Use((context, next) =>
+    {
+        context.Request.PathBase = pathBase;
+        return next();
+    });
+    logger.LogInformation("Path base applied: {PathBase}", pathBase);
+}
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
