@@ -1,5 +1,5 @@
 using Prometheus;
-using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using OpenTelemetry.Metrics;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -15,6 +15,15 @@ Console.WriteLine("=== Configuration Values ===");
 Console.WriteLine($"ModularMonolithApiUrl from config: {builder.Configuration["ModularMonolithApiUrl"] ?? "not set"}");
 Console.WriteLine($"TokenServiceUrl from config: {builder.Configuration["TokenServiceUrl"] ?? "not set"}");
 Console.WriteLine("==========================");
+
+// Add OpenTelemetry with ASP.NET Core built-in metrics
+builder.Services.AddOpenTelemetry()
+    .WithMetrics(metrics =>
+    {
+        metrics.AddAspNetCoreInstrumentation();
+        metrics.AddHttpClientInstrumentation();
+        metrics.AddPrometheusExporter();
+    });
 
 // Add Prometheus metrics
 builder.Services.AddHealthChecks();

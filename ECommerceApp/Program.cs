@@ -13,7 +13,6 @@ using ECommerceApp.Services.Interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-using Prometheus;
 
 namespace ECommerceApp;
 
@@ -54,6 +53,9 @@ public partial class Program
             });
         });
 
+        // Add OpenTelemetry
+        builder.Services.AddOpenTelemetryConfiguration(builder.Configuration);
+
         // Register services
         builder.Services.AddOrderModule(builder.Configuration);
         builder.Services.AddCustomerModule(builder.Configuration);
@@ -81,12 +83,17 @@ public partial class Program
         builder.Services.AddAuthorization();
 
         var app = builder.Build();
+        var logger = app.Logger;
 
-        // Enable Prometheus metrics
-        app.UseHttpMetrics();
+        // Configure Prometheus endpoint if enabled
+        var openTelemetryConfig = builder.Configuration.GetSection("OpenTelemetry");
+        if (openTelemetryConfig.GetValue<bool>("Exporters:Prometheus:Enabled"))
+        {
+            logger.LogInformation("Prometheus exporter is enabled. Configuring scraping endpoint");
+            app.MapPrometheusScrapingEndpoint();
+        }
 
         // Log ASPNETCORE_PATHBASE value at startup
-        var logger = app.Logger;
         var pathBase = app.Configuration["ASPNETCORE_PATHBASE"] ?? Environment.GetEnvironmentVariable("ASPNETCORE_PATHBASE");
         logger.LogInformation("ASPNETCORE_PATHBASE is set to: \'{PathBase}\'", pathBase);
 
@@ -117,9 +124,6 @@ public partial class Program
                 options.SwaggerEndpoint(swaggerJsonPath, "E-Commerce API V1");
             });
         }
-
-        // Expose /metrics endpoint for Prometheus
-        app.MapMetrics();
 
         await BusinessEventsModule.InitializeDefaultSchemasAsync(app.Services);
 
