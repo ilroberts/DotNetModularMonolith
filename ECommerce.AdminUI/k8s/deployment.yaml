@@ -43,6 +43,8 @@ spec:
                 configMapKeyRef:
                   name: admin-ui-config
                   key: TokenServiceUrl
+            - name: ASPNETCORE_PATHBASE
+              value: "/admin"
           livenessProbe:
             httpGet:
               path: /HealthCheck

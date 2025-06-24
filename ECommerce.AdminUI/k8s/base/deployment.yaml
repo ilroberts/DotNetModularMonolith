@@ -15,12 +15,7 @@ metadata:
   labels:
     app: admin-ui
 spec:
-  replicas: 3
-  strategy:
-    type: RollingUpdate
-    rollingUpdate:
-      maxUnavailable: 1
-      maxSurge: 1
+  replicas: 2
   selector:
     matchLabels:
       app: admin-ui
@@ -89,3 +84,4 @@ spec:
   selector:
     app: admin-ui
   type: ClusterIP
+

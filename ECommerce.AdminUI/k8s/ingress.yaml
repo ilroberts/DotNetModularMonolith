@@ -1,7 +1,7 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: modularmonolith-ingress
+  name: admin-ui-ingress
   annotations:
     traefik.ingress.kubernetes.io/router.entrypoints: web
 spec:
@@ -9,10 +9,11 @@ spec:
   rules:
     - http:
         paths:
-          - path: /modulith
+          - path: /admin
             pathType: Prefix
             backend:
               service:
-                name: modularmonolith-service
+                name: admin-ui
                 port:
-                  number: 8080
+                  name: http
+
