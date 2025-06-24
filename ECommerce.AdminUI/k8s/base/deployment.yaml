@@ -45,6 +45,9 @@ spec:
                 configMapKeyRef:
                   name: admin-ui-config
                   key: TokenServiceUrl
+          volumeMounts:
+            - name: dataprotection-keys
+              mountPath: /var/dpkeys
           livenessProbe:
             httpGet:
               path: /HealthCheck
@@ -70,6 +73,10 @@ spec:
             limits:
               cpu: "300m"
               memory: "256Mi"
+      volumes:
+        - name: dataprotection-keys
+          persistentVolumeClaim:
+            claimName: dataprotection-pvc
 ---
 apiVersion: v1
 kind: Service
@@ -86,4 +93,3 @@ spec:
   selector:
     app: admin-ui
   type: ClusterIP
-

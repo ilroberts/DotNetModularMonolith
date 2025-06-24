@@ -9,7 +9,7 @@ namespace ECommerce.AdminUI.Pages
     {
         private readonly AuthService _authService;
         private readonly ILogger<LoginModel> _logger;
-        
+
         public LoginModel(AuthService authService, ILogger<LoginModel> logger)
         {
             _authService = authService;
@@ -25,7 +25,8 @@ namespace ECommerce.AdminUI.Pages
             // If already logged in, redirect to dashboard
             if (!string.IsNullOrEmpty(HttpContext.Session.GetString("AuthToken")))
             {
-                Response.Redirect("/Index");
+                // Use relative path without leading slash to respect PathBase
+                Response.Redirect("Index");
             }
         }
 
@@ -40,21 +41,21 @@ namespace ECommerce.AdminUI.Pages
             {
                 // Call the token generation API
                 var token = await _authService.GenerateTokenAsync(Username);
-                
+
                 if (string.IsNullOrEmpty(token))
                 {
                     ModelState.AddModelError(string.Empty, "Failed to generate token. Please try again.");
                     return Page();
                 }
-                
+
                 // Store token in session
                 HttpContext.Session.SetString("AuthToken", token);
                 HttpContext.Session.SetString("Username", Username);
-                
+
                 _logger.LogInformation("User {Username} logged in successfully", Username);
-                
-                // Redirect to dashboard
-                return RedirectToPage("/Index");
+
+                // Redirect to dashboard - use relative path without leading slash
+                return RedirectToPage("Index");
             }
             catch (Exception ex)
             {

@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.DataProtection;
 using Prometheus;
 using OpenTelemetry.Metrics;
 
@@ -44,6 +45,11 @@ builder.Services.AddSession(options =>
     options.Cookie.IsEssential = true;
     options.Cookie.Path = Environment.GetEnvironmentVariable("ASPNETCORE_PATHBASE") ?? "/";
 });
+
+// Persist Data Protection keys to a shared volume for multi-pod/ingress scenarios
+builder.Services.AddDataProtection()
+    .PersistKeysToFileSystem(new DirectoryInfo("/var/dpkeys"))
+    .SetApplicationName("ECommerce.AdminUI");
 
 // Add HttpContextAccessor for accessing session in services
 builder.Services.AddHttpContextAccessor();
