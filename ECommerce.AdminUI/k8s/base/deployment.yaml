@@ -31,6 +31,8 @@ spec:
           ports:
             - containerPort: 8080
           env:
+            - name: ASPNETCORE_PATHBASE
+              value: "/admin"
             - name: ASPNETCORE_URLS
               value: "http://+:8080"
             - name: ModularMonolithApiUrl

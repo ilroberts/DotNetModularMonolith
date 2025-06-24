@@ -30,8 +30,9 @@ public class AuthenticationFilter(ILogger<AuthenticationFilter> logger) : IPageF
 
         logger.LogInformation("Unauthenticated access attempt to {Path}", httpContext.Request.PathBase + httpContext.Request.Path);
 
-        // Redirect to login page
-        context.Result = new RedirectToPageResult("/Login");
+        // Build the login URL with the correct path base
+        var loginPath = httpContext.Request.PathBase.Add("/Login").ToString();
+        context.Result = new RedirectResult(loginPath);
     }
 
     public void OnPageHandlerExecuted(PageHandlerExecutedContext context)
