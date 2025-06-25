@@ -104,17 +104,25 @@ builder.Services.AddScoped<ECommerce.AdminUI.Services.OrderService>();
 var app = builder.Build();
 var logger = app.Logger;
 
-// Configure Prometheus endpoint if enabled
-var openTelemetryConfig = builder.Configuration.GetSection("OpenTelemetry");
-if (openTelemetryConfig.GetValue<bool>("Exporters:Prometheus:Enabled"))
-{
-    logger.LogInformation("Prometheus exporter is enabled. Configuring scraping endpoint");
-    app.MapPrometheusScrapingEndpoint();
-}
-
 // Log ASPNETCORE_PATHBASE value at startup
 string? pathBase = app.Configuration["ASPNETCORE_PATHBASE"] ?? Environment.GetEnvironmentVariable("ASPNETCORE_PATHBASE");
 logger.LogInformation("ASPNETCORE_PATHBASE is set to: \'{PathBase}\'", pathBase);
+
+// Configure Prometheus endpoint if enabled - before any PathBase middleware
+var openTelemetryConfig = builder.Configuration.GetSection("OpenTelemetry");
+if (openTelemetryConfig.GetValue<bool>("Exporters:Prometheus:Enabled"))
+{
+    logger.LogInformation("Prometheus exporter is enabled. Configuring scraping endpoint at ROOT path (/metrics)");
+    // Branch the pipeline for /metrics before PathBase is applied
+    app.MapWhen(ctx => ctx.Request.Path.Equals("/metrics", StringComparison.OrdinalIgnoreCase), metricsApp =>
+    {
+        metricsApp.UseRouting();
+        metricsApp.UseEndpoints(endpoints =>
+        {
+            endpoints.MapPrometheusScrapingEndpoint();
+        });
+    });
+}
 
 // Apply the path base if it's set
 if (!string.IsNullOrEmpty(pathBase))
