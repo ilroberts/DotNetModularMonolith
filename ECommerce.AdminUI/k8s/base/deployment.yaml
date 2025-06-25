@@ -45,6 +45,28 @@ spec:
                 configMapKeyRef:
                   name: admin-ui-config
                   key: TokenServiceUrl
+            - name: REDIS_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: admin-ui-config
+                  key: REDIS_HOST
+            - name: REDIS_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: admin-ui-config
+                  key: REDIS_PORT
+            - name: REDIS_USER
+              valueFrom:
+                configMapKeyRef:
+                  name: admin-ui-config
+                  key: REDIS_USER
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: redis-secret
+                  key: REDIS_PASSWORD
+            - name: REDIS_CONNECTION_STRING
+              value: "$(REDIS_HOST):$(REDIS_PORT),user=$(REDIS_USER),password=$(REDIS_PASSWORD)"
           livenessProbe:
             httpGet:
               path: /HealthCheck

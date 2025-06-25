@@ -49,7 +49,8 @@ builder.Services.AddAntiforgery(options =>
 });
 
 // Persist Data Protection keys to Redis for multi-pod/ingress scenarios
-var redisConnectionString = builder.Configuration["Redis:ConnectionString"] ?? "localhost";
+string redisConnectionString = Environment.GetEnvironmentVariable("REDIS_CONNECTION_STRING") ?? "not set";
+Console.WriteLine($"Redis connection string: {redisConnectionString}");
 builder.Services.AddDataProtection()
     .PersistKeysToStackExchangeRedis(ConnectionMultiplexer.Connect(redisConnectionString), "ECommerce.AdminUI-Keys")
     .SetApplicationName("ECommerce.AdminUI");

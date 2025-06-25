@@ -5,4 +5,6 @@ metadata:
 data:
   ModularMonolithApiUrl: "http://modularmonolith-service:8080/modulith"
   TokenServiceUrl: "http://modularmonolith-service:8080"
-
+  REDIS_HOST: "my-redis-master"
+  REDIS_PORT: "6379"
+  REDIS_USER: "default"
