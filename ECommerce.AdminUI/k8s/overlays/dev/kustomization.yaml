@@ -8,7 +8,7 @@ resources:
 
 replicas:
 - name: admin-ui
-  count: 1
+  count: 2
 
 patches:
 - path: configmap.yaml
