@@ -1,5 +1,6 @@
 using ECommerce.AdminUI;
 using Microsoft.AspNetCore.DataProtection;
+using StackExchange.Redis;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -47,9 +48,10 @@ builder.Services.AddAntiforgery(options =>
     options.Cookie.IsEssential = true;
 });
 
-// Persist Data Protection keys to a shared volume for multi-pod/ingress scenarios
+// Persist Data Protection keys to Redis for multi-pod/ingress scenarios
+var redisConnectionString = builder.Configuration["Redis:ConnectionString"] ?? "localhost";
 builder.Services.AddDataProtection()
-    .PersistKeysToFileSystem(new DirectoryInfo("/var/dpkeys"))
+    .PersistKeysToStackExchangeRedis(ConnectionMultiplexer.Connect(redisConnectionString), "ECommerce.AdminUI-Keys")
     .SetApplicationName("ECommerce.AdminUI");
 
 // Add HttpContextAccessor for accessing session in services
