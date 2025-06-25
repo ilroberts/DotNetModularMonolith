@@ -16,7 +16,6 @@ namespace ECommerce.AdminUI.Pages
 
         public IActionResult OnGet()
         {
-            _logger.LogInformation("Health check endpoint accessed");
             return new JsonResult(new { status = "healthy" });
         }
     }

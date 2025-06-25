@@ -43,7 +43,15 @@ builder.Services.AddSession(options =>
     options.IdleTimeout = TimeSpan.FromHours(2);
     options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true;
-    options.Cookie.Path = Environment.GetEnvironmentVariable("ASPNETCORE_PATHBASE") ?? "/";
+    options.Cookie.Path = "/"; // Set to root to allow session sharing across applications
+});
+
+// Configure antiforgery to use root path for cookies - consistent with session cookie
+builder.Services.AddAntiforgery(options =>
+{
+    options.Cookie.Path = "/"; // Set to root path for consistency with session cookie
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
 });
 
 // Persist Data Protection keys to a shared volume for multi-pod/ingress scenarios
