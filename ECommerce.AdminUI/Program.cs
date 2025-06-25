@@ -31,13 +31,13 @@ builder.Services.AddRazorPages()
     });
 
 // Add session state
-builder.Services.AddDistributedMemoryCache();
-builder.Services.AddSession(options =>
+// builder.Services.AddDistributedMemoryCache();
+// Use Redis for distributed session state instead of in-memory cache
+string redisConnectionString = Environment.GetEnvironmentVariable("REDIS_CONNECTION_STRING") ?? "localhost:6379";
+builder.Services.AddStackExchangeRedisCache(options =>
 {
-    options.IdleTimeout = TimeSpan.FromHours(2);
-    options.Cookie.HttpOnly = true;
-    options.Cookie.IsEssential = true;
-    options.Cookie.Path = "/"; // Set to root to allow session sharing across applications
+    options.Configuration = redisConnectionString;
+    options.InstanceName = "ECommerce.AdminUI.Session:";
 });
 
 // Configure antiforgery to use root path for cookies - consistent with session cookie
@@ -49,8 +49,6 @@ builder.Services.AddAntiforgery(options =>
 });
 
 // Persist Data Protection keys to Redis for multi-pod/ingress scenarios
-string redisConnectionString = Environment.GetEnvironmentVariable("REDIS_CONNECTION_STRING") ?? "not set";
-Console.WriteLine($"Redis connection string: {redisConnectionString}");
 builder.Services.AddDataProtection()
     .PersistKeysToStackExchangeRedis(ConnectionMultiplexer.Connect(redisConnectionString), "ECommerce.AdminUI-Keys")
     .SetApplicationName("ECommerce.AdminUI");
@@ -103,6 +101,17 @@ builder.Services.AddScoped<ECommerce.AdminUI.Services.ProductService>();
 builder.Services.AddScoped<ECommerce.AdminUI.Services.AuthService>();
 builder.Services.AddScoped<ECommerce.AdminUI.Services.DashboardService>();
 builder.Services.AddScoped<ECommerce.AdminUI.Services.OrderService>();
+
+// Configure session
+builder.Services.AddSession(options =>
+{
+    options.IdleTimeout = TimeSpan.FromHours(2);
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
+    options.Cookie.Path = "/"; // Set to root to allow session sharing across applications
+    options.Cookie.SameSite = SameSiteMode.Lax; // Allow redirects to properly maintain the session
+    options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest; // Respect the request scheme
+});
 
 var app = builder.Build();
 var logger = app.Logger;
