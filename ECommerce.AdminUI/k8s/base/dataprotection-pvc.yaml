@@ -4,8 +4,8 @@ metadata:
   name: dataprotection-pvc
 spec:
   accessModes:
-    - ReadWriteOnce
+    - ReadWriteOnce  # Changed from ReadWriteMany to be compatible with local-path
   resources:
     requests:
-      storage: 1Gi
-  storageClassName: local-path
+      storage: 100Mi
+  storageClassName: local-path  # Explicitly specify the storage class

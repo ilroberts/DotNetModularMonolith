@@ -15,7 +15,7 @@ metadata:
   labels:
     app: admin-ui
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: admin-ui

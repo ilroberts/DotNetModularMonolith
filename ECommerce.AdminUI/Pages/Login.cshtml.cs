@@ -20,18 +20,26 @@ namespace ECommerce.AdminUI.Pages
         [Required(ErrorMessage = "Username is required")]
         public string Username { get; set; } = string.Empty;
 
-        public void OnGet()
+        public IActionResult OnGet()
         {
+            _logger.LogDebug("OnGet: Login page accessed. PathBase: {PathBase}, Path: {Path}, HasToken: {HasToken}",
+                Request.PathBase, Request.Path, !string.IsNullOrEmpty(HttpContext.Session.GetString("AuthToken")));
+
             // If already logged in, redirect to dashboard
             if (!string.IsNullOrEmpty(HttpContext.Session.GetString("AuthToken")))
             {
-                // Use relative path without leading slash to respect PathBase
-                Response.Redirect("Index");
+                _logger.LogDebug("User has token, redirecting to Index");
+                // Use RedirectToPage instead of Response.Redirect for more reliable path handling
+                return RedirectToPage("Index");
             }
+
+            return Page();
         }
 
         public async Task<IActionResult> OnPostAsync()
         {
+            _logger.LogDebug("OnPostAsync: Login form submitted. Username: {Username}", Username);
+
             if (!ModelState.IsValid)
             {
                 return Page();
@@ -41,6 +49,7 @@ namespace ECommerce.AdminUI.Pages
             {
                 // Call the token generation API
                 var token = await _authService.GenerateTokenAsync(Username);
+                _logger.LogDebug("Token generation result: {TokenResult}", string.IsNullOrEmpty(token) ? "Failed" : "Success");
 
                 if (string.IsNullOrEmpty(token))
                 {
