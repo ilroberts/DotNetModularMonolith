@@ -1,6 +1,5 @@
+using ECommerce.AdminUI;
 using Microsoft.AspNetCore.DataProtection;
-using Prometheus;
-using OpenTelemetry.Metrics;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -17,14 +16,8 @@ Console.WriteLine($"ModularMonolithApiUrl from config: {builder.Configuration["M
 Console.WriteLine($"TokenServiceUrl from config: {builder.Configuration["TokenServiceUrl"] ?? "not set"}");
 Console.WriteLine("==========================");
 
-// Add OpenTelemetry with ASP.NET Core built-in metrics
-builder.Services.AddOpenTelemetry()
-    .WithMetrics(metrics =>
-    {
-        metrics.AddAspNetCoreInstrumentation();
-        metrics.AddHttpClientInstrumentation();
-        metrics.AddPrometheusExporter();
-    });
+// Add OpenTelemetry
+builder.Services.AddOpenTelemetryConfiguration(builder.Configuration);
 
 // Add Prometheus metrics
 builder.Services.AddHealthChecks();
@@ -111,6 +104,14 @@ builder.Services.AddScoped<ECommerce.AdminUI.Services.OrderService>();
 var app = builder.Build();
 var logger = app.Logger;
 
+// Configure Prometheus endpoint if enabled
+var openTelemetryConfig = builder.Configuration.GetSection("OpenTelemetry");
+if (openTelemetryConfig.GetValue<bool>("Exporters:Prometheus:Enabled"))
+{
+    logger.LogInformation("Prometheus exporter is enabled. Configuring scraping endpoint");
+    app.MapPrometheusScrapingEndpoint();
+}
+
 // Log ASPNETCORE_PATHBASE value at startup
 string? pathBase = app.Configuration["ASPNETCORE_PATHBASE"] ?? Environment.GetEnvironmentVariable("ASPNETCORE_PATHBASE");
 logger.LogInformation("ASPNETCORE_PATHBASE is set to: \'{PathBase}\'", pathBase);
@@ -143,10 +144,6 @@ app.UseRouting();
 app.UseSession(); // Enable session middleware
 
 app.UseAuthorization();
-
-// Configure metrics endpoint before mapping controllers
-app.UseMetricServer("/metrics"); // This exposes the metrics endpoint
-app.UseHttpMetrics(); // Collect HTTP metrics
 
 app.MapRazorPages();
 app.MapHealthChecks("/health");
