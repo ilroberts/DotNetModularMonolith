@@ -57,7 +57,7 @@ public class BusinessEventFactory
 
     public BusinessEventFactory WithCorrelationId(string? correlationId)
     {
-        _dto.CorrelationId = correlationId ?? Guid.NewGuid().ToString();
+        _dto.CorrelationId = correlationId ?? "not-present";
         return this;
     }
 
@@ -66,7 +66,7 @@ public class BusinessEventFactory
         if (_dto.EventId == Guid.Empty)
             _dto.EventId = Guid.NewGuid();
         if (string.IsNullOrEmpty(_dto.CorrelationId))
-            _dto.CorrelationId = Guid.NewGuid().ToString();
+            _dto.CorrelationId = "not-present";
         if (_dto.EventTimestamp == default)
             _dto.EventTimestamp = DateTimeOffset.UtcNow;
         return _dto;

@@ -20,8 +20,12 @@ public static class CustomerEndpoints
             var user = httpContext.User;
             var userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
 
-            logger.LogInformation("Creating customer");
-            var result = await customerService.AddCustomerAsync(customer, userId);
+            // Get correlation ID from request headers
+            string correlationId = httpContext.Request.Headers["X-Correlation-Id"].FirstOrDefault() ?? "not-available";
+            logger.LogInformation("Creating customer. CorrelationId: {CorrelationId}", correlationId);
+
+            // Pass correlation ID to the service method
+            var result = await customerService.AddCustomerAsync(customer, userId, correlationId);
             if (!result.IsSuccess)
             {
                 return Results.BadRequest(result.Error);
@@ -59,9 +63,14 @@ public static class CustomerEndpoints
             var user = httpContext.User;
             var userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
 
+            // Get correlation ID from request headers
+            string correlationId = httpContext.Request.Headers["X-Correlation-Id"].FirstOrDefault() ?? "not-available";
+            logger.LogInformation("Updating customer with ID: {CustomerId}. CorrelationId: {CorrelationId}", id, correlationId);
+
             try
             {
-                var updatedCustomer = await customerService.UpdateCustomerAsync(id, customerUpdateDto, userId);
+                // Pass correlation ID to the service method
+                var updatedCustomer = await customerService.UpdateCustomerAsync(id, customerUpdateDto, userId, correlationId);
                 return Results.Ok(updatedCustomer);
             }
             catch (InvalidOperationException)

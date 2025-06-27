@@ -1,3 +1,5 @@
+using CorrelationId;
+using CorrelationId.DependencyInjection;
 using ECommerce.AdminUI;
 using Microsoft.AspNetCore.DataProtection;
 using StackExchange.Redis;
@@ -22,6 +24,32 @@ builder.Services.AddOpenTelemetryConfiguration(builder.Configuration);
 
 // Add Prometheus metrics
 builder.Services.AddHealthChecks();
+
+// Configure correlation ID for outgoing requests based on official package examples
+builder.Services.AddDefaultCorrelationId(options =>
+{
+    // Don't use a fixed generator - let the system create unique IDs
+    // options.CorrelationIdGenerator = () => "Foo";
+
+    // Add correlation ID to logging scope for better tracing
+    options.AddToLoggingScope = true;
+
+    // Don't require correlation ID in incoming requests
+    options.EnforceHeader = false;
+
+    // Process incoming correlation IDs if they exist, but don't require them
+    options.IgnoreRequestHeader = false;
+
+    // Include the correlation ID in the response
+    options.IncludeInResponse = true;
+
+    // Use standard header names
+    options.RequestHeader = "X-Correlation-Id";
+    options.ResponseHeader = "X-Correlation-Id";
+
+    // Update ASP.NET Core TraceIdentifier for better integration
+    options.UpdateTraceIdentifier = true;
+});
 
 // Add services to the container.
 builder.Services.AddRazorPages()
@@ -56,6 +84,9 @@ builder.Services.AddDataProtection()
 // Add HttpContextAccessor for accessing session in services
 builder.Services.AddHttpContextAccessor();
 
+// Register the CorrelationIdDelegatingHandler as a transient service
+builder.Services.AddTransient<ECommerce.AdminUI.Infrastructure.CorrelationIdDelegatingHandler>();
+
 // Add HTTP clients for communication with modular monolith API
 builder.Services.AddHttpClient("ModularMonolith", client =>
 {
@@ -71,6 +102,7 @@ builder.Services.AddHttpClient("ModularMonolith", client =>
     // Log the configured base address for debugging
     Console.WriteLine($"ModularMonolith API base address: {baseUrl}");
 })
+.AddHttpMessageHandler<ECommerce.AdminUI.Infrastructure.CorrelationIdDelegatingHandler>()
 .ConfigurePrimaryHttpMessageHandler(() =>
 {
     return new HttpClientHandler
@@ -86,6 +118,7 @@ builder.Services.AddHttpClient("TokenService", client =>
     client.BaseAddress = new Uri(builder.Configuration["TokenServiceUrl"] ?? "http://localhost:56000");
     client.DefaultRequestHeaders.Add("Accept", "application/json");
 })
+.AddHttpMessageHandler<ECommerce.AdminUI.Infrastructure.CorrelationIdDelegatingHandler>()
 .ConfigurePrimaryHttpMessageHandler(() =>
 {
     return new HttpClientHandler
@@ -115,6 +148,8 @@ builder.Services.AddSession(options =>
 
 var app = builder.Build();
 var logger = app.Logger;
+
+app.UseCorrelationId(); // Enable Correlation ID middleware
 
 // Log ASPNETCORE_PATHBASE value at startup
 string? pathBase = app.Configuration["ASPNETCORE_PATHBASE"] ?? Environment.GetEnvironmentVariable("ASPNETCORE_PATHBASE");

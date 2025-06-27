@@ -72,6 +72,8 @@ public class ProductService(
       .WithEntityData(existingProduct)
       .Build();
 
+    logger.LogInformation("Product update event correlation ID: {CorrelationId}", businessEvent.CorrelationId);
+
     var eventResult = await businessEventService.TrackEventAsync(businessEvent);
     return !eventResult.IsSuccess ? Result<Product, string>.Failure($"Product update event tracking failed: {eventResult.Error}")
         : Result<Product, string>.Success(existingProduct);

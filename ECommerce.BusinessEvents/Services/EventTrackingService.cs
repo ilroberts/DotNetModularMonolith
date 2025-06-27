@@ -22,6 +22,9 @@ namespace ECommerce.BusinessEvents.Services
             string entityType = businessEventDto.EntityType;
             object entityData = businessEventDto.EntityData;
 
+            logger.LogInformation("Tracking business event for entity type: {EntityType}, Event Type: {EventType}, Entity ID: {EntityId}, Correlation ID: {CorrelationId}",
+                entityType, businessEventDto.EventType, businessEventDto.EntityId, businessEventDto.CorrelationId);
+
             var latestSchema = await schemaRegistry.GetLatestSchemaAsync(entityType);
             if (latestSchema == null)
                 return Result<Unit, string>.Failure($"No schema found for entity type '{entityType}'. Please register a schema first.");
@@ -48,8 +51,7 @@ namespace ECommerce.BusinessEvents.Services
                 SchemaVersion = schemaVersion,
                 EventTimestamp = businessEventDto.EventTimestamp == default ?
                     DateTimeOffset.UtcNow : businessEventDto.EventTimestamp,
-                CorrelationId = string.IsNullOrEmpty(businessEventDto.CorrelationId) ?
-                    Guid.NewGuid().ToString() : businessEventDto.CorrelationId,
+                CorrelationId = businessEventDto.CorrelationId,
                 ActorId = businessEventDto.ActorId,
                 ActorType = businessEventDto.ActorType.ToString(),
                 EntityData = json
