@@ -1,9 +1,9 @@
+using System.Security.Claims;
 using ECommerce.Modules.Products.Domain;
 using ECommerce.Modules.Products.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
-using System.Security.Claims;
 
 namespace ECommerce.Modules.Products.Endpoints;
 
@@ -14,11 +14,17 @@ public static class ProductEndpoints
     var logger = app.Logger;
 
     app.MapPost("/products", async (IProductService productService,
-            Product product, ClaimsPrincipal user) =>
+            Product product, HttpContext httpContext) =>
         {
-            logger.LogInformation("Creating product");
+            // Get correlation ID from request headers
+            string correlationId = httpContext.Request.Headers["X-Correlation-Id"].FirstOrDefault() ?? "not-available";
+            logger.LogInformation("Creating product. CorrelationId: {CorrelationId}", correlationId);
+
+            var user = httpContext.User;
             var userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "anonymous";
-            var result = await productService.AddProductAsync(product, userId);
+
+            // Pass correlation ID to service method
+            var result = await productService.AddProductAsync(product, userId, correlationId);
 
             if (!result.IsSuccess)
             {
@@ -44,28 +50,32 @@ public static class ProductEndpoints
     app.MapGet("/products/{id}", async (IProductService productService, Guid id) =>
         {
             var product = await productService.GetProductByIdAsync(id);
-            return product is not null ? Results.Ok(product) : Results.NotFound();
+            return product != null ? Results.Ok(product) : Results.NotFound();
         })
         .WithName("GetProductById")
         .WithTags("Products")
         .RequireAuthorization();
 
-    app.MapPut("/products/{id}",
-            async (IProductService productService, Guid id, Product updatedProduct, ClaimsPrincipal user) =>
+    app.MapPut("/products/{id}", async (IProductService productService,
+            Guid id, Product updatedProduct, HttpContext httpContext) =>
+        {
+            // Get correlation ID from request headers
+            string correlationId = httpContext.Request.Headers["X-Correlation-Id"].FirstOrDefault() ?? "not-available";
+            logger.LogInformation("Updating product with ID: {ProductId}. CorrelationId: {CorrelationId}", id, correlationId);
+
+            var user = httpContext.User;
+            var userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "anonymous";
+
+            // Pass correlation ID to service method
+            var result = await productService.UpdateProductAsync(id, updatedProduct, userId, correlationId);
+
+            if (!result.IsSuccess)
             {
-                logger.LogInformation("Updating product with ID: {ProductId}", id);
-                var userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "anonymous";
-                var result = await productService.UpdateProductAsync(id, updatedProduct, userId);
+                return Results.NotFound(result.Error);
+            }
 
-                if (!result.IsSuccess)
-                {
-                    return result.Error == "Product not found."
-                        ? Results.NotFound(result.Error)
-                        : Results.BadRequest(result.Error);
-                }
-
-                return Results.Ok(result.Value);
-            })
+            return Results.Ok(result.Value);
+        })
         .WithName("UpdateProduct")
         .WithTags("Products")
         .RequireAuthorization();

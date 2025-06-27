@@ -7,6 +7,6 @@ public interface IProductService
 {
   Task<Product> GetProductByIdAsync(Guid productId);
   Task<IEnumerable<Product>> GetAllProductsAsync();
-  Task<Result<Product, string>> AddProductAsync(Product product, string userId);
-  Task<Result<Product, string>> UpdateProductAsync(Guid id, Product updatedProduct, string userId);
+  Task<Result<Product, string>> AddProductAsync(Product product, string userId, string correlationId);
+  Task<Result<Product, string>> UpdateProductAsync(Guid id, Product updatedProduct, string userId, string correlationId);
 }

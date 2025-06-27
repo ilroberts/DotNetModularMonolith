@@ -26,8 +26,11 @@ public class ProductService(
     return products;
   }
 
-  public async Task<Result<Product, string>> AddProductAsync(Product product, string userId)
+  public async Task<Result<Product, string>> AddProductAsync(Product product, string userId, string correlationId)
   {
+    logger.LogInformation("Adding product with name {ProductName}. CorrelationId: {CorrelationId}",
+        product.Name, correlationId);
+
     productDbContext.Products.Add(product);
     await productDbContext.SaveChangesAsync();
 
@@ -38,23 +41,33 @@ public class ProductService(
       .WithActorId(userId)
       .WithActorType(IBusinessEventService.ActorType.User)
       .WithEntityData(product)
+      .WithCorrelationId(correlationId)  // Add correlation ID to the business event
       .Build();
 
     var eventResult = await businessEventService.TrackEventAsync(businessEvent);
     if (!eventResult.IsSuccess)
     {
       productDbContext.Entry(product).State = EntityState.Detached;
+      logger.LogError("Product creation failed. CorrelationId: {CorrelationId}, Error: {Error}",
+        correlationId, eventResult.Error);
       return Result<Product, string>.Failure($"Product creation failed due to business event schema validation: {eventResult.Error}");
     }
 
+    logger.LogInformation("Product created successfully with ID: {ProductId}. CorrelationId: {CorrelationId}",
+        product.Id, correlationId);
     return Result<Product, string>.Success(product);
   }
 
-  public async Task<Result<Product, string>> UpdateProductAsync(Guid id, Product updatedProduct, string userId)
+  public async Task<Result<Product, string>> UpdateProductAsync(Guid id, Product updatedProduct, string userId, string correlationId)
   {
+    logger.LogInformation("Updating product with ID: {ProductId}. CorrelationId: {CorrelationId}",
+        id, correlationId);
+
     var existingProduct = await productDbContext.Products.FindAsync(id);
     if (existingProduct == null)
     {
+      logger.LogWarning("Product with ID {ProductId} not found. CorrelationId: {CorrelationId}",
+          id, correlationId);
       return Result<Product, string>.Failure("Product not found.");
     }
 
@@ -65,17 +78,22 @@ public class ProductService(
 
     var businessEvent = BusinessEventFactory.Create()
       .WithEntityType(nameof(Product))
-      .WithEntityId(id.ToString())
+      .WithEntityId(existingProduct.Id.ToString())
       .WithEventType(IBusinessEventService.EventType.Updated)
       .WithActorId(userId)
       .WithActorType(IBusinessEventService.ActorType.User)
       .WithEntityData(existingProduct)
+      .WithCorrelationId(correlationId)  // Add correlation ID to the business event
       .Build();
 
-    logger.LogInformation("Product update event correlation ID: {CorrelationId}", businessEvent.CorrelationId);
-
     var eventResult = await businessEventService.TrackEventAsync(businessEvent);
-    return !eventResult.IsSuccess ? Result<Product, string>.Failure($"Product update event tracking failed: {eventResult.Error}")
-        : Result<Product, string>.Success(existingProduct);
+    if (!eventResult.IsSuccess)
+    {
+      logger.LogWarning("Failed to track product update event. CorrelationId: {CorrelationId}, Error: {Error}",
+          correlationId, eventResult.Error);
+    }
+
+    logger.LogInformation("Product updated successfully. CorrelationId: {CorrelationId}", correlationId);
+    return Result<Product, string>.Success(existingProduct);
   }
 }
