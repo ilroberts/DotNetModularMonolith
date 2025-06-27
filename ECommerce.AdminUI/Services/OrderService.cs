@@ -3,32 +3,56 @@ using System.Text.Json;
 
 namespace ECommerce.AdminUI.Services
 {
-    public class OrderService(
-        IHttpClientFactory httpClientFactory,
-        ILogger<OrderService> logger,
-        IHttpContextAccessor httpContextAccessor,
-        CustomerService customerService,
-        ProductService productService)
+    public class OrderService : BaseService
     {
-        private readonly HttpClient _httpClient = httpClientFactory.CreateClient("ModularMonolith");
+        private readonly HttpClient _httpClient;
+        private readonly CustomerService _customerService;
+        private readonly ProductService _productService;
 
-        private void AddAuthorizationHeader()
+        public OrderService(
+            IHttpClientFactory httpClientFactory,
+            ILogger<OrderService> logger,
+            IHttpContextAccessor httpContextAccessor,
+            CustomerService customerService,
+            ProductService productService,
+            AuthService authService)
+            : base(httpContextAccessor, authService, logger)
         {
-            var token = httpContextAccessor.HttpContext?.Session.GetString("AuthToken");
-            if (!string.IsNullOrEmpty(token))
-            {
-                _httpClient.DefaultRequestHeaders.Remove("Authorization");
-                _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
-            }
+            _httpClient = httpClientFactory.CreateClient("ModularMonolith");
+            _customerService = customerService;
+            _productService = productService;
         }
 
         public async Task<List<OrderDto>> GetAllOrdersAsync()
         {
+            var token = GetTokenFromSession();
+            var username = GetUsernameFromSession();
+
+            if (string.IsNullOrEmpty(token))
+            {
+                Logger.LogWarning("No auth token available for order list request");
+                return new List<OrderDto>();
+            }
+
             try
             {
-                AddAuthorizationHeader();
-                var response = await _httpClient.GetAsync("orders");
-                response.EnsureSuccessStatusCode();
+                // Define the API call as a function that takes a token
+                async Task<HttpResponseMessage> apiCall(string tkn)
+                {
+                    AddAuthorizationHeader(_httpClient, tkn);
+                    return await _httpClient.GetAsync("orders");
+                }
+
+                // Execute with automatic token refresh
+                var httpContext = HttpContextAccessor.HttpContext!;
+                var (success, response) = await AuthService.ExecuteWithTokenRefreshAsync(
+                    apiCall, token, username ?? string.Empty, httpContext);
+
+                if (!success || response == null)
+                {
+                    Logger.LogWarning("Failed to retrieve orders due to authentication issues");
+                    return new List<OrderDto>();
+                }
 
                 // Deserialize to API format first
                 var apiOrders = await response.Content.ReadFromJsonAsync<List<ApiOrderDto>>() ?? new List<ApiOrderDto>();
@@ -67,18 +91,41 @@ namespace ECommerce.AdminUI.Services
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Error retrieving orders");
+                Logger.LogError(ex, "Error retrieving orders");
                 return new List<OrderDto>();
             }
         }
 
         public async Task<OrderDto?> GetOrderByIdAsync(Guid id)
         {
+            var token = GetTokenFromSession();
+            var username = GetUsernameFromSession();
+
+            if (string.IsNullOrEmpty(token))
+            {
+                Logger.LogWarning("No auth token available for order detail request");
+                return null;
+            }
+
             try
             {
-                AddAuthorizationHeader();
-                var response = await _httpClient.GetAsync($"orders/{id}");
-                response.EnsureSuccessStatusCode();
+                // Define the API call as a function that takes a token
+                async Task<HttpResponseMessage> apiCall(string tkn)
+                {
+                    AddAuthorizationHeader(_httpClient, tkn);
+                    return await _httpClient.GetAsync($"orders/{id}");
+                }
+
+                // Execute with automatic token refresh
+                var httpContext = HttpContextAccessor.HttpContext!;
+                var (success, response) = await AuthService.ExecuteWithTokenRefreshAsync(
+                    apiCall, token, username ?? string.Empty, httpContext);
+
+                if (!success || response == null)
+                {
+                    Logger.LogWarning("Failed to retrieve order {OrderId} due to authentication issues", id);
+                    return null;
+                }
 
                 // Deserialize to API format first
                 var apiOrder = await response.Content.ReadFromJsonAsync<ApiOrderDto>();
@@ -101,131 +148,162 @@ namespace ECommerce.AdminUI.Services
                     Status = "Completed" // Default status as API doesn't provide it yet
                 };
 
-                // Enrich with customer and product details
+                // Enrich order with customer and product details
                 await EnrichOrderWithDetailsAsync(order);
+
                 return order;
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Error retrieving order {OrderId}", id);
+                Logger.LogError(ex, "Error retrieving order {OrderId}", id);
                 return null;
-            }
-        }
-
-        private async Task EnrichOrderWithDetailsAsync(OrderDto order)
-        {
-            // Fetch customer details
-            if (order.CustomerId != Guid.Empty)
-            {
-                var customer = await customerService.GetCustomerByIdAsync(order.CustomerId);
-                if (customer != null)
-                {
-                    order.CustomerName = customer.Name;
-                    order.CustomerEmail = customer.Email;
-                }
-            }
-
-            // Fetch product details
-            if (order.ProductId != Guid.Empty)
-            {
-                var product = await productService.GetProductByIdAsync(order.ProductId);
-                if (product != null)
-                {
-                    order.ProductName = product.Name;
-                    order.ProductPrice = product.Price;
-
-                    // Recalculate total price if necessary
-                    if (order.TotalPrice == 0 && order.Quantity > 0)
-                    {
-                        order.TotalPrice = order.ProductPrice * order.Quantity;
-                    }
-                }
             }
         }
 
         public async Task<bool> CreateOrderAsync(OrderDto order)
         {
+            var token = GetTokenFromSession();
+            var username = GetUsernameFromSession();
+
+            if (string.IsNullOrEmpty(token))
+            {
+                Logger.LogWarning("No auth token available for create order request");
+                return false;
+            }
+
             try
             {
-                // Enrich the order with customer and product details
-                await EnrichOrderWithDetailsAsync(order);
-
-                AddAuthorizationHeader();
-
-                // Create the order items array as expected by the API
-                var orderItems = new List<OrderItemDto>
+                // Convert our OrderDto to the API format
+                var apiOrder = new ApiOrderDto
                 {
-                    new OrderItemDto
-                    {
-                        Id = Guid.NewGuid(),
-                        ProductId = order.ProductId,
-                        Quantity = order.Quantity,
-                        Price = order.ProductPrice
-                    }
+                    CustomerId = order.CustomerId,
+                    Items =
+                    [
+                        new ApiOrderItemDto { ProductId = order.ProductId,
+                            Quantity = order.Quantity,
+                            Price = order.ProductPrice }
+                    ]
                 };
 
                 var content = new StringContent(
-                    JsonSerializer.Serialize(orderItems),
+                    JsonSerializer.Serialize(apiOrder),
                     Encoding.UTF8,
                     "application/json");
 
-                // Add customerId as a query parameter
-                var url = $"orders?customerId={order.CustomerId}";
-                logger.LogInformation("Creating order at URL: {Url} with data: {OrderData}",
-                    _httpClient.BaseAddress + url, JsonSerializer.Serialize(orderItems));
+                // Define the API call as a function that takes a token
+                async Task<HttpResponseMessage> apiCall(string tkn)
+                {
+                    AddAuthorizationHeader(_httpClient, tkn);
+                    return await _httpClient.PostAsync("orders", content);
+                }
 
-                var response = await _httpClient.PostAsync(url, content);
-                response.EnsureSuccessStatusCode();
+                // Execute with automatic token refresh
+                var httpContext = HttpContextAccessor.HttpContext!;
+                var (success, response) = await AuthService.ExecuteWithTokenRefreshAsync(
+                    apiCall, token, username ?? string.Empty, httpContext);
 
-                return true;
+                if (success && response != null)
+                {
+                    Logger.LogInformation("Successfully created order");
+                    return true;
+                }
+
+                Logger.LogWarning("Failed to create order due to authentication issues");
+                return false;
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Error creating order for customer {CustomerId}", order.CustomerId);
+                Logger.LogError(ex, "Error creating order");
                 return false;
             }
         }
 
         public async Task<bool> UpdateOrderAsync(Guid id, OrderDto order)
         {
-            // For now, updates aren't fully implemented as we'd need to map back to API format
+            var token = GetTokenFromSession();
+            var username = GetUsernameFromSession();
+
+            if (string.IsNullOrEmpty(token))
+            {
+                Logger.LogWarning("No auth token available for update order request");
+                return false;
+            }
+
             try
             {
-                // Ensure order has all required details
-                await EnrichOrderWithDetailsAsync(order);
+                // Convert our OrderDto to the API format
+                var apiOrder = new ApiOrderDto
+                {
+                    Id = id,
+                    CustomerId = order.CustomerId,
+                    Items = new List<ApiOrderItemDto>
+                    {
+                        new()
+                        {
+                            ProductId = order.ProductId,
+                            Quantity = order.Quantity,
+                            Price = order.ProductPrice
+                        }
+                    }
+                };
 
-                AddAuthorizationHeader();
                 var content = new StringContent(
-                    JsonSerializer.Serialize(order),
+                    JsonSerializer.Serialize(apiOrder),
                     Encoding.UTF8,
                     "application/json");
 
-                var response = await _httpClient.PutAsync($"orders/{id}", content);
-                response.EnsureSuccessStatusCode();
+                // Define the API call as a function that takes a token
+                async Task<HttpResponseMessage> apiCall(string tkn)
+                {
+                    AddAuthorizationHeader(_httpClient, tkn);
+                    return await _httpClient.PutAsync($"orders/{id}", content);
+                }
 
-                return true;
+                // Execute with automatic token refresh
+                var httpContext = HttpContextAccessor.HttpContext!;
+                var (success, response) = await AuthService.ExecuteWithTokenRefreshAsync(
+                    apiCall, token, username ?? string.Empty, httpContext);
+
+                if (success && response != null)
+                {
+                    Logger.LogInformation("Successfully updated order {OrderId}", id);
+                    return true;
+                }
+
+                Logger.LogWarning("Failed to update order {OrderId} due to authentication issues", id);
+                return false;
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Error updating order {OrderId}", id);
+                Logger.LogError(ex, "Error updating order {OrderId}", id);
                 return false;
             }
         }
 
+        /// <summary>
+        /// Placeholder method for deleting an order.
+        /// Note: The backend API doesn't support deletion yet.
+        /// </summary>
         public async Task<bool> DeleteOrderAsync(Guid id)
         {
-            try
-            {
-                AddAuthorizationHeader();
-                var response = await _httpClient.DeleteAsync($"orders/{id}");
-                response.EnsureSuccessStatusCode();
+            Logger.LogWarning("DeleteOrderAsync was called, but the backend API doesn't support deletion yet. Order ID: {OrderId}", id);
+            return false;
+        }
 
-                return true;
-            }
-            catch (Exception ex)
+        private async Task EnrichOrderWithDetailsAsync(OrderDto order)
+        {
+            // Get customer details
+            var customer = await _customerService.GetCustomerByIdAsync(order.CustomerId);
+            if (customer != null)
             {
-                logger.LogError(ex, "Error deleting order {OrderId}", id);
-                return false;
+                order.CustomerName = customer.Name; // Using the Name property which exists on CustomerDto
+            }
+
+            // Get product details
+            var product = await _productService.GetProductByIdAsync(order.ProductId);
+            if (product != null)
+            {
+                order.ProductName = product.Name;
             }
         }
     }

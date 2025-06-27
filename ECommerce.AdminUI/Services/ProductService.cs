@@ -5,125 +5,202 @@ using Microsoft.AspNetCore.Http;
 
 namespace ECommerce.AdminUI.Services;
 
-public class ProductService
+public class ProductService : BaseService
 {
     private readonly HttpClient _httpClient;
-    private readonly ILogger<ProductService> _logger;
-    private readonly IHttpContextAccessor _httpContextAccessor;
 
-    public ProductService(IHttpClientFactory httpClientFactory, ILogger<ProductService> logger, IHttpContextAccessor httpContextAccessor)
+    public ProductService(
+        IHttpClientFactory httpClientFactory,
+        ILogger<ProductService> logger,
+        IHttpContextAccessor httpContextAccessor,
+        AuthService authService)
+        : base(httpContextAccessor, authService, logger)
     {
         _httpClient = httpClientFactory.CreateClient("ModularMonolith");
-        _logger = logger;
-        _httpContextAccessor = httpContextAccessor;
-    }
-
-    private void AddAuthorizationHeader()
-    {
-        var token = _httpContextAccessor.HttpContext?.Session.GetString("AuthToken");
-        if (!string.IsNullOrEmpty(token))
-        {
-            _httpClient.DefaultRequestHeaders.Remove("Authorization");
-            _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
-        }
     }
 
     public async Task<List<ProductDto>> GetAllProductsAsync()
     {
+        var token = GetTokenFromSession();
+        var username = GetUsernameFromSession();
+
+        if (string.IsNullOrEmpty(token))
+        {
+            Logger.LogWarning("No auth token available for product list request");
+            return new List<ProductDto>();
+        }
+
         try
         {
-            AddAuthorizationHeader();
-            _logger.LogInformation("Getting all products from {Url}", _httpClient.BaseAddress + "products");
-            var response = await _httpClient.GetAsync("products");
-            response.EnsureSuccessStatusCode();
+            // Define the API call as a function that takes a token
+            async Task<HttpResponseMessage> apiCall(string tkn)
+            {
+                AddAuthorizationHeader(_httpClient, tkn);
+                return await _httpClient.GetAsync("products");
+            }
 
-            return await response.Content.ReadFromJsonAsync<List<ProductDto>>() ?? new List<ProductDto>();
+            // Execute with automatic token refresh
+            var httpContext = HttpContextAccessor.HttpContext!;
+            var (success, response) = await AuthService.ExecuteWithTokenRefreshAsync(
+                apiCall, token, username ?? string.Empty, httpContext);
+
+            if (success && response != null)
+            {
+                Logger.LogInformation("Successfully retrieved products from {Url}", _httpClient.BaseAddress + "products");
+                return await response.Content.ReadFromJsonAsync<List<ProductDto>>() ?? new List<ProductDto>();
+            }
+
+            Logger.LogWarning("Failed to retrieve products due to authentication issues");
+            return new List<ProductDto>();
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error retrieving products");
+            Logger.LogError(ex, "Error retrieving products");
             return new List<ProductDto>();
         }
     }
 
     public async Task<ProductDto?> GetProductByIdAsync(Guid id)
     {
+        var token = GetTokenFromSession();
+        var username = GetUsernameFromSession();
+
+        if (string.IsNullOrEmpty(token))
+        {
+            Logger.LogWarning("No auth token available for product detail request");
+            return null;
+        }
+
         try
         {
-            AddAuthorizationHeader();
-            var response = await _httpClient.GetAsync($"products/{id}");
-            response.EnsureSuccessStatusCode();
+            // Define the API call as a function that takes a token
+            async Task<HttpResponseMessage> apiCall(string tkn)
+            {
+                AddAuthorizationHeader(_httpClient, tkn);
+                return await _httpClient.GetAsync($"products/{id}");
+            }
 
-            return await response.Content.ReadFromJsonAsync<ProductDto>();
+            // Execute with automatic token refresh
+            var httpContext = HttpContextAccessor.HttpContext!;
+            var (success, response) = await AuthService.ExecuteWithTokenRefreshAsync(
+                apiCall, token, username ?? string.Empty, httpContext);
+
+            if (success && response != null)
+            {
+                return await response.Content.ReadFromJsonAsync<ProductDto>();
+            }
+
+            Logger.LogWarning("Failed to retrieve product {ProductId} due to authentication issues", id);
+            return null;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error retrieving product {ProductId}", id);
+            Logger.LogError(ex, "Error retrieving product {ProductId}", id);
             return null;
         }
     }
 
     public async Task<bool> CreateProductAsync(ProductDto product)
     {
-        _logger.LogInformation("creating product with name: {ProductName}", product.Name);
+        Logger.LogInformation("creating product with name: {ProductName}", product.Name);
+
+        var token = GetTokenFromSession();
+        var username = GetUsernameFromSession();
+
+        if (string.IsNullOrEmpty(token))
+        {
+            Logger.LogWarning("No auth token available for create product request");
+            return false;
+        }
 
         try
         {
-            AddAuthorizationHeader();
             var content = new StringContent(
                 JsonSerializer.Serialize(product),
                 Encoding.UTF8,
                 "application/json");
 
-            _logger.LogInformation("Creating product at URL: {Url}", _httpClient.BaseAddress + "products");
-            var response = await _httpClient.PostAsync("products", content);
-            response.EnsureSuccessStatusCode();
+            // Define the API call as a function that takes a token
+            async Task<HttpResponseMessage> apiCall(string tkn)
+            {
+                AddAuthorizationHeader(_httpClient, tkn);
+                return await _httpClient.PostAsync("products", content);
+            }
 
-            return true;
+            // Execute with automatic token refresh
+            var httpContext = HttpContextAccessor.HttpContext!;
+            var (success, response) = await AuthService.ExecuteWithTokenRefreshAsync(
+                apiCall, token, username ?? string.Empty, httpContext);
+
+            if (success && response != null)
+            {
+                Logger.LogInformation("Successfully created product");
+                return true;
+            }
+
+            Logger.LogWarning("Failed to create product due to authentication issues");
+            return false;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error creating product");
+            Logger.LogError(ex, "Error creating product");
             return false;
         }
     }
 
     public async Task<bool> UpdateProductAsync(Guid id, ProductDto product)
     {
+        var token = GetTokenFromSession();
+        var username = GetUsernameFromSession();
+
+        if (string.IsNullOrEmpty(token))
+        {
+            Logger.LogWarning("No auth token available for update product request");
+            return false;
+        }
+
         try
         {
-            AddAuthorizationHeader();
             var content = new StringContent(
                 JsonSerializer.Serialize(product),
                 Encoding.UTF8,
                 "application/json");
 
-            var response = await _httpClient.PutAsync($"products/{id}", content);
-            response.EnsureSuccessStatusCode();
+            // Define the API call as a function that takes a token
+            async Task<HttpResponseMessage> apiCall(string tkn)
+            {
+                AddAuthorizationHeader(_httpClient, tkn);
+                return await _httpClient.PutAsync($"products/{id}", content);
+            }
 
-            return true;
+            // Execute with automatic token refresh
+            var httpContext = HttpContextAccessor.HttpContext!;
+            var (success, response) = await AuthService.ExecuteWithTokenRefreshAsync(
+                apiCall, token, username ?? string.Empty, httpContext);
+
+            if (success && response != null)
+            {
+                Logger.LogInformation("Successfully updated product {ProductId}", id);
+                return true;
+            }
+
+            Logger.LogWarning("Failed to update product {ProductId} due to authentication issues", id);
+            return false;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error updating product {ProductId}", id);
+            Logger.LogError(ex, "Error updating product {ProductId}", id);
             return false;
         }
     }
 
+    /// <summary>
+    /// Placeholder method for deleting a product.
+    /// Note: The backend API doesn't support deletion yet.
+    /// </summary>
     public async Task<bool> DeleteProductAsync(Guid id)
     {
-        try
-        {
-            AddAuthorizationHeader();
-            var response = await _httpClient.DeleteAsync($"products/{id}");
-            response.EnsureSuccessStatusCode();
-
-            return true;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error deleting product {ProductId}", id);
-            return false;
-        }
+        Logger.LogWarning("DeleteProductAsync was called, but the backend API doesn't support deletion yet. Product ID: {ProductId}", id);
+        return false;
     }
 }

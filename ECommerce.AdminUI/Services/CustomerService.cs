@@ -5,128 +5,200 @@ using Microsoft.AspNetCore.Http;
 
 namespace ECommerce.AdminUI.Services;
 
-public class CustomerService
+public class CustomerService : BaseService
 {
     private readonly HttpClient _httpClient;
-    private readonly ILogger<CustomerService> _logger;
-    private readonly IHttpContextAccessor _httpContextAccessor;
 
-    public CustomerService(IHttpClientFactory httpClientFactory, ILogger<CustomerService> logger, IHttpContextAccessor httpContextAccessor)
+    public CustomerService(
+        IHttpClientFactory httpClientFactory,
+        ILogger<CustomerService> logger,
+        IHttpContextAccessor httpContextAccessor,
+        AuthService authService)
+        : base(httpContextAccessor, authService, logger)
     {
         _httpClient = httpClientFactory.CreateClient("ModularMonolith");
-        _logger = logger;
-        _httpContextAccessor = httpContextAccessor;
-    }
-
-    private void AddAuthorizationHeader()
-    {
-        var token = _httpContextAccessor.HttpContext?.Session.GetString("AuthToken");
-        if (!string.IsNullOrEmpty(token))
-        {
-            _httpClient.DefaultRequestHeaders.Remove("Authorization");
-            _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
-        }
     }
 
     public async Task<List<CustomerDto>> GetAllCustomersAsync()
     {
+        var token = GetTokenFromSession();
+        var username = GetUsernameFromSession();
+
+        if (string.IsNullOrEmpty(token))
+        {
+            Logger.LogWarning("No auth token available for customer list request");
+            return new List<CustomerDto>();
+        }
+
         try
         {
-            AddAuthorizationHeader();
-            // Remove the leading slash to use the full base URL from configuration
-            var response = await _httpClient.GetAsync("customers");
-            _logger.LogInformation("Getting all customers from {Url}", _httpClient.BaseAddress + "customers");
-            response.EnsureSuccessStatusCode();
+            // Define the API call as a function that takes a token
+            async Task<HttpResponseMessage> apiCall(string tkn)
+            {
+                AddAuthorizationHeader(_httpClient, tkn);
+                return await _httpClient.GetAsync("customers");
+            }
 
-            return await response.Content.ReadFromJsonAsync<List<CustomerDto>>() ?? new List<CustomerDto>();
+            // Execute with automatic token refresh
+            var httpContext = HttpContextAccessor.HttpContext!;
+            var (success, response) = await AuthService.ExecuteWithTokenRefreshAsync(
+                apiCall, token, username ?? string.Empty, httpContext);
+
+            if (success && response != null)
+            {
+                Logger.LogInformation("Successfully retrieved customers from {Url}", _httpClient.BaseAddress + "customers");
+                return await response.Content.ReadFromJsonAsync<List<CustomerDto>>() ?? new List<CustomerDto>();
+            }
+
+            Logger.LogWarning("Failed to retrieve customers due to authentication issues");
+            return new List<CustomerDto>();
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error retrieving customers");
+            Logger.LogError(ex, "Error retrieving customers");
             return new List<CustomerDto>();
         }
     }
 
     public async Task<CustomerDto?> GetCustomerByIdAsync(Guid id)
     {
+        var token = GetTokenFromSession();
+        var username = GetUsernameFromSession();
+
+        if (string.IsNullOrEmpty(token))
+        {
+            Logger.LogWarning("No auth token available for customer detail request");
+            return null;
+        }
+
         try
         {
-            AddAuthorizationHeader();
-            // Remove the leading slash
-            var response = await _httpClient.GetAsync($"customers/{id}");
-            response.EnsureSuccessStatusCode();
-            
-            return await response.Content.ReadFromJsonAsync<CustomerDto>();
+            // Define the API call as a function that takes a token
+            async Task<HttpResponseMessage> apiCall(string tkn)
+            {
+                AddAuthorizationHeader(_httpClient, tkn);
+                return await _httpClient.GetAsync($"customers/{id}");
+            }
+
+            // Execute with automatic token refresh
+            var httpContext = HttpContextAccessor.HttpContext!;
+            var (success, response) = await AuthService.ExecuteWithTokenRefreshAsync(
+                apiCall, token, username ?? string.Empty, httpContext);
+
+            if (success && response != null)
+            {
+                return await response.Content.ReadFromJsonAsync<CustomerDto>();
+            }
+
+            Logger.LogWarning("Failed to retrieve customer {CustomerId} due to authentication issues", id);
+            return null;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error retrieving customer {CustomerId}", id);
+            Logger.LogError(ex, "Error retrieving customer {CustomerId}", id);
             return null;
         }
     }
 
     public async Task<bool> CreateCustomerAsync(CustomerDto customer)
     {
+        var token = GetTokenFromSession();
+        var username = GetUsernameFromSession();
+
+        if (string.IsNullOrEmpty(token))
+        {
+            Logger.LogWarning("No auth token available for create customer request");
+            return false;
+        }
+
         try
         {
-            AddAuthorizationHeader();
             var content = new StringContent(
                 JsonSerializer.Serialize(customer),
                 Encoding.UTF8,
                 "application/json");
-            
-            // Remove the leading slash
-            _logger.LogInformation("Creating customer at URL: {Url}", _httpClient.BaseAddress + "customers");
-            var response = await _httpClient.PostAsync("customers", content);
-            response.EnsureSuccessStatusCode();
-            
-            return true;
+
+            // Define the API call as a function that takes a token
+            async Task<HttpResponseMessage> apiCall(string tkn)
+            {
+                AddAuthorizationHeader(_httpClient, tkn);
+                return await _httpClient.PostAsync("customers", content);
+            }
+
+            // Execute with automatic token refresh
+            var httpContext = HttpContextAccessor.HttpContext!;
+            var (success, response) = await AuthService.ExecuteWithTokenRefreshAsync(
+                apiCall, token, username ?? string.Empty, httpContext);
+
+            if (success && response != null)
+            {
+                Logger.LogInformation("Successfully created customer");
+                return true;
+            }
+
+            Logger.LogWarning("Failed to create customer due to authentication issues");
+            return false;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error creating customer");
+            Logger.LogError(ex, "Error creating customer");
             return false;
         }
     }
 
     public async Task<bool> UpdateCustomerAsync(Guid id, CustomerDto customer)
     {
+        var token = GetTokenFromSession();
+        var username = GetUsernameFromSession();
+
+        if (string.IsNullOrEmpty(token))
+        {
+            Logger.LogWarning("No auth token available for update customer request");
+            return false;
+        }
+
         try
         {
-            AddAuthorizationHeader();
             var content = new StringContent(
                 JsonSerializer.Serialize(customer),
                 Encoding.UTF8,
                 "application/json");
-            
-            // Remove the leading slash
-            var response = await _httpClient.PutAsync($"customers/{id}", content);
-            response.EnsureSuccessStatusCode();
-            
-            return true;
+
+            // Define the API call as a function that takes a token
+            async Task<HttpResponseMessage> apiCall(string tkn)
+            {
+                AddAuthorizationHeader(_httpClient, tkn);
+                return await _httpClient.PutAsync($"customers/{id}", content);
+            }
+
+            // Execute with automatic token refresh
+            var httpContext = HttpContextAccessor.HttpContext!;
+            var (success, response) = await AuthService.ExecuteWithTokenRefreshAsync(
+                apiCall, token, username ?? string.Empty, httpContext);
+
+            if (success && response != null)
+            {
+                Logger.LogInformation("Successfully updated customer {CustomerId}", id);
+                return true;
+            }
+
+            Logger.LogWarning("Failed to update customer {CustomerId} due to authentication issues", id);
+            return false;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error updating customer {CustomerId}", id);
+            Logger.LogError(ex, "Error updating customer {CustomerId}", id);
             return false;
         }
     }
 
+    /// <summary>
+    /// Placeholder method for deleting a customer.
+    /// Note: The backend API doesn't support deletion yet.
+    /// </summary>
     public async Task<bool> DeleteCustomerAsync(Guid id)
     {
-        try
-        {
-            AddAuthorizationHeader();
-            // Remove the leading slash
-            var response = await _httpClient.DeleteAsync($"customers/{id}");
-            response.EnsureSuccessStatusCode();
-            
-            return true;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error deleting customer {CustomerId}", id);
-            return false;
-        }
+        Logger.LogWarning("DeleteCustomerAsync was called, but the backend API doesn't support deletion yet. Customer ID: {CustomerId}", id);
+        return false;
     }
 }

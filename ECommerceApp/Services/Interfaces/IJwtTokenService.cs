@@ -6,4 +6,6 @@ namespace ECommerceApp.Services.Interfaces;
 public interface IJwtTokenService
 {
     string GenerateToken(string userId);
+    bool ValidateToken(string token);
+    string RefreshToken(string oldToken);
 }
