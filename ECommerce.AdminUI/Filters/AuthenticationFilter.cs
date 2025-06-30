@@ -31,8 +31,20 @@ public class AuthenticationFilter(ILogger<AuthenticationFilter> logger) : IPageF
 
         try
         {
-            // Try to get token from session
-            var token = httpContext.Session.GetString("AuthToken");
+            var session = context.HttpContext.Session;
+            if (session is not { IsAvailable: true })
+            {
+                context.Result = new RedirectResult("/Login");
+                return;
+            }
+
+            string? token = session.GetString("AuthToken");
+            if (string.IsNullOrEmpty(token))
+            {
+                // Redirect to login if no token
+                context.Result = new RedirectResult("/Login");
+                return;
+            }
 
             // Log session ID and token for debugging
             logger.LogDebug("AuthFilter: Session ID: {SessionID}, Token present: {HasToken}, SessionIsAvailable: {SessionAvailable}",

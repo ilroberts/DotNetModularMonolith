@@ -15,5 +15,7 @@ namespace ECommerce.AdminUI.Services
         public decimal TotalPrice { get; set; }
         public DateTime CreatedAt { get; set; }
         public string Status { get; set; } = "Pending";
+        public DateTime OrderDate { get; set; }
+        public string OrderStatus { get; set; } = string.Empty;
     }
 }
