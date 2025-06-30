@@ -278,6 +278,7 @@ namespace ECommerce.AdminUI.Services
         public async Task<bool> DeleteOrderAsync(Guid id)
         {
             Logger.LogWarning("DeleteOrderAsync was called, but the backend API doesn't support deletion yet. Order ID: {OrderId}", id);
+            await Task.CompletedTask;
             return false;
         }
 

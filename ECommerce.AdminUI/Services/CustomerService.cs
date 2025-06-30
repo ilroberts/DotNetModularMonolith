@@ -1,7 +1,5 @@
-using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
-using Microsoft.AspNetCore.Http;
 
 namespace ECommerce.AdminUI.Services;
 
@@ -199,6 +197,7 @@ public class CustomerService : BaseService, ICustomerService
     public async Task<bool> DeleteCustomerAsync(Guid id)
     {
         Logger.LogWarning("DeleteCustomerAsync was called, but the backend API doesn't support deletion yet. Customer ID: {CustomerId}", id);
+        await Task.CompletedTask;
         return false;
     }
 }

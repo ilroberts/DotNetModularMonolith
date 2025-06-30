@@ -9,7 +9,6 @@ namespace ECommerce.AdminUI.Pages.Orders
     {
         private readonly IOrderService _orderService;
         private readonly IProductService _productService;
-        private readonly ILogger<EditModel> _logger;
 
         public EditModel(
             IOrderService orderService,
@@ -18,7 +17,6 @@ namespace ECommerce.AdminUI.Pages.Orders
         {
             _orderService = orderService;
             _productService = productService;
-            _logger = logger;
         }
 
         [BindProperty]

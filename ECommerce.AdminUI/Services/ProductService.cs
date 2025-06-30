@@ -1,7 +1,5 @@
-using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
-using Microsoft.AspNetCore.Http;
 
 namespace ECommerce.AdminUI.Services;
 
@@ -21,13 +19,13 @@ public class ProductService : BaseService, IProductService
 
     public async Task<List<ProductDto>> GetAllProductsAsync()
     {
-        var token = GetTokenFromSession();
-        var username = GetUsernameFromSession();
+        string? token = GetTokenFromSession();
+        string? username = GetUsernameFromSession();
 
         if (string.IsNullOrEmpty(token))
         {
             Logger.LogWarning("No auth token available for product list request");
-            return new List<ProductDto>();
+            return [];
         }
 
         try
@@ -51,12 +49,12 @@ public class ProductService : BaseService, IProductService
             }
 
             Logger.LogWarning("Failed to retrieve products due to authentication issues");
-            return new List<ProductDto>();
+            return [];
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, "Error retrieving products");
-            return new List<ProductDto>();
+            return [];
         }
     }
 
@@ -201,6 +199,7 @@ public class ProductService : BaseService, IProductService
     public async Task<bool> DeleteProductAsync(Guid id)
     {
         Logger.LogWarning("DeleteProductAsync was called, but the backend API doesn't support deletion yet. Product ID: {ProductId}", id);
+        await Task.CompletedTask;
         return false;
     }
 }

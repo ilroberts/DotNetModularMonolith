@@ -7,12 +7,10 @@ namespace ECommerce.AdminUI.Pages.Orders
     public class DetailsModel : PageModel
     {
         private readonly IOrderService _orderService;
-        private readonly ILogger<DetailsModel> _logger;
 
         public DetailsModel(IOrderService orderService, ILogger<DetailsModel> logger)
         {
             _orderService = orderService;
-            _logger = logger;
         }
 
         public OrderDto Order { get; set; } = new();
