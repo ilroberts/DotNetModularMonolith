@@ -6,10 +6,10 @@ namespace ECommerce.AdminUI.Pages.Products;
 
 public class IndexModel : PageModel
 {
-    private readonly ProductService _productService;
+    private readonly IProductService? _productService;
     private readonly ILogger<IndexModel> _logger;
 
-    public IndexModel(ProductService productService, ILogger<IndexModel> logger)
+    public IndexModel(IProductService productService, ILogger<IndexModel> logger)
     {
         _productService = productService;
         _logger = logger;

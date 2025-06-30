@@ -7,15 +7,15 @@ namespace ECommerce.AdminUI.Pages.Orders
 {
     public class CreateModel : PageModel
     {
-        private readonly OrderService _orderService;
-        private readonly CustomerService _customerService;
-        private readonly ProductService _productService;
+        private readonly IOrderService _orderService;
+        private readonly ICustomerService _customerService;
+        private readonly IProductService _productService;
         private readonly ILogger<CreateModel> _logger;
 
         public CreateModel(
-            OrderService orderService,
-            CustomerService customerService,
-            ProductService productService,
+            IOrderService orderService,
+            ICustomerService customerService,
+            IProductService productService,
             ILogger<CreateModel> logger)
         {
             _orderService = orderService;

@@ -6,10 +6,10 @@ namespace ECommerce.AdminUI.Pages.Orders
 {
     public class DeleteModel : PageModel
     {
-        private readonly OrderService _orderService;
+        private readonly IOrderService _orderService;
         private readonly ILogger<DeleteModel> _logger;
 
-        public DeleteModel(OrderService orderService, ILogger<DeleteModel> logger)
+        public DeleteModel(IOrderService orderService, ILogger<DeleteModel> logger)
         {
             _orderService = orderService;
             _logger = logger;

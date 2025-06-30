@@ -6,10 +6,10 @@ namespace ECommerce.AdminUI.Pages.Customers;
 
 public class DeleteModel : PageModel
 {
-    private readonly CustomerService _customerService;
+    private readonly ICustomerService _customerService;
     private readonly ILogger<DeleteModel> _logger;
 
-    public DeleteModel(CustomerService customerService, ILogger<DeleteModel> logger)
+    public DeleteModel(ICustomerService customerService, ILogger<DeleteModel> logger)
     {
         _customerService = customerService;
         _logger = logger;
@@ -25,7 +25,7 @@ public class DeleteModel : PageModel
         {
             return NotFound();
         }
-        
+
         Customer = customer;
         return Page();
     }
@@ -34,7 +34,7 @@ public class DeleteModel : PageModel
     {
         var id = Customer.Id;
         var success = await _customerService.DeleteCustomerAsync(id);
-        
+
         if (success)
         {
             TempData["SuccessMessage"] = "Customer deleted successfully.";

@@ -7,10 +7,10 @@ namespace ECommerce.AdminUI.Pages
 {
     public class LoginModel : PageModel
     {
-        private readonly AuthService _authService;
+        private readonly IAuthService _authService;
         private readonly ILogger<LoginModel> _logger;
 
-        public LoginModel(AuthService authService, ILogger<LoginModel> logger)
+        public LoginModel(IAuthService authService, ILogger<LoginModel> logger)
         {
             _authService = authService;
             _logger = logger;

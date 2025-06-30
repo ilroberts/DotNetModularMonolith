@@ -6,10 +6,10 @@ namespace ECommerce.AdminUI.Pages.Products;
 
 public class DetailsModel : PageModel
 {
-    private readonly ProductService _productService;
+    private readonly IProductService _productService;
     private readonly ILogger<DetailsModel> _logger;
 
-    public DetailsModel(ProductService productService, ILogger<DetailsModel> logger)
+    public DetailsModel(IProductService productService, ILogger<DetailsModel> logger)
     {
         _productService = productService;
         _logger = logger;
@@ -24,7 +24,7 @@ public class DetailsModel : PageModel
         {
             return NotFound();
         }
-        
+
         Product = product;
         return Page();
     }

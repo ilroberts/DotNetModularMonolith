@@ -6,10 +6,10 @@ namespace ECommerce.AdminUI.Pages.Customers;
 
 public class CreateModel : PageModel
 {
-    private readonly CustomerService _customerService;
+    private readonly ICustomerService _customerService;
     private readonly ILogger<CreateModel> _logger;
 
-    public CreateModel(CustomerService customerService, ILogger<CreateModel> logger)
+    public CreateModel(ICustomerService customerService, ILogger<CreateModel> logger)
     {
         _customerService = customerService;
         _logger = logger;

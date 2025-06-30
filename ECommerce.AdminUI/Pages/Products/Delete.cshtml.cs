@@ -6,10 +6,10 @@ namespace ECommerce.AdminUI.Pages.Products;
 
 public class DeleteModel : PageModel
 {
-    private readonly ProductService _productService;
+    private readonly IProductService _productService;
     private readonly ILogger<DeleteModel> _logger;
 
-    public DeleteModel(ProductService productService, ILogger<DeleteModel> logger)
+    public DeleteModel(IProductService productService, ILogger<DeleteModel> logger)
     {
         _productService = productService;
         _logger = logger;
@@ -25,7 +25,7 @@ public class DeleteModel : PageModel
         {
             return NotFound();
         }
-        
+
         Product = product;
         return Page();
     }
@@ -34,7 +34,7 @@ public class DeleteModel : PageModel
     {
         var id = Product.Id;
         var success = await _productService.DeleteProductAsync(id);
-        
+
         if (success)
         {
             TempData["SuccessMessage"] = "Product deleted successfully.";

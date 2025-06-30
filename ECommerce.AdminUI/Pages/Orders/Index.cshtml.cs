@@ -6,7 +6,7 @@ namespace ECommerce.AdminUI.Pages.Orders
 {
     public class IndexModel : PageModel
     {
-        private readonly OrderService _orderService;
+        private readonly IOrderService _orderService;
         private readonly ILogger<IndexModel> _logger;
 
         public IndexModel(OrderService orderService, ILogger<IndexModel> logger)

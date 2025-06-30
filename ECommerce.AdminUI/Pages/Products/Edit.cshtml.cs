@@ -6,10 +6,10 @@ namespace ECommerce.AdminUI.Pages.Products;
 
 public class EditModel : PageModel
 {
-    private readonly ProductService _productService;
+    private readonly IProductService _productService;
     private readonly ILogger<EditModel> _logger;
 
-    public EditModel(ProductService productService, ILogger<EditModel> logger)
+    public EditModel(IProductService productService, ILogger<EditModel> logger)
     {
         _productService = productService;
         _logger = logger;
@@ -25,7 +25,7 @@ public class EditModel : PageModel
         {
             return NotFound();
         }
-        
+
         Product = product;
         return Page();
     }

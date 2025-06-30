@@ -160,9 +160,10 @@ if (!app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 
-app.UseRouting();
-app.UseSession(); // Enable session middleware
+// Add session middleware to enable session state
+app.UseSession();
 
+app.UseRouting();
 app.UseAuthorization();
 
 app.MapRazorPages();

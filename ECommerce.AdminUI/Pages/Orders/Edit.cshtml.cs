@@ -7,13 +7,13 @@ namespace ECommerce.AdminUI.Pages.Orders
 {
     public class EditModel : PageModel
     {
-        private readonly OrderService _orderService;
-        private readonly ProductService _productService;
+        private readonly IOrderService _orderService;
+        private readonly IProductService _productService;
         private readonly ILogger<EditModel> _logger;
 
         public EditModel(
-            OrderService orderService,
-            ProductService productService,
+            IOrderService orderService,
+            IProductService productService,
             ILogger<EditModel> logger)
         {
             _orderService = orderService;
