@@ -5,18 +5,21 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using Moq.Protected;
 using System.Net;
+using System.Text;
 using System.Text.Json;
-using Xunit;
 
 namespace ECommerce.AdminUI.Tests.Services
 {
+    // Define delegate for TryGetValue callbacks
+    delegate void TryGetValueCallback(string key, out byte[] value);
+
     public class DashboardServiceTests
     {
         private readonly DashboardService _dashboardService;
         private readonly Mock<IHttpClientFactory> _httpClientFactoryMock;
         private readonly Mock<ILogger<DashboardService>> _loggerMock;
         private readonly Mock<IHttpContextAccessor> _httpContextAccessorMock;
-        private readonly Mock<OrderService> _orderServiceMock;
+        private readonly Mock<IOrderService> _orderServiceMock; // Changed to IOrderService
         private readonly Mock<HttpMessageHandler> _httpMessageHandlerMock;
         private readonly HttpClient _httpClient;
         private readonly DefaultHttpContext _httpContext;
@@ -42,13 +45,21 @@ namespace ECommerce.AdminUI.Tests.Services
 
             // Set up session mock
             _sessionMock = new Mock<ISession>();
-            var sessionDict = new Dictionary<string, string>();
+            var sessionDict = new Dictionary<string, byte[]>();
 
-            _sessionMock.Setup(s => s.SetString(It.IsAny<string>(), It.IsAny<string>()))
-                .Callback<string, string>((key, value) => sessionDict[key] = value);
+            // Setup Set method directly instead of using the extension method
+            _sessionMock.Setup(s => s.Set(It.IsAny<string>(), It.IsAny<byte[]>()))
+                .Callback<string, byte[]>((key, value) => sessionDict[key] = value);
 
-            _sessionMock.Setup(s => s.GetString(It.IsAny<string>()))
-                .Returns<string>(key => sessionDict.TryGetValue(key, out var value) ? value : null);
+            // Setup TryGetValue to retrieve the string values - fixed out parameter handling
+            _sessionMock.Setup(s => s.TryGetValue(It.IsAny<string>(), out It.Ref<byte[]>.IsAny!))
+                .Callback(new TryGetValueCallback((string key, out byte[] value) =>
+                {
+                    value = sessionDict.TryGetValue(key, out byte[]? bytes) ? bytes : null!;
+                }))
+                .Returns((string key, byte[] value) => sessionDict.ContainsKey(key));
+
+            // No default authorization token setup here - let each test set up its own token if needed
 
             // Set up HTTP context with session
             _httpContext = new DefaultHttpContext
@@ -59,15 +70,23 @@ namespace ECommerce.AdminUI.Tests.Services
             _httpContextAccessorMock = new Mock<IHttpContextAccessor>();
             _httpContextAccessorMock.Setup(x => x.HttpContext).Returns(_httpContext);
 
-            // Set up order service mock
-            _orderServiceMock = new Mock<OrderService>(
+            // Create proper mocks for CustomerService and ProductService with their required parameters
+            var customerServiceMock = new Mock<CustomerService>(
                 _httpClientFactoryMock.Object,
-                Mock.Of<ILogger<OrderService>>(),
+                Mock.Of<ILogger<CustomerService>>(),
                 _httpContextAccessorMock.Object,
-                Mock.Of<CustomerService>(),
-                Mock.Of<ProductService>(),
-                Mock.Of<AuthService>()
+                Mock.Of<IAuthService>()
             );
+
+            var productServiceMock = new Mock<ProductService>(
+                _httpClientFactoryMock.Object,
+                Mock.Of<ILogger<ProductService>>(),
+                _httpContextAccessorMock.Object,
+                Mock.Of<IAuthService>()
+            );
+
+            // Set up order service mock - use interface instead of concrete class
+            _orderServiceMock = new Mock<IOrderService>();
 
             // Create the service under test
             _dashboardService = new DashboardService(
@@ -83,7 +102,12 @@ namespace ECommerce.AdminUI.Tests.Services
         {
             // Arrange
             // Setup auth token in session
-            _sessionMock.Setup(s => s.GetString("AuthToken")).Returns("valid-token");
+            var tokenBytes = Encoding.UTF8.GetBytes("valid-token");
+            _sessionMock.Setup(s => s.TryGetValue("AuthToken", out It.Ref<byte[]>.IsAny!))
+                .Callback(new TryGetValueCallback((string key, out byte[] value) => {
+                    value = tokenBytes;
+                }))
+                .Returns(true);
 
             // Setup mock customer response
             var customers = new List<CustomerDto>
@@ -135,7 +159,12 @@ namespace ECommerce.AdminUI.Tests.Services
         {
             // Arrange
             // Setup auth token in session
-            _sessionMock.Setup(s => s.GetString("AuthToken")).Returns("valid-token");
+            var tokenBytes = Encoding.UTF8.GetBytes("valid-token");
+            _sessionMock.Setup(s => s.TryGetValue("AuthToken", out It.Ref<byte[]>.IsAny!))
+                .Callback(new TryGetValueCallback((string key, out byte[] value) => {
+                    value = tokenBytes;
+                }))
+                .Returns(true);
 
             // Setup mock customer response - succeeds
             var customers = new List<CustomerDto>

@@ -1,4 +1,3 @@
-
 using ECommerce.AdminUI;
 using Microsoft.AspNetCore.DataProtection;
 using StackExchange.Redis;
@@ -98,11 +97,11 @@ builder.Services.AddHttpClient("TokenService", client =>
 });
 
 // Register application services
-builder.Services.AddScoped<ECommerce.AdminUI.Services.CustomerService>();
-builder.Services.AddScoped<ECommerce.AdminUI.Services.ProductService>();
-builder.Services.AddScoped<ECommerce.AdminUI.Services.AuthService>();
+builder.Services.AddScoped<ECommerce.AdminUI.Services.IAuthService, ECommerce.AdminUI.Services.AuthService>();
+builder.Services.AddScoped<ECommerce.AdminUI.Services.IOrderService, ECommerce.AdminUI.Services.OrderService>();
+builder.Services.AddScoped<ECommerce.AdminUI.Services.ICustomerService, ECommerce.AdminUI.Services.CustomerService>();
+builder.Services.AddScoped<ECommerce.AdminUI.Services.IProductService, ECommerce.AdminUI.Services.ProductService>();
 builder.Services.AddScoped<ECommerce.AdminUI.Services.DashboardService>();
-builder.Services.AddScoped<ECommerce.AdminUI.Services.OrderService>();
 
 // Configure session
 builder.Services.AddSession(options =>

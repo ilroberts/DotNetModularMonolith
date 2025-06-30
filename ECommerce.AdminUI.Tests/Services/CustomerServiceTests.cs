@@ -5,7 +5,6 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using System.Net;
 using System.Text.Json;
-using Xunit;
 
 namespace ECommerce.AdminUI.Tests.Services
 {

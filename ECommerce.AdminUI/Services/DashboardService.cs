@@ -1,4 +1,3 @@
-using System.Net.Http.Json;
 using System.Text.Json;
 
 namespace ECommerce.AdminUI.Services;
@@ -7,7 +6,7 @@ public class DashboardService(
     IHttpClientFactory httpClientFactory,
     ILogger<DashboardService> logger,
     IHttpContextAccessor httpContextAccessor,
-    OrderService orderService)
+    IOrderService orderService)
 {
     private readonly HttpClient _httpClient = httpClientFactory.CreateClient("ModularMonolith");
 

@@ -3,9 +3,16 @@ using System.Text.Json;
 
 namespace ECommerce.AdminUI.Services;
 
-public class AuthService(IHttpClientFactory httpClientFactory, ILogger<AuthService> logger)
+public class AuthService : IAuthService
 {
-    private readonly HttpClient _httpClient = httpClientFactory.CreateClient("TokenService");
+    private readonly HttpClient _httpClient;
+    private readonly ILogger<AuthService> _logger;
+
+    public AuthService(IHttpClientFactory httpClientFactory, ILogger<AuthService> logger)
+    {
+        _httpClient = httpClientFactory.CreateClient("TokenService");
+        _logger = logger;
+    }
 
     public async Task<string?> GenerateTokenAsync(string userName)
     {
@@ -17,19 +24,19 @@ public class AuthService(IHttpClientFactory httpClientFactory, ILogger<AuthServi
                 Encoding.UTF8,
                 "application/json");
 
-            logger.LogInformation("Generating token for user {UserName}, request body: {RequestBody}",
+            _logger.LogInformation("Generating token for user {UserName}, request body: {RequestBody}",
                 userName, JsonSerializer.Serialize(request));
 
             var response = await _httpClient.PostAsync("/modulith/admin/generateToken", content);
 
             // Read the raw response for debugging
             var tokenString = await response.Content.ReadAsStringAsync();
-            logger.LogInformation("Response status: {Status}, Content: {Content}",
+            _logger.LogInformation("Response status: {Status}, Content: {Content}",
                 response.StatusCode, tokenString);
 
             if (!response.IsSuccessStatusCode)
             {
-                logger.LogError("Token generation failed with status code {StatusCode}", response.StatusCode);
+                _logger.LogError("Token generation failed with status code {StatusCode}", response.StatusCode);
                 return null;
             }
 
@@ -38,7 +45,7 @@ public class AuthService(IHttpClientFactory httpClientFactory, ILogger<AuthServi
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error generating token for user {UserName}", userName);
+            _logger.LogError(ex, "Error generating token for user {UserName}", userName);
             return null;
         }
     }
@@ -47,7 +54,7 @@ public class AuthService(IHttpClientFactory httpClientFactory, ILogger<AuthServi
     {
         try
         {
-            logger.LogDebug("Attempting to refresh token");
+            _logger.LogDebug("Attempting to refresh token");
 
             var request = new HttpRequestMessage(HttpMethod.Post, "/modulith/admin/refreshToken");
             request.Headers.Add("Authorization", $"Bearer {token}");
@@ -56,17 +63,17 @@ public class AuthService(IHttpClientFactory httpClientFactory, ILogger<AuthServi
 
             if (!response.IsSuccessStatusCode)
             {
-                logger.LogWarning("Token refresh failed with status code {StatusCode}", response.StatusCode);
+                _logger.LogWarning("Token refresh failed with status code {StatusCode}", response.StatusCode);
                 return null;
             }
 
             var newToken = await response.Content.ReadAsStringAsync();
-            logger.LogInformation("Token refreshed successfully");
+            _logger.LogInformation("Token refreshed successfully");
             return !string.IsNullOrWhiteSpace(newToken) ? newToken.Trim() : null;
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error refreshing token");
+            _logger.LogError(ex, "Error refreshing token");
             return null;
         }
     }
@@ -92,7 +99,7 @@ public class AuthService(IHttpClientFactory httpClientFactory, ILogger<AuthServi
             // If we get a 401 Unauthorized, try refreshing the token
             if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
             {
-                logger.LogInformation("Received 401 Unauthorized, attempting to refresh token");
+                _logger.LogInformation("Received 401 Unauthorized, attempting to refresh token");
 
                 // Try to refresh the token
                 var newToken = await RefreshTokenAsync(token);
@@ -108,7 +115,7 @@ public class AuthService(IHttpClientFactory httpClientFactory, ILogger<AuthServi
                 }
 
                 // If refresh fails, clear the token and return false
-                logger.LogWarning("Token refresh failed, user needs to re-authenticate");
+                _logger.LogWarning("Token refresh failed, user needs to re-authenticate");
                 httpContext.Session.Remove("AuthToken");
                 return (false, null);
             }
@@ -118,7 +125,7 @@ public class AuthService(IHttpClientFactory httpClientFactory, ILogger<AuthServi
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error executing authenticated request");
+            _logger.LogError(ex, "Error executing authenticated request");
             return (false, null);
         }
     }

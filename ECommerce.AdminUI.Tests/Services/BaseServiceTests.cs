@@ -12,7 +12,7 @@ namespace ECommerce.AdminUI.Tests.Services
         protected Mock<IHttpContextAccessor> HttpContextAccessorMock { get; }
         protected Mock<IHttpClientFactory> HttpClientFactoryMock { get; }
         protected Mock<HttpMessageHandler> HttpMessageHandlerMock { get; }
-        protected Mock<AuthService> AuthServiceMock { get; }
+        protected Mock<IAuthService> AuthServiceMock { get; }
         protected HttpClient HttpClient { get; }
 
         protected BaseServiceTests()
@@ -59,10 +59,7 @@ namespace ECommerce.AdminUI.Tests.Services
                 .Returns(HttpClient);
 
             // Setup auth service mock
-            AuthServiceMock = new Mock<AuthService>(
-                HttpClientFactoryMock.Object,
-                Mock.Of<ILogger<AuthService>>(),
-                HttpContextAccessorMock.Object);
+            AuthServiceMock = new Mock<IAuthService>();
         }
 
         protected void SetupAuthToken(string token = "test-token")

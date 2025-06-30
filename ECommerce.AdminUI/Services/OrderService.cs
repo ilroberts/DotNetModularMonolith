@@ -3,25 +3,16 @@ using System.Text.Json;
 
 namespace ECommerce.AdminUI.Services
 {
-    public class OrderService : BaseService
+    public class OrderService(
+        IHttpClientFactory httpClientFactory,
+        ILogger<OrderService> logger,
+        IHttpContextAccessor httpContextAccessor,
+        ICustomerService customerService,
+        IProductService productService,
+        IAuthService authService)
+        : BaseService(httpContextAccessor, authService, logger), IOrderService
     {
-        private readonly HttpClient _httpClient;
-        private readonly CustomerService _customerService;
-        private readonly ProductService _productService;
-
-        public OrderService(
-            IHttpClientFactory httpClientFactory,
-            ILogger<OrderService> logger,
-            IHttpContextAccessor httpContextAccessor,
-            CustomerService customerService,
-            ProductService productService,
-            AuthService authService)
-            : base(httpContextAccessor, authService, logger)
-        {
-            _httpClient = httpClientFactory.CreateClient("ModularMonolith");
-            _customerService = customerService;
-            _productService = productService;
-        }
+        private readonly HttpClient _httpClient = httpClientFactory.CreateClient("ModularMonolith");
 
         public async Task<List<OrderDto>> GetAllOrdersAsync()
         {
@@ -293,14 +284,14 @@ namespace ECommerce.AdminUI.Services
         private async Task EnrichOrderWithDetailsAsync(OrderDto order)
         {
             // Get customer details
-            var customer = await _customerService.GetCustomerByIdAsync(order.CustomerId);
+            var customer = await customerService.GetCustomerByIdAsync(order.CustomerId);
             if (customer != null)
             {
                 order.CustomerName = customer.Name; // Using the Name property which exists on CustomerDto
             }
 
             // Get product details
-            var product = await _productService.GetProductByIdAsync(order.ProductId);
+            var product = await productService.GetProductByIdAsync(order.ProductId);
             if (product != null)
             {
                 order.ProductName = product.Name;

@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Http;
 
 namespace ECommerce.AdminUI.Services;
 
-public class CustomerService : BaseService
+public class CustomerService : BaseService, ICustomerService
 {
     private readonly HttpClient _httpClient;
 
@@ -13,7 +13,7 @@ public class CustomerService : BaseService
         IHttpClientFactory httpClientFactory,
         ILogger<CustomerService> logger,
         IHttpContextAccessor httpContextAccessor,
-        AuthService authService)
+        IAuthService authService)
         : base(httpContextAccessor, authService, logger)
     {
         _httpClient = httpClientFactory.CreateClient("ModularMonolith");
