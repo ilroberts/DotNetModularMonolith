@@ -9,7 +9,7 @@ namespace ECommerce.AdminUI.Pages.Orders
         private readonly IOrderService _orderService;
         private readonly ILogger<IndexModel> _logger;
 
-        public IndexModel(OrderService orderService, ILogger<IndexModel> logger)
+        public IndexModel(IOrderService orderService, ILogger<IndexModel> logger)
         {
             _orderService = orderService;
             _logger = logger;
