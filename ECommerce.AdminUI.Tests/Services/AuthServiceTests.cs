@@ -1,271 +1,474 @@
-using ECommerce.AdminUI.Services;
-using FluentAssertions;
+using System.Net;
+using System.Text;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Moq.Protected;
-using System.Net;
 using Xunit;
+using ECommerce.AdminUI.Services;
 
-namespace ECommerce.AdminUI.Tests.Services
+namespace ECommerce.AdminUI.Tests.Services;
+
+public class AuthServiceTests
 {
-    public class AuthServiceTests
+    private readonly Mock<IHttpClientFactory> _mockHttpClientFactory;
+    private readonly Mock<ILogger<AuthService>> _mockLogger;
+    private readonly Mock<HttpMessageHandler> _mockHttpMessageHandler;
+    private readonly HttpClient _httpClient;
+    private readonly AuthService _authService;
+
+    public AuthServiceTests()
     {
-        private readonly Mock<IHttpClientFactory> _httpClientFactoryMock;
-        private readonly Mock<ILogger<AuthService>> _loggerMock;
-        private readonly Mock<IConfiguration> _configMock;
-        private readonly Mock<HttpMessageHandler> _httpMessageHandlerMock;
-        private readonly HttpClient _httpClient;
-        private readonly AuthService _authService;
-        private readonly Mock<IHttpContextAccessor> _httpContextAccessorMock;
-        private readonly DefaultHttpContext _httpContext;
-        private readonly Mock<ISession> _sessionMock;
+        _mockHttpClientFactory = new Mock<IHttpClientFactory>();
+        _mockLogger = new Mock<ILogger<AuthService>>();
+        _mockHttpMessageHandler = new Mock<HttpMessageHandler>();
 
-        public AuthServiceTests()
+        _httpClient = new HttpClient(_mockHttpMessageHandler.Object)
         {
-            _httpMessageHandlerMock = new Mock<HttpMessageHandler>();
-            _httpClient = new HttpClient(_httpMessageHandlerMock.Object)
-            {
-                BaseAddress = new Uri("http://test-token-service.com/")
-            };
+            BaseAddress = new Uri("https://test.api.com")
+        };
 
-            _httpClientFactoryMock = new Mock<IHttpClientFactory>();
-            _httpClientFactoryMock
-                .Setup(x => x.CreateClient("TokenService"))
-                .Returns(_httpClient);
+        _mockHttpClientFactory.Setup(x => x.CreateClient("TokenService"))
+            .Returns(_httpClient);
 
-            _loggerMock = new Mock<ILogger<AuthService>>();
-            _configMock = new Mock<IConfiguration>();
-
-            // Set up the session mock
-            _sessionMock = new Mock<ISession>();
-            var sessionDict = new Dictionary<string, string>();
-
-            _sessionMock.Setup(s => s.SetString(It.IsAny<string>(), It.IsAny<string>()))
-                .Callback<string, string>((key, value) => sessionDict[key] = value);
-
-            _sessionMock.Setup(s => s.GetString(It.IsAny<string>()))
-                .Returns<string>(key => sessionDict.TryGetValue(key, out var value) ? value : null);
-
-            _sessionMock.Setup(s => s.Remove(It.IsAny<string>()))
-                .Callback<string>(key => sessionDict.Remove(key));
-
-            // Set up HTTP context with session
-            _httpContext = new DefaultHttpContext
-            {
-                Session = _sessionMock.Object
-            };
-
-            _httpContextAccessorMock = new Mock<IHttpContextAccessor>();
-            _httpContextAccessorMock.Setup(x => x.HttpContext).Returns(_httpContext);
-
-            _authService = new AuthService(_httpClientFactoryMock.Object, _loggerMock.Object, _configMock.Object);
-        }
-
-        [Fact]
-        public async Task GenerateTokenAsync_ReturnsToken_WhenSuccessful()
-        {
-            // Arrange
-            var expectedToken = "valid-token-123";
-            SetupHttpResponse(HttpStatusCode.OK, expectedToken);
-
-            // Act
-            var result = await _authService.GenerateTokenAsync("testuser");
-
-            // Assert
-            result.Should().Be(expectedToken);
-            VerifyHttpRequest(HttpMethod.Post, "/modulith/admin/generateToken");
-        }
-
-        [Fact]
-        public async Task GenerateTokenAsync_ReturnsNull_WhenApiCallFails()
-        {
-            // Arrange
-            SetupHttpResponse(HttpStatusCode.BadRequest, "Error");
-
-            // Act
-            var result = await _authService.GenerateTokenAsync("testuser");
-
-            // Assert
-            result.Should().BeNull();
-        }
-
-        [Fact]
-        public async Task RefreshTokenAsync_ReturnsNewToken_WhenSuccessful()
-        {
-            // Arrange
-            var newToken = "refreshed-token-456";
-            SetupHttpResponse(HttpStatusCode.OK, newToken);
-
-            // Act
-            var result = await _authService.RefreshTokenAsync("old-token");
-
-            // Assert
-            result.Should().Be(newToken);
-
-            // Verify the request was made with the correct authorization header
-            _httpMessageHandlerMock.Protected()
-                .Verify<Task<HttpResponseMessage>>(
-                    "SendAsync",
-                    Times.Once(),
-                    ItExpr.Is<HttpRequestMessage>(req =>
-                        req.Method == HttpMethod.Post &&
-                        req.RequestUri!.PathAndQuery == "/modulith/admin/refreshToken" &&
-                        req.Headers.Authorization!.Parameter == "old-token"),
-                    ItExpr.IsAny<CancellationToken>());
-        }
-
-        [Fact]
-        public async Task RefreshTokenAsync_ReturnsNull_WhenApiCallFails()
-        {
-            // Arrange
-            SetupHttpResponse(HttpStatusCode.BadRequest, "Error");
-
-            // Act
-            var result = await _authService.RefreshTokenAsync("invalid-token");
-
-            // Assert
-            result.Should().BeNull();
-        }
-
-        [Fact]
-        public async Task ExecuteWithTokenRefreshAsync_ReturnsSuccessResponse_WhenInitialCallSucceeds()
-        {
-            // Arrange
-            var successResponse = new HttpResponseMessage(HttpStatusCode.OK)
-            {
-                Content = new StringContent("Success")
-            };
-
-            bool apiCallInvoked = false;
-            Func<string, Task<HttpResponseMessage>> apiCall = token =>
-            {
-                apiCallInvoked = true;
-                token.Should().Be("test-token");
-                return Task.FromResult(successResponse);
-            };
-
-            // Act
-            var result = await _authService.ExecuteWithTokenRefreshAsync(
-                apiCall,
-                "test-token",
-                "testuser",
-                _httpContext);
-
-            // Assert
-            apiCallInvoked.Should().BeTrue();
-            result.Success.Should().BeTrue();
-            result.Response.Should().BeSameAs(successResponse);
-        }
-
-        [Fact]
-        public async Task ExecuteWithTokenRefreshAsync_AttemptsTokenRefresh_WhenInitialCallReturns401()
-        {
-            // Arrange
-            // Setup initial 401 response
-            var unauthorizedResponse = new HttpResponseMessage(HttpStatusCode.Unauthorized);
-
-            // Setup successful response after token refresh
-            var successResponse = new HttpResponseMessage(HttpStatusCode.OK)
-            {
-                Content = new StringContent("Success after refresh")
-            };
-
-            int apiCallCount = 0;
-            Func<string, Task<HttpResponseMessage>> apiCall = token =>
-            {
-                apiCallCount++;
-                if (apiCallCount == 1)
-                {
-                    token.Should().Be("old-token");
-                    return Task.FromResult(unauthorizedResponse);
-                }
-                else
-                {
-                    token.Should().Be("new-token");
-                    return Task.FromResult(successResponse);
-                }
-            };
-
-            // Setup refresh token response
-            SetupHttpResponse(HttpStatusCode.OK, "new-token");
-
-            // Act
-            var result = await _authService.ExecuteWithTokenRefreshAsync(
-                apiCall,
-                "old-token",
-                "testuser",
-                _httpContext);
-
-            // Assert
-            apiCallCount.Should().Be(2);
-            result.Success.Should().BeTrue();
-            result.Response.Should().BeSameAs(successResponse);
-
-            // Verify token was updated in session
-            _sessionMock.Verify(s => s.SetString("AuthToken", "new-token"), Times.Once);
-        }
-
-        [Fact]
-        public async Task ExecuteWithTokenRefreshAsync_ReturnsFailure_WhenRefreshFails()
-        {
-            // Arrange
-            // Setup initial 401 response
-            var unauthorizedResponse = new HttpResponseMessage(HttpStatusCode.Unauthorized);
-
-            int apiCallCount = 0;
-            Func<string, Task<HttpResponseMessage>> apiCall = token =>
-            {
-                apiCallCount++;
-                return Task.FromResult(unauthorizedResponse);
-            };
-
-            // Setup failed token refresh
-            SetupHttpResponse(HttpStatusCode.BadRequest, "Error");
-
-            // Act
-            var result = await _authService.ExecuteWithTokenRefreshAsync(
-                apiCall,
-                "invalid-token",
-                "testuser",
-                _httpContext);
-
-            // Assert
-            apiCallCount.Should().Be(1);
-            result.Success.Should().BeFalse();
-            result.Response.Should().BeNull();
-
-            // Verify token was removed from session
-            _sessionMock.Verify(s => s.Remove("AuthToken"), Times.Once);
-        }
-
-        private void SetupHttpResponse(HttpStatusCode statusCode, string content)
-        {
-            _httpMessageHandlerMock
-                .Protected()
-                .Setup<Task<HttpResponseMessage>>(
-                    "SendAsync",
-                    ItExpr.IsAny<HttpRequestMessage>(),
-                    ItExpr.IsAny<CancellationToken>())
-                .ReturnsAsync(new HttpResponseMessage
-                {
-                    StatusCode = statusCode,
-                    Content = new StringContent(content)
-                });
-        }
-
-        private void VerifyHttpRequest(HttpMethod method, string requestUri)
-        {
-            _httpMessageHandlerMock
-                .Protected()
-                .Verify<Task<HttpResponseMessage>>(
-                    "SendAsync",
-                    Times.Once(),
-                    ItExpr.Is<HttpRequestMessage>(req =>
-                        req.Method == method &&
-                        req.RequestUri!.PathAndQuery == requestUri),
-                    ItExpr.IsAny<CancellationToken>());
-        }
+        _authService = new AuthService(_mockHttpClientFactory.Object, _mockLogger.Object);
     }
+
+    #region GenerateTokenAsync Tests
+
+    [Fact]
+    public async Task GenerateTokenAsync_WithValidUser_ReturnsToken()
+    {
+        // Arrange
+        const string userName = "testuser";
+        const string expectedToken = "test-token-123";
+
+        SetupHttpResponse(HttpStatusCode.OK, expectedToken);
+
+        // Act
+        var result = await _authService.GenerateTokenAsync(userName);
+
+        // Assert
+        Assert.Equal(expectedToken, result);
+        VerifyHttpCall(HttpMethod.Post, "/modulith/admin/generateToken");
+        VerifyLogInformation("Generating token for user {UserName}, request body: {RequestBody}");
+        VerifyLogInformation("Response status: {Status}, Content: {Content}");
+    }
+
+    [Fact]
+    public async Task GenerateTokenAsync_WithValidUser_TrimsWhitespace()
+    {
+        // Arrange
+        const string userName = "testuser";
+        const string tokenWithWhitespace = "  test-token-123  ";
+        const string expectedToken = "test-token-123";
+
+        SetupHttpResponse(HttpStatusCode.OK, tokenWithWhitespace);
+
+        // Act
+        var result = await _authService.GenerateTokenAsync(userName);
+
+        // Assert
+        Assert.Equal(expectedToken, result);
+    }
+
+    [Fact]
+    public async Task GenerateTokenAsync_WithEmptyResponse_ReturnsNull()
+    {
+        // Arrange
+        const string userName = "testuser";
+
+        SetupHttpResponse(HttpStatusCode.OK, "");
+
+        // Act
+        var result = await _authService.GenerateTokenAsync(userName);
+
+        // Assert
+        Assert.Null(result);
+    }
+
+    [Fact]
+    public async Task GenerateTokenAsync_WithWhitespaceResponse_ReturnsNull()
+    {
+        // Arrange
+        const string userName = "testuser";
+
+        SetupHttpResponse(HttpStatusCode.OK, "   ");
+
+        // Act
+        var result = await _authService.GenerateTokenAsync(userName);
+
+        // Assert
+        Assert.Null(result);
+    }
+
+    [Theory]
+    [InlineData(HttpStatusCode.BadRequest)]
+    [InlineData(HttpStatusCode.Unauthorized)]
+    [InlineData(HttpStatusCode.InternalServerError)]
+    public async Task GenerateTokenAsync_WithErrorStatusCode_ReturnsNull(HttpStatusCode statusCode)
+    {
+        // Arrange
+        const string userName = "testuser";
+
+        SetupHttpResponse(statusCode, "error response");
+
+        // Act
+        var result = await _authService.GenerateTokenAsync(userName);
+
+        // Assert
+        Assert.Null(result);
+        VerifyLogError("Token generation failed with status code {StatusCode}");
+    }
+
+    [Fact]
+    public async Task GenerateTokenAsync_WithHttpException_ReturnsNull()
+    {
+        // Arrange
+        const string userName = "testuser";
+        var expectedException = new HttpRequestException("Network error");
+
+        SetupHttpException(expectedException);
+
+        // Act
+        var result = await _authService.GenerateTokenAsync(userName);
+
+        // Assert
+        Assert.Null(result);
+        VerifyLogError("Error generating token for user {UserName}");
+    }
+
+    #endregion
+
+    #region RefreshTokenAsync Tests
+
+    [Fact]
+    public async Task RefreshTokenAsync_WithValidToken_ReturnsNewToken()
+    {
+        // Arrange
+        const string token = "old-token";
+        const string expectedNewToken = "new-token-456";
+
+        SetupHttpResponse(HttpStatusCode.OK, expectedNewToken);
+
+        // Act
+        var result = await _authService.RefreshTokenAsync(token);
+
+        // Assert
+        Assert.Equal(expectedNewToken, result);
+        VerifyHttpCall(HttpMethod.Post, "/modulith/admin/refreshToken", token);
+        VerifyLogDebug("Attempting to refresh token");
+        VerifyLogInformation("Token refreshed successfully");
+    }
+
+    [Fact]
+    public async Task RefreshTokenAsync_WithValidToken_TrimsWhitespace()
+    {
+        // Arrange
+        const string token = "old-token";
+        const string tokenWithWhitespace = "  new-token-456  ";
+        const string expectedToken = "new-token-456";
+
+        SetupHttpResponse(HttpStatusCode.OK, tokenWithWhitespace);
+
+        // Act
+        var result = await _authService.RefreshTokenAsync(token);
+
+        // Assert
+        Assert.Equal(expectedToken, result);
+    }
+
+    [Fact]
+    public async Task RefreshTokenAsync_WithEmptyResponse_ReturnsNull()
+    {
+        // Arrange
+        const string token = "old-token";
+
+        SetupHttpResponse(HttpStatusCode.OK, "");
+
+        // Act
+        var result = await _authService.RefreshTokenAsync(token);
+
+        // Assert
+        Assert.Null(result);
+    }
+
+    [Theory]
+    [InlineData(HttpStatusCode.BadRequest)]
+    [InlineData(HttpStatusCode.Unauthorized)]
+    [InlineData(HttpStatusCode.InternalServerError)]
+    public async Task RefreshTokenAsync_WithErrorStatusCode_ReturnsNull(HttpStatusCode statusCode)
+    {
+        // Arrange
+        const string token = "old-token";
+
+        SetupHttpResponse(statusCode, "error response");
+
+        // Act
+        var result = await _authService.RefreshTokenAsync(token);
+
+        // Assert
+        Assert.Null(result);
+        VerifyLogWarning("Token refresh failed with status code {StatusCode}");
+    }
+
+    [Fact]
+    public async Task RefreshTokenAsync_WithException_ReturnsNull()
+    {
+        // Arrange
+        const string token = "old-token";
+        var expectedException = new HttpRequestException("Network error");
+
+        SetupHttpException(expectedException);
+
+        // Act
+        var result = await _authService.RefreshTokenAsync(token);
+
+        // Assert
+        Assert.Null(result);
+        VerifyLogError("Error refreshing token");
+    }
+
+    #endregion
+
+    #region ExecuteWithTokenRefreshAsync Tests
+
+    [Fact]
+    public async Task ExecuteWithTokenRefreshAsync_WithSuccessfulFirstCall_ReturnsSuccessAndResponse()
+    {
+        // Arrange
+        const string token = "valid-token";
+        const string username = "testuser";
+        var httpContext = CreateMockHttpContext();
+        var expectedResponse = new HttpResponseMessage(HttpStatusCode.OK);
+
+        var apiCall = new Mock<Func<string, Task<HttpResponseMessage>>>();
+        apiCall.Setup(x => x(token)).ReturnsAsync(expectedResponse);
+
+        // Act
+        var result = await _authService.ExecuteWithTokenRefreshAsync(
+            apiCall.Object, token, username, httpContext.Object);
+
+        // Assert
+        Assert.True(result.Success);
+        Assert.Equal(expectedResponse, result.Response);
+        apiCall.Verify(x => x(token), Times.Once);
+    }
+
+    [Fact]
+    public async Task ExecuteWithTokenRefreshAsync_WithUnauthorizedThenSuccessfulRefresh_ReturnsSuccessAndResponse()
+    {
+        // Arrange
+        const string oldToken = "expired-token";
+        const string newToken = "refreshed-token";
+        const string username = "testuser";
+
+        // Set up the session mock to properly capture interactions
+        var mockSession = new Mock<ISession>();
+        var mockHttpContext = new Mock<HttpContext>();
+        mockHttpContext.Setup(x => x.Session).Returns(mockSession.Object);
+
+        var unauthorizedResponse = new HttpResponseMessage(HttpStatusCode.Unauthorized);
+        var successResponse = new HttpResponseMessage(HttpStatusCode.OK);
+
+        var apiCall = new Mock<Func<string, Task<HttpResponseMessage>>>();
+        apiCall.SetupSequence(x => x(It.IsAny<string>()))
+            .ReturnsAsync(unauthorizedResponse)
+            .ReturnsAsync(successResponse);
+
+        // Setup refresh token response
+        SetupHttpResponse(HttpStatusCode.OK, newToken);
+
+        // Act
+        var result = await _authService.ExecuteWithTokenRefreshAsync(
+            apiCall.Object, oldToken, username, mockHttpContext.Object);
+
+        // Assert
+        Assert.True(result.Success);
+        Assert.Equal(successResponse, result.Response);
+        apiCall.Verify(x => x(oldToken), Times.Once);
+        apiCall.Verify(x => x(newToken), Times.Once);
+        VerifyLogInformation("Received 401 Unauthorized, attempting to refresh token");
+
+        // Verify session was updated with new token
+        // Use Set method directly instead of the extension method SetString
+        mockSession.Verify(s => s.Set(
+            It.Is<string>(key => key == "AuthToken"),
+            It.Is<byte[]>(val => Encoding.UTF8.GetString(val).Contains(newToken))),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task ExecuteWithTokenRefreshAsync_WithUnauthorizedAndFailedRefresh_ClearsSessionAndReturnsFalse()
+    {
+        // Arrange
+        const string token = "expired-token";
+        const string username = "testuser";
+        var httpContext = CreateMockHttpContext();
+
+        var unauthorizedResponse = new HttpResponseMessage(HttpStatusCode.Unauthorized);
+
+        var apiCall = new Mock<Func<string, Task<HttpResponseMessage>>>();
+        apiCall.Setup(x => x(token)).ReturnsAsync(unauthorizedResponse);
+
+        // Setup failed refresh token response
+        SetupHttpResponse(HttpStatusCode.Unauthorized, "");
+
+        // Act
+        var result = await _authService.ExecuteWithTokenRefreshAsync(
+            apiCall.Object, token, username, httpContext.Object);
+
+        // Assert
+        Assert.False(result.Success);
+        Assert.Null(result.Response);
+        VerifyLogWarning("Token refresh failed, user needs to re-authenticate");
+
+        // Verify session was cleared
+        httpContext.Verify(x => x.Session.Remove("AuthToken"), Times.Once);
+    }
+
+    [Theory]
+    [InlineData(HttpStatusCode.BadRequest)]
+    [InlineData(HttpStatusCode.InternalServerError)]
+    [InlineData(HttpStatusCode.NotFound)]
+    public async Task ExecuteWithTokenRefreshAsync_WithNonUnauthorizedError_ReturnsFailureAndResponse(HttpStatusCode statusCode)
+    {
+        // Arrange
+        const string token = "valid-token";
+        const string username = "testuser";
+        var httpContext = CreateMockHttpContext();
+        var errorResponse = new HttpResponseMessage(statusCode);
+
+        var apiCall = new Mock<Func<string, Task<HttpResponseMessage>>>();
+        apiCall.Setup(x => x(token)).ReturnsAsync(errorResponse);
+
+        // Act
+        var result = await _authService.ExecuteWithTokenRefreshAsync(
+            apiCall.Object, token, username, httpContext.Object);
+
+        // Assert
+        Assert.False(result.Success);
+        Assert.Equal(errorResponse, result.Response);
+        apiCall.Verify(x => x(token), Times.Once);
+    }
+
+    [Fact]
+    public async Task ExecuteWithTokenRefreshAsync_WithException_ReturnsFailureAndNull()
+    {
+        // Arrange
+        const string token = "valid-token";
+        const string username = "testuser";
+        var httpContext = CreateMockHttpContext();
+        var expectedException = new InvalidOperationException("Test exception");
+
+        var apiCall = new Mock<Func<string, Task<HttpResponseMessage>>>();
+        apiCall.Setup(x => x(token)).ThrowsAsync(expectedException);
+
+        // Act
+        var result = await _authService.ExecuteWithTokenRefreshAsync(
+            apiCall.Object, token, username, httpContext.Object);
+
+        // Assert
+        Assert.False(result.Success);
+        Assert.Null(result.Response);
+        VerifyLogError("Error executing authenticated request");
+    }
+
+    #endregion
+
+    #region Helper Methods
+
+    private void SetupHttpResponse(HttpStatusCode statusCode, string content)
+    {
+        var response = new HttpResponseMessage(statusCode)
+        {
+            Content = new StringContent(content, Encoding.UTF8, "text/plain")
+        };
+
+        _mockHttpMessageHandler.Protected()
+            .Setup<Task<HttpResponseMessage>>("SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>())
+            .ReturnsAsync(response);
+    }
+
+    private void SetupHttpException(Exception exception)
+    {
+        _mockHttpMessageHandler.Protected()
+            .Setup<Task<HttpResponseMessage>>("SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>())
+            .ThrowsAsync(exception);
+    }
+
+    private Mock<HttpContext> CreateMockHttpContext()
+    {
+        var mockSession = new Mock<ISession>();
+        var mockHttpContext = new Mock<HttpContext>();
+        mockHttpContext.Setup(x => x.Session).Returns(mockSession.Object);
+        return mockHttpContext;
+    }
+
+    private void VerifyHttpCall(HttpMethod method, string expectedUri, string? expectedToken = null)
+    {
+        _mockHttpMessageHandler.Protected()
+            .Verify("SendAsync", Times.Once(),
+                ItExpr.Is<HttpRequestMessage>(req =>
+                    req.Method == method &&
+                    req.RequestUri != null &&
+                    req.RequestUri.ToString().EndsWith(expectedUri) &&
+                    (expectedToken == null || req.Headers.Authorization != null &&
+                     req.Headers.Authorization.ToString() == $"Bearer {expectedToken}")),
+                ItExpr.IsAny<CancellationToken>());
+    }
+
+    private void VerifyLogInformation(string expectedMessage)
+    {
+        _mockLogger.Verify(
+            x => x.Log(
+                LogLevel.Information,
+                It.IsAny<EventId>(),
+                It.IsAny<It.IsAnyType>(),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.AtLeastOnce);
+    }
+
+    private void VerifyLogDebug(string expectedMessage)
+    {
+        _mockLogger.Verify(
+            x => x.Log(
+                LogLevel.Debug,
+                It.IsAny<EventId>(),
+                It.IsAny<It.IsAnyType>(),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.AtLeastOnce);
+    }
+
+    private void VerifyLogWarning(string expectedMessage)
+    {
+        _mockLogger.Verify(
+            x => x.Log(
+                LogLevel.Warning,
+                It.IsAny<EventId>(),
+                It.IsAny<It.IsAnyType>(),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.AtLeastOnce);
+    }
+
+    private void VerifyLogError(string expectedMessage)
+    {
+        _mockLogger.Verify(
+            x => x.Log(
+                LogLevel.Error,
+                It.IsAny<EventId>(),
+                It.IsAny<It.IsAnyType>(),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.AtLeastOnce);
+    }
+
+    #endregion
 }

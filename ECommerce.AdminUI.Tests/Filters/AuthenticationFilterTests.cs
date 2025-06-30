@@ -122,8 +122,7 @@ namespace ECommerce.AdminUI.Tests.Filters
             var configurationMock = new Mock<IConfiguration>();
             var authService = new ECommerce.AdminUI.Services.AuthService(
                 httpClientFactoryMock.Object,
-                loggerAuthServiceMock.Object,
-                configurationMock.Object
+                loggerAuthServiceMock.Object
             );
             var loggerMock = new Mock<ILogger<ECommerce.AdminUI.Pages.LoginModel>>();
             var loginModel = new ECommerce.AdminUI.Pages.LoginModel(authService, loggerMock.Object);
