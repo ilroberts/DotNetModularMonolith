@@ -39,6 +39,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ECommerce.AdminUI.Tests", "
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ECommerceApp.IntegrationTests", "ECommerceApp.IntegrationTests\ECommerceApp.IntegrationTests.csproj", "{AE507077-98C4-476F-A039-25E92ECCC280}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ECommerce.AdminUI.IntegrationTests", "ECommerce.AdminUI.IntegrationTests\ECommerce.AdminUI.IntegrationTests.csproj", "{3081A0AF-4168-4CBF-956C-C222E590C281}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -117,6 +119,10 @@ Global
 		{AE507077-98C4-476F-A039-25E92ECCC280}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{AE507077-98C4-476F-A039-25E92ECCC280}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{AE507077-98C4-476F-A039-25E92ECCC280}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3081A0AF-4168-4CBF-956C-C222E590C281}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3081A0AF-4168-4CBF-956C-C222E590C281}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3081A0AF-4168-4CBF-956C-C222E590C281}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3081A0AF-4168-4CBF-956C-C222E590C281}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
