@@ -10,26 +10,30 @@ namespace ECommerceApp.IntegrationTests;
 public class ProductsApiTests
 {
     private readonly ITestOutputHelper _testOutputHelper;
-    private readonly CustomWebApplicationFactory<global::ECommerceApp.Program> _factory;
+    private readonly CustomWebApplicationFactory<Program> _factory;
     private readonly HttpClient _client;
 
     public ProductsApiTests(ITestOutputHelper testOutputHelper)
     {
         _testOutputHelper = testOutputHelper;
-        _factory = new CustomWebApplicationFactory<global::ECommerceApp.Program>("FakeConnectionString");
+        _factory = new CustomWebApplicationFactory<Program>("FakeConnectionString");
         _client = _factory.CreateClient();
+    }
+
+    private async Task<string> GenerateTokenAsync()
+    {
+        var user = new { user_name = "testuser" };
+        var tokenResponse = await _client.PostAsJsonAsync("/admin/generateToken", user);
+        tokenResponse.EnsureSuccessStatusCode();
+        var token = await tokenResponse.Content.ReadAsStringAsync();
+        return token.Trim('"');
     }
 
     [Fact]
     public async Task Get_Products_ReturnsOk()
     {
         // Arrange
-        var user = new { user_name = "testuser" };
-        var tokenResponse = await _client.PostAsJsonAsync("/admin/generateToken", user);
-        tokenResponse.EnsureSuccessStatusCode();
-        var token = await tokenResponse.Content.ReadAsStringAsync();
-        token = token.Trim('"'); // Remove quotes if returned as JSON string
-
+        var token = await GenerateTokenAsync();
         var request = new HttpRequestMessage(HttpMethod.Get, "/products");
         request.Headers.Add("Authorization", $"Bearer {token}");
 
@@ -52,12 +56,7 @@ public class ProductsApiTests
     public async Task Create_Product_ReturnsCreated()
     {
         // Arrange
-        var user = new { user_name = "testuser" };
-        var tokenResponse = await _client.PostAsJsonAsync("/admin/generateToken", user);
-        tokenResponse.EnsureSuccessStatusCode();
-        var token = await tokenResponse.Content.ReadAsStringAsync();
-        token = token.Trim('"');
-
+        var token = await GenerateTokenAsync();
         var product = new
         {
             name = "Test Product",
@@ -88,12 +87,7 @@ public class ProductsApiTests
     public async Task Update_Product_ReturnsOk()
     {
         // Arrange
-        var user = new { user_name = "testuser" };
-        var tokenResponse = await _client.PostAsJsonAsync("/admin/generateToken", user);
-        tokenResponse.EnsureSuccessStatusCode();
-        var token = await tokenResponse.Content.ReadAsStringAsync();
-        token = token.Trim('"');
-
+        var token = await GenerateTokenAsync();
         // First, create a product
         var product = new
         {
@@ -114,7 +108,7 @@ public class ProductsApiTests
         // Prepare update payload
         var updatedProduct = new
         {
-            id = id,
+            id,
             name = "Product To Update",
             description = "Updated description!",
             price = 7.50M,
