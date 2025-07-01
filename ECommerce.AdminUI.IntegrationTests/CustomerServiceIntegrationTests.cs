@@ -1,94 +1,23 @@
 using System;
 using System.Net;
-using System.Net.Http;
-using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 using ECommerce.AdminUI.Services;
-using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
-using Moq;
-using Moq.Protected;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace ECommerce.AdminUI.IntegrationTests;
 
-public class CustomerServiceIntegrationTests
+public class CustomerServiceIntegrationTests : ServiceIntegrationTestBase
 {
-    private readonly ITestOutputHelper _testOutputHelper;
-
     public CustomerServiceIntegrationTests(ITestOutputHelper testOutputHelper)
+        : base(testOutputHelper)
     {
-        _testOutputHelper = testOutputHelper;
     }
 
-    private HttpClient CreateMockHttpClient(HttpStatusCode statusCode, string content)
+    protected override void ConfigureServices(IServiceCollection services)
     {
-        var handlerMock = new Mock<HttpMessageHandler>(MockBehavior.Strict);
-        handlerMock
-            .Protected()
-            .Setup<Task<HttpResponseMessage>>(
-                "SendAsync",
-                ItExpr.IsAny<HttpRequestMessage>(),
-                ItExpr.IsAny<CancellationToken>())
-            .ReturnsAsync(new HttpResponseMessage
-            {
-                StatusCode = statusCode,
-                Content = new StringContent(content),
-            });
-
-        return new HttpClient(handlerMock.Object)
-        {
-            BaseAddress = new Uri("https://fake-api/")
-        };
-    }
-
-    private IServiceCollection SetupCommonServices(HttpClient httpClient, bool setupAuthSuccess = false)
-    {
-        var services = new ServiceCollection();
-        var httpClientFactoryMock = new Mock<IHttpClientFactory>();
-        httpClientFactoryMock
-            .Setup(f => f.CreateClient(It.IsAny<string>()))
-            .Returns(httpClient);
-        services.AddSingleton(httpClientFactoryMock.Object);
-        services.AddLogging();
-
-        var sessionMock = new Mock<ISession>();
-        sessionMock.Setup(x => x.TryGetValue("AuthToken", out It.Ref<byte[]>.IsAny))
-            .Returns((string key, out byte[] value) => { value = Encoding.UTF8.GetBytes("test-token"); return true; });
-        sessionMock.Setup(x => x.TryGetValue("Username", out It.Ref<byte[]>.IsAny))
-            .Returns((string key, out byte[] value) => { value = Encoding.UTF8.GetBytes("testuser"); return true; });
-
-        var httpContextMock = new Mock<HttpContext>();
-        httpContextMock.Setup(x => x.Session).Returns(sessionMock.Object);
-
-        var httpContextAccessorMock = new Mock<IHttpContextAccessor>();
-        httpContextAccessorMock.Setup(x => x.HttpContext).Returns(httpContextMock.Object);
-        services.AddSingleton(httpContextAccessorMock.Object);
-
-        var orderServiceMock = new Mock<IOrderService>();
-        services.AddSingleton(orderServiceMock.Object);
-        var productServiceMock = new Mock<IProductService>();
-        services.AddSingleton(productServiceMock.Object);
-        var authServiceMock = new Mock<IAuthService>();
-        if (setupAuthSuccess)
-        {
-            authServiceMock
-                .Setup(x => x.ExecuteWithTokenRefreshAsync(
-                    It.IsAny<Func<string, Task<HttpResponseMessage>>>(),
-                    It.IsAny<string>(),
-                    It.IsAny<string>(),
-                    It.IsAny<HttpContext>()))
-                .ReturnsAsync((true, new HttpResponseMessage
-                {
-                    StatusCode = HttpStatusCode.OK,
-                    Content = new StringContent("true"),
-                }));
-        }
-        services.AddSingleton(authServiceMock.Object);
         services.AddTransient<ICustomerService, CustomerService>();
-        return services;
     }
 
     [Fact]
@@ -132,8 +61,8 @@ public class CustomerServiceIntegrationTests
         if (!result)
         {
             var requestJson = System.Text.Json.JsonSerializer.Serialize(customer);
-            _testOutputHelper.WriteLine($"Customer payload: {requestJson}");
-            _testOutputHelper.WriteLine("Stubbed HTTP response: 200 OK, body: 'true'");
+            TestOutputHelper.WriteLine($"Customer payload: {requestJson}");
+            TestOutputHelper.WriteLine("Stubbed HTTP response: 200 OK, body: 'true'");
         }
 
         // Assert
@@ -163,8 +92,8 @@ public class CustomerServiceIntegrationTests
         if (!result)
         {
             var requestJson = System.Text.Json.JsonSerializer.Serialize(customer);
-            _testOutputHelper.WriteLine($"Customer payload: {requestJson}");
-            _testOutputHelper.WriteLine("Stubbed HTTP response: 200 OK, body: 'true'");
+            TestOutputHelper.WriteLine($"Customer payload: {requestJson}");
+            TestOutputHelper.WriteLine("Stubbed HTTP response: 200 OK, body: 'true'");
         }
 
         // Assert
