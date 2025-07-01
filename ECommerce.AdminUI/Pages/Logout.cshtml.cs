@@ -22,6 +22,6 @@ public class LogoutModel : PageModel
         HttpContext.Session.Clear();
 
         // Redirect to login page
-        return RedirectToPage("/Login");
+        return RedirectToPage("/Admin/Login");
     }
 }
