@@ -23,10 +23,8 @@ public class OrderServiceIntegrationTests
         _testOutputHelper = testOutputHelper;
     }
 
-    [Fact]
-    public async Task GetOrdersAsync_ReturnsStubbedOrders()
+    private HttpClient CreateMockHttpClient(HttpStatusCode statusCode, string content)
     {
-        // Arrange: stub HTTP response
         var handlerMock = new Mock<HttpMessageHandler>(MockBehavior.Strict);
         handlerMock
             .Protected()
@@ -36,49 +34,79 @@ public class OrderServiceIntegrationTests
                 ItExpr.IsAny<CancellationToken>())
             .ReturnsAsync(new HttpResponseMessage
             {
-                StatusCode = HttpStatusCode.OK,
-                Content = new StringContent("[]"), // Return empty list for simplicity
+                StatusCode = statusCode,
+                Content = new StringContent(content),
             });
 
-        var httpClient = new HttpClient(handlerMock.Object)
+        return new HttpClient(handlerMock.Object)
         {
             BaseAddress = new Uri("https://fake-api/")
         };
+    }
 
-        // Mock IHttpClientFactory to return our stubbed HttpClient
+    private IServiceCollection SetupCommonServices(HttpClient httpClient, bool setupAuthSuccess = false)
+    {
+        var services = new ServiceCollection();
+
+        // Setup HttpClientFactory
         var httpClientFactoryMock = new Mock<IHttpClientFactory>();
         httpClientFactoryMock
             .Setup(f => f.CreateClient(It.IsAny<string>()))
             .Returns(httpClient);
-
-        var services = new ServiceCollection();
         services.AddSingleton(httpClientFactoryMock.Object);
         services.AddLogging();
-        // Mock session to return a fake token and username via TryGetValue
+
+        // Setup session and HttpContext
         var sessionMock = new Mock<ISession>();
         sessionMock.Setup(x => x.TryGetValue("AuthToken", out It.Ref<byte[]>.IsAny))
             .Returns((string key, out byte[] value) => { value = Encoding.UTF8.GetBytes("test-token"); return true; });
         sessionMock.Setup(x => x.TryGetValue("Username", out It.Ref<byte[]>.IsAny))
             .Returns((string key, out byte[] value) => { value = Encoding.UTF8.GetBytes("testuser"); return true; });
 
-        // Mock HttpContext to use the mocked session
         var httpContextMock = new Mock<HttpContext>();
         httpContextMock.Setup(x => x.Session).Returns(sessionMock.Object);
 
-        // Mock IHttpContextAccessor to return the mocked HttpContext
         var httpContextAccessorMock = new Mock<IHttpContextAccessor>();
         httpContextAccessorMock.Setup(x => x.HttpContext).Returns(httpContextMock.Object);
         services.AddSingleton(httpContextAccessorMock.Object);
-        // Add a mock for ICustomerService since OrderService depends on it
+
+        // Setup dependent services
         var customerServiceMock = new Mock<ICustomerService>();
         services.AddSingleton(customerServiceMock.Object);
-        // Add a mock for IProductService since OrderService may depend on it
+
         var productServiceMock = new Mock<IProductService>();
         services.AddSingleton(productServiceMock.Object);
-        // Add a mock for IAuthService since OrderService or dependencies may require it
+
         var authServiceMock = new Mock<IAuthService>();
+
+        if (setupAuthSuccess)
+        {
+            // Mock ExecuteWithTokenRefreshAsync to always return success for tests that need it
+            authServiceMock
+                .Setup(x => x.ExecuteWithTokenRefreshAsync(
+                    It.IsAny<Func<string, Task<HttpResponseMessage>>>(),
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<HttpContext>()))
+                .ReturnsAsync((true, new HttpResponseMessage
+                {
+                    StatusCode = HttpStatusCode.OK,
+                    Content = new StringContent("true"),
+                }));
+        }
+
         services.AddSingleton(authServiceMock.Object);
         services.AddTransient<IOrderService, OrderService>();
+
+        return services;
+    }
+
+    [Fact]
+    public async Task GetOrdersAsync_ReturnsStubbedOrders()
+    {
+        // Arrange
+        var httpClient = CreateMockHttpClient(HttpStatusCode.OK, "[]");
+        var services = SetupCommonServices(httpClient);
         var provider = services.BuildServiceProvider();
         var orderService = provider.GetRequiredService<IOrderService>();
 
@@ -93,67 +121,9 @@ public class OrderServiceIntegrationTests
     [Fact]
     public async Task CreateOrderAsync_ReturnsTrue_WhenApiReturnsSuccess()
     {
-        // Arrange: stub HTTP response for order creation
-        var handlerMock = new Mock<HttpMessageHandler>(MockBehavior.Strict);
-        handlerMock
-            .Protected()
-            .Setup<Task<HttpResponseMessage>>(
-                "SendAsync",
-                ItExpr.Is<HttpRequestMessage>(req => req.Method == HttpMethod.Post),
-                ItExpr.IsAny<CancellationToken>())
-            .ReturnsAsync(new HttpResponseMessage
-            {
-                StatusCode = HttpStatusCode.OK,
-                Content = new StringContent("true"),
-            });
-
-        var httpClient = new HttpClient(handlerMock.Object)
-        {
-            BaseAddress = new System.Uri("https://fake-api/")
-        };
-
-        var httpClientFactoryMock = new Mock<IHttpClientFactory>();
-        httpClientFactoryMock
-            .Setup(f => f.CreateClient(It.IsAny<string>()))
-            .Returns(httpClient);
-
-        var services = new ServiceCollection();
-        services.AddSingleton(httpClientFactoryMock.Object);
-        services.AddLogging();
-        // Mock session to return a fake token and username via TryGetValue
-        var sessionMock = new Mock<Microsoft.AspNetCore.Http.ISession>();
-        sessionMock.Setup(x => x.TryGetValue("AuthToken", out It.Ref<byte[]>.IsAny))
-            .Returns((string key, out byte[] value) => { value = System.Text.Encoding.UTF8.GetBytes("test-token"); return true; });
-        sessionMock.Setup(x => x.TryGetValue("Username", out It.Ref<byte[]>.IsAny))
-            .Returns((string key, out byte[] value) => { value = System.Text.Encoding.UTF8.GetBytes("testuser"); return true; });
-
-        // Mock HttpContext to use the mocked session
-        var httpContextMock = new Mock<HttpContext>();
-        httpContextMock.Setup(x => x.Session).Returns(sessionMock.Object);
-
-        // Mock IHttpContextAccessor to return the mocked HttpContext
-        var httpContextAccessorMock = new Mock<IHttpContextAccessor>();
-        httpContextAccessorMock.Setup(x => x.HttpContext).Returns(httpContextMock.Object);
-        services.AddSingleton(httpContextAccessorMock.Object);
-        var customerServiceMock = new Mock<ICustomerService>();
-        services.AddSingleton(customerServiceMock.Object);
-        var productServiceMock = new Mock<IProductService>();
-        services.AddSingleton(productServiceMock.Object);
-        var authServiceMock = new Mock<IAuthService>();
-        // Mock ExecuteWithTokenRefreshAsync to always return (true, a successful response)
-        authServiceMock
-            .Setup(x => x.ExecuteWithTokenRefreshAsync(
-                It.IsAny<Func<string, Task<HttpResponseMessage>>>(),
-                It.IsAny<string>(),
-                It.IsAny<string>(),
-                It.IsAny<HttpContext>()))
-            .ReturnsAsync((true, new HttpResponseMessage
-            {
-                StatusCode = HttpStatusCode.OK,
-                Content = new StringContent("true"),
-            }));
-        services.AddSingleton(authServiceMock.Object);
-        services.AddTransient<IOrderService, OrderService>();
+        // Arrange
+        var httpClient = CreateMockHttpClient(HttpStatusCode.OK, "true");
+        var services = SetupCommonServices(httpClient, setupAuthSuccess: true);
         var provider = services.BuildServiceProvider();
         var orderService = provider.GetRequiredService<IOrderService>();
 
@@ -180,7 +150,6 @@ public class OrderServiceIntegrationTests
         // Log the result for debugging
         if (!result)
         {
-            // Try to log the request payload and stubbed response
             var requestJson = System.Text.Json.JsonSerializer.Serialize(order);
             _testOutputHelper.WriteLine($"Order payload: {requestJson}");
             _testOutputHelper.WriteLine("Stubbed HTTP response: 200 OK, body: 'true'");
