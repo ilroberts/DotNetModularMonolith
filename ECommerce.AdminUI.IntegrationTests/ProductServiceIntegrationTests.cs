@@ -14,11 +14,11 @@ using Xunit.Abstractions;
 
 namespace ECommerce.AdminUI.IntegrationTests;
 
-public class OrderServiceIntegrationTests
+public class ProductServiceIntegrationTests
 {
     private readonly ITestOutputHelper _testOutputHelper;
 
-    public OrderServiceIntegrationTests(ITestOutputHelper testOutputHelper)
+    public ProductServiceIntegrationTests(ITestOutputHelper testOutputHelper)
     {
         _testOutputHelper = testOutputHelper;
     }
@@ -47,8 +47,6 @@ public class OrderServiceIntegrationTests
     private IServiceCollection SetupCommonServices(HttpClient httpClient, bool setupAuthSuccess = false)
     {
         var services = new ServiceCollection();
-
-        // Setup HttpClientFactory
         var httpClientFactoryMock = new Mock<IHttpClientFactory>();
         httpClientFactoryMock
             .Setup(f => f.CreateClient(It.IsAny<string>()))
@@ -56,7 +54,6 @@ public class OrderServiceIntegrationTests
         services.AddSingleton(httpClientFactoryMock.Object);
         services.AddLogging();
 
-        // Setup session and HttpContext
         var sessionMock = new Mock<ISession>();
         sessionMock.Setup(x => x.TryGetValue("AuthToken", out It.Ref<byte[]>.IsAny))
             .Returns((string _, out byte[] value) => { value = Encoding.UTF8.GetBytes("test-token"); return true; });
@@ -70,18 +67,13 @@ public class OrderServiceIntegrationTests
         httpContextAccessorMock.Setup(x => x.HttpContext).Returns(httpContextMock.Object);
         services.AddSingleton(httpContextAccessorMock.Object);
 
-        // Setup dependent services
+        var orderServiceMock = new Mock<IOrderService>();
+        services.AddSingleton(orderServiceMock.Object);
         var customerServiceMock = new Mock<ICustomerService>();
         services.AddSingleton(customerServiceMock.Object);
-
-        var productServiceMock = new Mock<IProductService>();
-        services.AddSingleton(productServiceMock.Object);
-
         var authServiceMock = new Mock<IAuthService>();
-
         if (setupAuthSuccess)
         {
-            // Mock ExecuteWithTokenRefreshAsync to always return success for tests that need it
             authServiceMock
                 .Setup(x => x.ExecuteWithTokenRefreshAsync(
                     It.IsAny<Func<string, Task<HttpResponseMessage>>>(),
@@ -94,64 +86,86 @@ public class OrderServiceIntegrationTests
                     Content = new StringContent("true"),
                 }));
         }
-
         services.AddSingleton(authServiceMock.Object);
-        services.AddTransient<IOrderService, OrderService>();
-
+        services.AddTransient<IProductService, ProductService>();
         return services;
     }
 
     [Fact]
-    public async Task GetOrdersAsync_ReturnsStubbedOrders()
+    public async Task GetAllProductsAsync_ReturnsStubbedProducts()
     {
         // Arrange
-        var httpClient = CreateMockHttpClient(HttpStatusCode.OK, "[]");
+        var productsJson = "[]";
+        var httpClient = CreateMockHttpClient(HttpStatusCode.OK, productsJson);
         var services = SetupCommonServices(httpClient);
         var provider = services.BuildServiceProvider();
-        var orderService = provider.GetRequiredService<IOrderService>();
+        var productService = provider.GetRequiredService<IProductService>();
 
         // Act
-        var orders = await orderService.GetAllOrdersAsync();
+        var products = await productService.GetAllProductsAsync();
 
         // Assert
-        Assert.NotNull(orders);
-        Assert.Empty(orders);
+        Assert.NotNull(products);
+        Assert.Empty(products);
     }
 
     [Fact]
-    public async Task CreateOrderAsync_ReturnsTrue_WhenApiReturnsSuccess()
+    public async Task CreateProductAsync_ReturnsTrue_WhenApiReturnsSuccess()
     {
         // Arrange
         var httpClient = CreateMockHttpClient(HttpStatusCode.OK, "true");
         var services = SetupCommonServices(httpClient, setupAuthSuccess: true);
         var provider = services.BuildServiceProvider();
-        var orderService = provider.GetRequiredService<IOrderService>();
+        var productService = provider.GetRequiredService<IProductService>();
 
-        var order = new OrderDto
+        var product = new ProductDto
         {
             Id = Guid.NewGuid(),
-            CustomerId = Guid.NewGuid(),
-            CustomerName = "Test Customer",
-            CustomerEmail = "test@example.com",
-            ProductId = Guid.NewGuid(),
-            ProductName = "Test Product",
-            ProductPrice = 10.0m,
-            Quantity = 2,
-            TotalPrice = 20.0m,
-            CreatedAt = DateTime.UtcNow,
-            Status = "Created",
-            OrderDate = DateTime.UtcNow,
-            OrderStatus = "Pending"
+            Name = "Test Product",
+            Description = "A test product",
+            Price = 9.99m
         };
 
         // Act
-        var result = await orderService.CreateOrderAsync(order);
+        var result = await productService.CreateProductAsync(product);
 
         // Log the result for debugging
         if (!result)
         {
-            var requestJson = System.Text.Json.JsonSerializer.Serialize(order);
-            _testOutputHelper.WriteLine($"Order payload: {requestJson}");
+            var requestJson = System.Text.Json.JsonSerializer.Serialize(product);
+            _testOutputHelper.WriteLine($"Product payload: {requestJson}");
+            _testOutputHelper.WriteLine("Stubbed HTTP response: 200 OK, body: 'true'");
+        }
+
+        // Assert
+        Assert.True(result);
+    }
+
+    [Fact]
+    public async Task UpdateProductAsync_ReturnsTrue_WhenApiReturnsSuccess()
+    {
+        // Arrange
+        var httpClient = CreateMockHttpClient(HttpStatusCode.OK, "true");
+        var services = SetupCommonServices(httpClient, setupAuthSuccess: true);
+        var provider = services.BuildServiceProvider();
+        var productService = provider.GetRequiredService<IProductService>();
+
+        var product = new ProductDto
+        {
+            Id = Guid.NewGuid(),
+            Name = "Updated Product",
+            Description = "Updated description",
+            Price = 19.99m
+        };
+
+        // Act
+        var result = await productService.UpdateProductAsync(product.Id, product);
+
+        // Log the result for debugging
+        if (!result)
+        {
+            var requestJson = System.Text.Json.JsonSerializer.Serialize(product);
+            _testOutputHelper.WriteLine($"Product payload: {requestJson}");
             _testOutputHelper.WriteLine("Stubbed HTTP response: 200 OK, body: 'true'");
         }
 
@@ -159,3 +173,4 @@ public class OrderServiceIntegrationTests
         Assert.True(result);
     }
 }
+

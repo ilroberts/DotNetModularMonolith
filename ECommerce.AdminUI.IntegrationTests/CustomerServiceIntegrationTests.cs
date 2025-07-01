@@ -14,11 +14,11 @@ using Xunit.Abstractions;
 
 namespace ECommerce.AdminUI.IntegrationTests;
 
-public class OrderServiceIntegrationTests
+public class CustomerServiceIntegrationTests
 {
     private readonly ITestOutputHelper _testOutputHelper;
 
-    public OrderServiceIntegrationTests(ITestOutputHelper testOutputHelper)
+    public CustomerServiceIntegrationTests(ITestOutputHelper testOutputHelper)
     {
         _testOutputHelper = testOutputHelper;
     }
@@ -47,8 +47,6 @@ public class OrderServiceIntegrationTests
     private IServiceCollection SetupCommonServices(HttpClient httpClient, bool setupAuthSuccess = false)
     {
         var services = new ServiceCollection();
-
-        // Setup HttpClientFactory
         var httpClientFactoryMock = new Mock<IHttpClientFactory>();
         httpClientFactoryMock
             .Setup(f => f.CreateClient(It.IsAny<string>()))
@@ -56,12 +54,11 @@ public class OrderServiceIntegrationTests
         services.AddSingleton(httpClientFactoryMock.Object);
         services.AddLogging();
 
-        // Setup session and HttpContext
         var sessionMock = new Mock<ISession>();
         sessionMock.Setup(x => x.TryGetValue("AuthToken", out It.Ref<byte[]>.IsAny))
-            .Returns((string _, out byte[] value) => { value = Encoding.UTF8.GetBytes("test-token"); return true; });
+            .Returns((string key, out byte[] value) => { value = Encoding.UTF8.GetBytes("test-token"); return true; });
         sessionMock.Setup(x => x.TryGetValue("Username", out It.Ref<byte[]>.IsAny))
-            .Returns((string _, out byte[] value) => { value = Encoding.UTF8.GetBytes("testuser"); return true; });
+            .Returns((string key, out byte[] value) => { value = Encoding.UTF8.GetBytes("testuser"); return true; });
 
         var httpContextMock = new Mock<HttpContext>();
         httpContextMock.Setup(x => x.Session).Returns(sessionMock.Object);
@@ -70,18 +67,13 @@ public class OrderServiceIntegrationTests
         httpContextAccessorMock.Setup(x => x.HttpContext).Returns(httpContextMock.Object);
         services.AddSingleton(httpContextAccessorMock.Object);
 
-        // Setup dependent services
-        var customerServiceMock = new Mock<ICustomerService>();
-        services.AddSingleton(customerServiceMock.Object);
-
+        var orderServiceMock = new Mock<IOrderService>();
+        services.AddSingleton(orderServiceMock.Object);
         var productServiceMock = new Mock<IProductService>();
         services.AddSingleton(productServiceMock.Object);
-
         var authServiceMock = new Mock<IAuthService>();
-
         if (setupAuthSuccess)
         {
-            // Mock ExecuteWithTokenRefreshAsync to always return success for tests that need it
             authServiceMock
                 .Setup(x => x.ExecuteWithTokenRefreshAsync(
                     It.IsAny<Func<string, Task<HttpResponseMessage>>>(),
@@ -94,64 +86,84 @@ public class OrderServiceIntegrationTests
                     Content = new StringContent("true"),
                 }));
         }
-
         services.AddSingleton(authServiceMock.Object);
-        services.AddTransient<IOrderService, OrderService>();
-
+        services.AddTransient<ICustomerService, CustomerService>();
         return services;
     }
 
     [Fact]
-    public async Task GetOrdersAsync_ReturnsStubbedOrders()
+    public async Task GetAllCustomersAsync_ReturnsStubbedCustomers()
     {
         // Arrange
-        var httpClient = CreateMockHttpClient(HttpStatusCode.OK, "[]");
+        var customersJson = "[]";
+        var httpClient = CreateMockHttpClient(HttpStatusCode.OK, customersJson);
         var services = SetupCommonServices(httpClient);
         var provider = services.BuildServiceProvider();
-        var orderService = provider.GetRequiredService<IOrderService>();
+        var customerService = provider.GetRequiredService<ICustomerService>();
 
         // Act
-        var orders = await orderService.GetAllOrdersAsync();
+        var customers = await customerService.GetAllCustomersAsync();
 
         // Assert
-        Assert.NotNull(orders);
-        Assert.Empty(orders);
+        Assert.NotNull(customers);
+        Assert.Empty(customers);
     }
 
     [Fact]
-    public async Task CreateOrderAsync_ReturnsTrue_WhenApiReturnsSuccess()
+    public async Task CreateCustomerAsync_ReturnsTrue_WhenApiReturnsSuccess()
     {
         // Arrange
         var httpClient = CreateMockHttpClient(HttpStatusCode.OK, "true");
         var services = SetupCommonServices(httpClient, setupAuthSuccess: true);
         var provider = services.BuildServiceProvider();
-        var orderService = provider.GetRequiredService<IOrderService>();
+        var customerService = provider.GetRequiredService<ICustomerService>();
 
-        var order = new OrderDto
+        var customer = new CustomerDto
         {
             Id = Guid.NewGuid(),
-            CustomerId = Guid.NewGuid(),
-            CustomerName = "Test Customer",
-            CustomerEmail = "test@example.com",
-            ProductId = Guid.NewGuid(),
-            ProductName = "Test Product",
-            ProductPrice = 10.0m,
-            Quantity = 2,
-            TotalPrice = 20.0m,
-            CreatedAt = DateTime.UtcNow,
-            Status = "Created",
-            OrderDate = DateTime.UtcNow,
-            OrderStatus = "Pending"
+            Name = "Test Customer",
+            Email = "test@example.com"
         };
 
         // Act
-        var result = await orderService.CreateOrderAsync(order);
+        var result = await customerService.CreateCustomerAsync(customer);
 
         // Log the result for debugging
         if (!result)
         {
-            var requestJson = System.Text.Json.JsonSerializer.Serialize(order);
-            _testOutputHelper.WriteLine($"Order payload: {requestJson}");
+            var requestJson = System.Text.Json.JsonSerializer.Serialize(customer);
+            _testOutputHelper.WriteLine($"Customer payload: {requestJson}");
+            _testOutputHelper.WriteLine("Stubbed HTTP response: 200 OK, body: 'true'");
+        }
+
+        // Assert
+        Assert.True(result);
+    }
+
+    [Fact]
+    public async Task UpdateCustomerAsync_ReturnsTrue_WhenApiReturnsSuccess()
+    {
+        // Arrange
+        var httpClient = CreateMockHttpClient(HttpStatusCode.OK, "true");
+        var services = SetupCommonServices(httpClient, setupAuthSuccess: true);
+        var provider = services.BuildServiceProvider();
+        var customerService = provider.GetRequiredService<ICustomerService>();
+
+        var customer = new CustomerDto
+        {
+            Id = Guid.NewGuid(),
+            Name = "Updated Customer",
+            Email = "updated@example.com"
+        };
+
+        // Act
+        var result = await customerService.UpdateCustomerAsync(customer.Id, customer);
+
+        // Log the result for debugging
+        if (!result)
+        {
+            var requestJson = System.Text.Json.JsonSerializer.Serialize(customer);
+            _testOutputHelper.WriteLine($"Customer payload: {requestJson}");
             _testOutputHelper.WriteLine("Stubbed HTTP response: 200 OK, body: 'true'");
         }
 
