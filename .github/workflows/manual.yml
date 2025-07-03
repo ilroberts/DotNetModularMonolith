@@ -1,0 +1,35 @@
+name: Manual Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment'
+        required: true
+        default: 'test'
+        type: choice
+        options:
+          - test
+          - prod
+      image_tag:
+        description: 'Docker image tag to deploy'
+        required: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment }}
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Show parameters
+        run: |
+          echo "Deploying to: ${{ github.event.inputs.environment }}"
+          echo "Using image tag: ${{ github.event.inputs.image_tag }}"
+
+      # Simulate deployment
+      - name: Mock deploy
+        run: |
+          echo "kubectl apply -f deployment.yaml --dry-run=client"
+          # Replace this with your actual deployment steps
