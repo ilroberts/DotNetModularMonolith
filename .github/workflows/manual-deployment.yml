@@ -11,6 +11,9 @@ on:
         options:
           - test
           - prod
+      image:
+        description: 'Docker image name to deploy'
+        required: true
       image_tag:
         description: 'Docker image tag to deploy'
         required: true
@@ -26,10 +29,10 @@ jobs:
       - name: Show parameters
         run: |
           echo "Deploying to: ${{ github.event.inputs.environment }}"
-          echo "Using image tag: ${{ github.event.inputs.image_tag }}"
+          echo "Using image: ${{ github.event.inputs.image }}:${{ github.event.inputs.image_tag }}"
 
       # Simulate deployment
       - name: Mock deploy
         run: |
-          echo "kubectl apply -f deployment.yaml --dry-run=client"
+          echo "kubectl set image deployment/my-app my-app=${{ github.event.inputs.image }}:${{ github.event.inputs.image_tag }} --dry-run=client"
           # Replace this with your actual deployment steps
