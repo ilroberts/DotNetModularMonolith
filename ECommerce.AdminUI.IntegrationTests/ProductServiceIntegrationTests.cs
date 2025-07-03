@@ -24,7 +24,7 @@ public class ProductServiceIntegrationTests : ServiceIntegrationTestBase
     public async Task GetAllProductsAsync_ReturnsStubbedProducts()
     {
         // Arrange
-        var productsJson = "[]";
+        const string productsJson = "[]";
         var httpClient = CreateMockHttpClient(HttpStatusCode.OK, productsJson);
         var services = SetupCommonServices(httpClient);
         var provider = services.BuildServiceProvider();

@@ -1,0 +1,40 @@
+name: Build and Test Docker Images
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore ModularMonolith.sln
+
+      - name: Build solution
+        run: dotnet build ModularMonolith.sln --no-restore --configuration Release
+
+      - name: Run tests
+        run: dotnet test ModularMonolith.sln --no-build --configuration Release --logger "trx;LogFileName=test_results.trx"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build ECommerceApp Docker image
+        run: docker build -t ecommerceapp:latest ./ECommerceApp
+        if: ${{ exists('ECommerceApp/Dockerfile') }}
+
+      - name: Build ECommerce.AdminUI Docker image
+        run: docker build -t ecommerceadminui:latest ./ECommerce.AdminUI
+        if: ${{ exists('ECommerce.AdminUI/Dockerfile') }}
+
