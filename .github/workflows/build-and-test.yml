@@ -31,10 +31,17 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       - name: Build ECommerceApp Docker image
-        run: docker build -t ecommerceapp:latest ./ECommerceApp
-        if: ${{ exists('ECommerceApp/Dockerfile') }}
+        run: |
+          if [ -f ./ECommerceApp/Dockerfile ]; then
+            docker build -t ecommerceapp:latest ./ECommerceApp
+          else
+            echo "ECommerceApp Dockerfile not found, skipping build."
+          fi
 
       - name: Build ECommerce.AdminUI Docker image
-        run: docker build -t ecommerceadminui:latest ./ECommerce.AdminUI
-        if: ${{ exists('ECommerce.AdminUI/Dockerfile') }}
-
+        run: |
+          if [ -f ./ECommerce.AdminUI/Dockerfile ]; then
+            docker build -t ecommerceadminui:latest ./ECommerce.AdminUI
+          else
+            echo "ECommerce.AdminUI Dockerfile not found, skipping build."
+          fi
