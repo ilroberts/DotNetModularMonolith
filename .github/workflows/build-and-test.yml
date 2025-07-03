@@ -37,7 +37,7 @@ jobs:
       - name: Build ECommerceApp Docker image
         run: |
           if [ -f ./ECommerceApp/Dockerfile ]; then
-            docker build -t ecommerceapp:latest ./ECommerceApp
+            docker build -t ecommerceapp:latest -f ECommerceApp/Dockerfile .
           else
             echo "ECommerceApp Dockerfile not found, skipping build."
           fi
@@ -45,7 +45,7 @@ jobs:
       - name: Build ECommerce.AdminUI Docker image
         run: |
           if [ -f ./ECommerce.AdminUI/Dockerfile ]; then
-            docker build -t ecommerceadminui:latest ./ECommerce.AdminUI
+            docker build -t ecommerceadminui:latest -f ECommerce.AdminUI/Dockerfile .
           else
             echo "ECommerce.AdminUI Dockerfile not found, skipping build."
           fi
