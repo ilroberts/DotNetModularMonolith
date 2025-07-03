@@ -13,6 +13,11 @@ public class CustomWebApplicationFactory<TStartup> : WebApplicationFactory<TStar
     where TStartup : class
 {
     private readonly string _connectionString;
+    // Create static names for in-memory databases to ensure they persist across requests within the same test
+    private static readonly string ProductsDbName = $"InMemoryProductsTestDb_{Guid.NewGuid()}";
+    private static readonly string CustomersDbName = $"InMemoryCustomersTestDb_{Guid.NewGuid()}";
+    private static readonly string OrdersDbName = $"InMemoryOrdersTestDb_{Guid.NewGuid()}";
+    private static readonly string BusinessEventsDbName = $"InMemoryBusinessEventsTestDb_{Guid.NewGuid()}";
 
     public CustomWebApplicationFactory(string connectionString)
     {
@@ -33,7 +38,7 @@ public class CustomWebApplicationFactory<TStartup> : WebApplicationFactory<TStar
             // Add in-memory database for ProductDbContext
             services.AddDbContext<ECommerce.Modules.Products.Persistence.ProductDbContext>(options =>
             {
-                options.UseInMemoryDatabase("InMemoryProductsTestDb");
+                options.UseInMemoryDatabase(ProductsDbName);
             });
 
             // Remove and add in-memory for CustomerDbContext
@@ -45,7 +50,7 @@ public class CustomWebApplicationFactory<TStartup> : WebApplicationFactory<TStar
             }
             services.AddDbContext<ECommerce.Modules.Customers.Persistence.CustomerDbContext>(options =>
             {
-                options.UseInMemoryDatabase("InMemoryCustomersTestDb");
+                options.UseInMemoryDatabase(CustomersDbName);
             });
 
             // Remove and add in-memory for OrderDbContext
@@ -57,7 +62,7 @@ public class CustomWebApplicationFactory<TStartup> : WebApplicationFactory<TStar
             }
             services.AddDbContext<ECommerce.Modules.Orders.Persistence.OrderDbContext>(options =>
             {
-                options.UseInMemoryDatabase("InMemoryOrdersTestDb");
+                options.UseInMemoryDatabase(OrdersDbName);
             });
 
             // Remove and add in-memory for BusinessEventDbContext
@@ -69,7 +74,7 @@ public class CustomWebApplicationFactory<TStartup> : WebApplicationFactory<TStar
             }
             services.AddDbContext<ECommerce.BusinessEvents.Persistence.BusinessEventDbContext>(options =>
             {
-                options.UseInMemoryDatabase("InMemoryBusinessEventsTestDb");
+                options.UseInMemoryDatabase(BusinessEventsDbName);
             });
         });
         builder.ConfigureAppConfiguration((context, configBuilder) =>
