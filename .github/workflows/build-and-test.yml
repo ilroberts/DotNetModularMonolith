@@ -70,3 +70,26 @@ jobs:
           docker tag ecommerceadminui:latest ghcr.io/${{ github.repository_owner }}/ecommerceadminui:${{ github.sha }}
           docker push ghcr.io/${{ github.repository_owner }}/ecommerceadminui:latest
           docker push ghcr.io/${{ github.repository_owner }}/ecommerceadminui:${{ github.sha }}
+
+  deploy-mock:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' # Only deploy on main, adjust as needed
+    env:
+      IMAGE_TAG: ${{ github.sha }}
+      ENVIRONMENT: ${{ inputs.environment || 'dev' }}
+    steps:
+      - name: Show deployment parameters
+        run: |
+          echo "Mock Deploying to environment: $ENVIRONMENT"
+          echo "Using image tag: $IMAGE_TAG"
+          echo "Would deploy ghcr.io/${{ github.repository_owner }}/ecommerceapp:${IMAGE_TAG}"
+          echo "Would deploy ghcr.io/${{ github.repository_owner }}/ecommerceadminui:${IMAGE_TAG}"
+
+      - name: Simulate deployment script
+        run: |
+          echo "kubectl apply -f k8s/deployment.yaml --dry-run=client"
+          # Add any commands you want to 'mock' here
+
+      - name: Confirm mock deployment success
+        run: echo "Mock deployment completed successfully."
