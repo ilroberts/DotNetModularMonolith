@@ -9,23 +9,23 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace ECommerceApp.IntegrationTests;
 
-// Separate static class for database names to avoid static field issues in generic class
-internal static class InMemoryDatabaseNames
-{
-    public static readonly string ProductsDbName = $"InMemoryProductsTestDb_{Guid.NewGuid()}";
-    public static readonly string CustomersDbName = $"InMemoryCustomersTestDb_{Guid.NewGuid()}";
-    public static readonly string OrdersDbName = $"InMemoryOrdersTestDb_{Guid.NewGuid()}";
-    public static readonly string BusinessEventsDbName = $"InMemoryBusinessEventsTestDb_{Guid.NewGuid()}";
-}
-
 public class CustomWebApplicationFactory<TStartup> : WebApplicationFactory<TStartup>
     where TStartup : class
 {
     private readonly string _connectionString;
+    private readonly string _productsDbName;
+    private readonly string _customersDbName;
+    private readonly string _ordersDbName;
+    private readonly string _businessEventsDbName;
 
     public CustomWebApplicationFactory(string connectionString)
     {
         _connectionString = connectionString;
+        // Generate unique DB names per factory instance
+        _productsDbName = $"InMemoryProductsTestDb_{Guid.NewGuid()}";
+        _customersDbName = $"InMemoryCustomersTestDb_{Guid.NewGuid()}";
+        _ordersDbName = $"InMemoryOrdersTestDb_{Guid.NewGuid()}";
+        _businessEventsDbName = $"InMemoryBusinessEventsTestDb_{Guid.NewGuid()}";
     }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
@@ -42,7 +42,7 @@ public class CustomWebApplicationFactory<TStartup> : WebApplicationFactory<TStar
             // Add in-memory database for ProductDbContext
             services.AddDbContext<ECommerce.Modules.Products.Persistence.ProductDbContext>(options =>
             {
-                options.UseInMemoryDatabase(InMemoryDatabaseNames.ProductsDbName);
+                options.UseInMemoryDatabase(_productsDbName);
             });
 
             // Remove and add in-memory for CustomerDbContext
@@ -54,7 +54,7 @@ public class CustomWebApplicationFactory<TStartup> : WebApplicationFactory<TStar
             }
             services.AddDbContext<ECommerce.Modules.Customers.Persistence.CustomerDbContext>(options =>
             {
-                options.UseInMemoryDatabase(InMemoryDatabaseNames.CustomersDbName);
+                options.UseInMemoryDatabase(_customersDbName);
             });
 
             // Remove and add in-memory for OrderDbContext
@@ -66,7 +66,7 @@ public class CustomWebApplicationFactory<TStartup> : WebApplicationFactory<TStar
             }
             services.AddDbContext<ECommerce.Modules.Orders.Persistence.OrderDbContext>(options =>
             {
-                options.UseInMemoryDatabase(InMemoryDatabaseNames.OrdersDbName);
+                options.UseInMemoryDatabase(_ordersDbName);
             });
 
             // Remove and add in-memory for BusinessEventDbContext
@@ -78,7 +78,7 @@ public class CustomWebApplicationFactory<TStartup> : WebApplicationFactory<TStar
             }
             services.AddDbContext<ECommerce.BusinessEvents.Persistence.BusinessEventDbContext>(options =>
             {
-                options.UseInMemoryDatabase(InMemoryDatabaseNames.BusinessEventsDbName);
+                options.UseInMemoryDatabase(_businessEventsDbName);
             });
         });
 
