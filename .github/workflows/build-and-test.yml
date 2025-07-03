@@ -60,9 +60,13 @@ jobs:
       - name: Tag and push ECommerceApp image
         run: |
           docker tag ecommerceapp:latest ghcr.io/${{ github.repository_owner }}/ecommerceapp:latest
+          docker tag ecommerceapp:latest ghcr.io/${{ github.repository_owner }}/ecommerceapp:${{ github.sha }}
           docker push ghcr.io/${{ github.repository_owner }}/ecommerceapp:latest
+          docker push ghcr.io/${{ github.repository_owner }}/ecommerceapp:${{ github.sha }}
 
       - name: Tag and push ECommerce.AdminUI image
         run: |
           docker tag ecommerceadminui:latest ghcr.io/${{ github.repository_owner }}/ecommerceadminui:latest
+          docker tag ecommerceadminui:latest ghcr.io/${{ github.repository_owner }}/ecommerceadminui:${{ github.sha }}
           docker push ghcr.io/${{ github.repository_owner }}/ecommerceadminui:latest
+          docker push ghcr.io/${{ github.repository_owner }}/ecommerceadminui:${{ github.sha }}
