@@ -35,7 +35,42 @@ public class CustomWebApplicationFactory<TStartup> : WebApplicationFactory<TStar
             {
                 options.UseInMemoryDatabase("InMemoryProductsTestDb");
             });
-            // Repeat for other module DbContexts as needed
+
+            // Remove and add in-memory for CustomerDbContext
+            var customerDescriptor = services.SingleOrDefault(
+                d => d.ServiceType == typeof(DbContextOptions<ECommerce.Modules.Customers.Persistence.CustomerDbContext>));
+            if (customerDescriptor != null)
+            {
+                services.Remove(customerDescriptor);
+            }
+            services.AddDbContext<ECommerce.Modules.Customers.Persistence.CustomerDbContext>(options =>
+            {
+                options.UseInMemoryDatabase("InMemoryCustomersTestDb");
+            });
+
+            // Remove and add in-memory for OrderDbContext
+            var orderDescriptor = services.SingleOrDefault(
+                d => d.ServiceType == typeof(DbContextOptions<ECommerce.Modules.Orders.Persistence.OrderDbContext>));
+            if (orderDescriptor != null)
+            {
+                services.Remove(orderDescriptor);
+            }
+            services.AddDbContext<ECommerce.Modules.Orders.Persistence.OrderDbContext>(options =>
+            {
+                options.UseInMemoryDatabase("InMemoryOrdersTestDb");
+            });
+
+            // Remove and add in-memory for BusinessEventDbContext
+            var businessEventDescriptor = services.SingleOrDefault(
+                d => d.ServiceType == typeof(DbContextOptions<ECommerce.BusinessEvents.Persistence.BusinessEventDbContext>));
+            if (businessEventDescriptor != null)
+            {
+                services.Remove(businessEventDescriptor);
+            }
+            services.AddDbContext<ECommerce.BusinessEvents.Persistence.BusinessEventDbContext>(options =>
+            {
+                options.UseInMemoryDatabase("InMemoryBusinessEventsTestDb");
+            });
         });
         builder.ConfigureAppConfiguration((context, configBuilder) =>
         {
