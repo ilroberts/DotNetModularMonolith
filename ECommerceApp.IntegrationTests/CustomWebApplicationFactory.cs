@@ -9,15 +9,19 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace ECommerceApp.IntegrationTests;
 
+// Separate static class for database names to avoid static field issues in generic class
+internal static class InMemoryDatabaseNames
+{
+    public static readonly string ProductsDbName = $"InMemoryProductsTestDb_{Guid.NewGuid()}";
+    public static readonly string CustomersDbName = $"InMemoryCustomersTestDb_{Guid.NewGuid()}";
+    public static readonly string OrdersDbName = $"InMemoryOrdersTestDb_{Guid.NewGuid()}";
+    public static readonly string BusinessEventsDbName = $"InMemoryBusinessEventsTestDb_{Guid.NewGuid()}";
+}
+
 public class CustomWebApplicationFactory<TStartup> : WebApplicationFactory<TStartup>
     where TStartup : class
 {
     private readonly string _connectionString;
-    // Create static names for in-memory databases to ensure they persist across requests within the same test
-    private static readonly string ProductsDbName = $"InMemoryProductsTestDb_{Guid.NewGuid()}";
-    private static readonly string CustomersDbName = $"InMemoryCustomersTestDb_{Guid.NewGuid()}";
-    private static readonly string OrdersDbName = $"InMemoryOrdersTestDb_{Guid.NewGuid()}";
-    private static readonly string BusinessEventsDbName = $"InMemoryBusinessEventsTestDb_{Guid.NewGuid()}";
 
     public CustomWebApplicationFactory(string connectionString)
     {
@@ -38,7 +42,7 @@ public class CustomWebApplicationFactory<TStartup> : WebApplicationFactory<TStar
             // Add in-memory database for ProductDbContext
             services.AddDbContext<ECommerce.Modules.Products.Persistence.ProductDbContext>(options =>
             {
-                options.UseInMemoryDatabase(ProductsDbName);
+                options.UseInMemoryDatabase(InMemoryDatabaseNames.ProductsDbName);
             });
 
             // Remove and add in-memory for CustomerDbContext
@@ -50,7 +54,7 @@ public class CustomWebApplicationFactory<TStartup> : WebApplicationFactory<TStar
             }
             services.AddDbContext<ECommerce.Modules.Customers.Persistence.CustomerDbContext>(options =>
             {
-                options.UseInMemoryDatabase(CustomersDbName);
+                options.UseInMemoryDatabase(InMemoryDatabaseNames.CustomersDbName);
             });
 
             // Remove and add in-memory for OrderDbContext
@@ -62,7 +66,7 @@ public class CustomWebApplicationFactory<TStartup> : WebApplicationFactory<TStar
             }
             services.AddDbContext<ECommerce.Modules.Orders.Persistence.OrderDbContext>(options =>
             {
-                options.UseInMemoryDatabase(OrdersDbName);
+                options.UseInMemoryDatabase(InMemoryDatabaseNames.OrdersDbName);
             });
 
             // Remove and add in-memory for BusinessEventDbContext
@@ -74,10 +78,11 @@ public class CustomWebApplicationFactory<TStartup> : WebApplicationFactory<TStar
             }
             services.AddDbContext<ECommerce.BusinessEvents.Persistence.BusinessEventDbContext>(options =>
             {
-                options.UseInMemoryDatabase(BusinessEventsDbName);
+                options.UseInMemoryDatabase(InMemoryDatabaseNames.BusinessEventsDbName);
             });
         });
-        builder.ConfigureAppConfiguration((context, configBuilder) =>
+
+        builder.ConfigureAppConfiguration((_, configBuilder) =>
         {
             var inMemorySettings = new Dictionary<string, string>
             {
