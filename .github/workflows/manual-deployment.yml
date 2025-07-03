@@ -17,6 +17,10 @@ on:
       image_tag:
         description: 'Docker image tag to deploy'
         required: true
+      branch:
+        description: 'Git branch to deploy from'
+        required: true
+        default: 'main'
 
 jobs:
   deploy:
@@ -25,6 +29,8 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.branch }}
 
       - name: Show parameters
         run: |
