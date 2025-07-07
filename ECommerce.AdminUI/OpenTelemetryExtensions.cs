@@ -43,16 +43,18 @@ public static IServiceCollection AddOpenTelemetryConfiguration(
                     builder.AddPrometheusExporter();
                 }
 
-                if (azureMonitorEnabled)
+                if (!azureMonitorEnabled)
                 {
-                    var connectionString = openTelemetryConfig["Exporters:AzureMonitor:ConnectionString"];
-                    if (!string.IsNullOrEmpty(connectionString))
+                    return;
+                }
+
+                var connectionString = openTelemetryConfig["Exporters:AzureMonitor:ConnectionString"];
+                if (!string.IsNullOrEmpty(connectionString))
+                {
+                    builder.AddAzureMonitorMetricExporter(options =>
                     {
-                        builder.AddAzureMonitorMetricExporter(options =>
-                        {
-                            options.ConnectionString = connectionString;
-                        });
-                    }
+                        options.ConnectionString = connectionString;
+                    });
                 }
             })
             .WithTracing(builder =>
