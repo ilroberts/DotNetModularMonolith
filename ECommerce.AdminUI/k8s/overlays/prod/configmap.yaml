@@ -3,8 +3,8 @@ kind: ConfigMap
 metadata:
   name: admin-ui-config
 data:
-  ModularMonolithApiUrl: "http://prod-modularmonolith:8080/modulith"
-  TokenServiceUrl: "http://prod-modularmonolith:8080"
+  ModularMonolithApiUrl: "http://modularmonolith:8080/modulith"
+  TokenServiceUrl: "http://modularmonolith:8080"
   REDIS_HOST: "my-redis-master"
   REDIS_PORT: "6379"
   REDIS_USER: "default"
