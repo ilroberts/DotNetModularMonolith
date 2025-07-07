@@ -22,7 +22,7 @@ public static IServiceCollection AddOpenTelemetryConfiguration(
                 builder
                     .SetResourceBuilder(ResourceBuilder.CreateDefault()
                         .AddService(
-                            serviceName: openTelemetryConfig["ServiceName"],
+                            serviceName: openTelemetryConfig["ServiceName"] ?? "AdminUI",
                             serviceVersion: openTelemetryConfig["ServiceVersion"]))
                     .AddRuntimeInstrumentation()
                     .AddProcessInstrumentation();
@@ -60,7 +60,7 @@ public static IServiceCollection AddOpenTelemetryConfiguration(
                 builder
                     .SetResourceBuilder(ResourceBuilder.CreateDefault()
                         .AddService(
-                            serviceName: openTelemetryConfig["ServiceName"],
+                            serviceName: openTelemetryConfig["ServiceName"] ?? "AdminUI",
                             serviceVersion: openTelemetryConfig["ServiceVersion"]));
 
                 if (openTelemetryConfig.GetValue<bool>("Instrumentation:AspNetCore"))
