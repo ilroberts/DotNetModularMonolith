@@ -59,17 +59,17 @@ jobs:
 
       - name: Tag and push ECommerceApp image
         run: |
-          docker tag modularmonolith:latest ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}/modularmonolith:latest
-          docker tag modularmonolith:latest ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}/modularmonolith:${{ github.sha }}
-          docker push ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}/modularmonolith:latest
-          docker push ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}/modularmonolith:${{ github.sha }}
+          docker tag modularmonolith:latest ghcr.io/${{ github.repository_owner }}/dotnetmodularmonolith/modularmonolith:latest
+          docker tag modularmonolith:latest ghcr.io/${{ github.repository_owner }}/dotnetmodularmonolith/modularmonolith:${{ github.sha }}
+          docker push ghcr.io/${{ github.repository_owner }}/dotnetmodularmonolith/modularmonolith:latest
+          docker push ghcr.io/${{ github.repository_owner }}/dotnetmodularmonolith/modularmonolith:${{ github.sha }}
 
       - name: Tag and push ECommerce.AdminUI image
         run: |
-          docker tag admin-ui:latest ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}/admin-ui:latest
-          docker tag admin-ui:latest ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}/admin-ui:${{ github.sha }}
-          docker push ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}/admin-ui:latest
-          docker push ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}/admin-ui:${{ github.sha }}
+          docker tag admin-ui:latest ghcr.io/${{ github.repository_owner }}/dotnetmodularmonolith/admin-ui:latest
+          docker tag admin-ui:latest ghcr.io/${{ github.repository_owner }}/dotnetmodularmonolith/admin-ui:${{ github.sha }}
+          docker push ghcr.io/${{ github.repository_owner }}/dotnetmodularmonolith/admin-ui:latest
+          docker push ghcr.io/${{ github.repository_owner }}/dotnetmodularmonolith/admin-ui:${{ github.sha }}
 
   deploy-mock:
     needs: build-and-test
@@ -83,8 +83,8 @@ jobs:
         run: |
           echo "Mock Deploying to environment: $ENVIRONMENT"
           echo "Using image tag: $IMAGE_TAG"
-          echo "Would deploy ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}/modularmonolith:${IMAGE_TAG}"
-          echo "Would deploy ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}/admin-ui:${IMAGE_TAG}"
+          echo "Would deploy ghcr.io/${{ github.repository_owner }}/dotnetmodularmonolith/modularmonolith:${IMAGE_TAG}"
+          echo "Would deploy ghcr.io/${{ github.repository_owner }}/dotnetmodularmonolith/admin-ui:${IMAGE_TAG}"
 
       - name: Simulate deployment script
         run: |
