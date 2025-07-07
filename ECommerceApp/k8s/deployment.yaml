@@ -21,7 +21,7 @@ spec:
     spec:
       containers:
         - name: modularmonolith
-          image: ghcr.io/ilroberts/ecommerceapp:latest
+          image: modularmonolith:latest
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080

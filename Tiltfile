@@ -28,8 +28,7 @@ k8s_yaml([
     'ECommerceApp/k8s/ingress.yaml',
     'ECommerceApp/k8s/service.yaml',
     'ECommerce.DatabaseMigrator/k8s/db-connection-sealedsecrets.yaml',
-    'ECommerce.DatabaseMigrator/k8s/migrate-job.yaml',
-    'EcommerceApp/k8s/servicemonitor.yaml',
+    'ECommerce.DatabaseMigrator/k8s/migrate-job.yaml'
 ])
 
 # Use kustomize for AdminUI
@@ -44,7 +43,7 @@ k8s_resource(
 )
 
 k8s_resource(
-    'admin-ui', 
+    'admin-ui',
     port_forwards=['8081:8080'],
     labels=["app"],
     trigger_mode=TRIGGER_MODE_MANUAL
@@ -73,5 +72,5 @@ k8s_resource(
 )
 
 # Let's add metrics server if it's needed
-k8s_yaml('ECommerceApp/k8s/metrics-server.yaml')
-k8s_yaml('ECommerceApp/k8s/metrics-rbac.yaml')
+k8s_yaml('Infrastructure/k8s/metrics-server.yaml')
+k8s_yaml('Infrastructure/k8s/metrics-rbac.yaml')
