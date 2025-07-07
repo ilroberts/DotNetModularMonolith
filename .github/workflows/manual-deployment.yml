@@ -17,10 +17,6 @@ on:
       image_tag:
         description: 'Docker image tag to deploy'
         required: true
-      branch:
-        description: 'Git branch to deploy from'
-        required: true
-        default: 'main'
 
 jobs:
   deploy:
