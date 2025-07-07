@@ -35,4 +35,9 @@
     <ProjectReference Include="..\ECommerce.BusinessEvents\ECommerce.BusinessEvents.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Remove="k8s\metrics-server.yaml" />
+    <None Remove="k8s\postgres.yaml" />
+  </ItemGroup>
+
 </Project>
