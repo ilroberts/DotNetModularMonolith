@@ -26,7 +26,7 @@ spec:
     spec:
       containers:
         - name: admin-ui
-          image: admin-ui:latest
+          image: ghcr.io/ilroberts/ecommerceadminui:latest
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
