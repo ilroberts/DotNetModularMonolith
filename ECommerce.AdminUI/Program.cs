@@ -40,6 +40,11 @@ builder.Services.AddStackExchangeRedisCache(options =>
     options.InstanceName = "ECommerce.AdminUI.Session:";
 });
 
+// Persist Data Protection keys to Redis for multi-pod/ingress scenarios
+builder.Services.AddDataProtection()
+    .PersistKeysToStackExchangeRedis(ConnectionMultiplexer.Connect(redisConnectionString), "ECommerce.AdminUI-Keys")
+    .SetApplicationName("ECommerce.AdminUI");
+
 // Configure antiforgery to use root path for cookies - consistent with session cookie
 builder.Services.AddAntiforgery(options =>
 {
@@ -48,10 +53,7 @@ builder.Services.AddAntiforgery(options =>
     options.Cookie.IsEssential = true;
 });
 
-// Persist Data Protection keys to Redis for multi-pod/ingress scenarios
-builder.Services.AddDataProtection()
-    .PersistKeysToStackExchangeRedis(ConnectionMultiplexer.Connect(redisConnectionString), "ECommerce.AdminUI-Keys")
-    .SetApplicationName("ECommerce.AdminUI");
+
 
 // Add HttpContextAccessor for accessing session in services
 builder.Services.AddHttpContextAccessor();
