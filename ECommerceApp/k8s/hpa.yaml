@@ -9,7 +9,7 @@ spec:
     kind: Deployment
     name: modularmonolith
   minReplicas: 2
-  maxReplicas: 10
+  maxReplicas: 4
   metrics:
     - type: Resource
       resource:
