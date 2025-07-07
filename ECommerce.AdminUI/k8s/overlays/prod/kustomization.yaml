@@ -4,11 +4,10 @@ kind: Kustomization
 resources:
 - ../../base
 
-namePrefix: prod-
+#namePrefix: prod-
 
 patches:
 - path: configmap.yaml
-- path: deployment.yaml
 
 images:
 - name: admin-ui
