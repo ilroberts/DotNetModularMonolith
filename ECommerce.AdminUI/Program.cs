@@ -79,7 +79,7 @@ builder.Services.AddHttpClient("ModularMonolith", client =>
     return new HttpClientHandler
     {
         ServerCertificateCustomValidationCallback =
-            (sender, cert, chain, sslPolicyErrors) => true // For development only!
+            (_, _, _, _) => true // For development only!
     };
 });
 
@@ -94,7 +94,7 @@ builder.Services.AddHttpClient("TokenService", client =>
     return new HttpClientHandler
     {
         ServerCertificateCustomValidationCallback =
-            (sender, cert, chain, sslPolicyErrors) => true // For development only!
+            (_, _, _, _) => true // For development only!
     };
 });
 
@@ -164,6 +164,28 @@ app.UseStaticFiles();
 
 // Add session middleware to enable session state
 app.UseSession();
+
+// Add Content Security Policy (CSP) header middleware
+app.Use(async (context, next) =>
+{
+    context.Response.OnStarting(() =>
+    {
+        // Allow scripts and styles from cdn.jsdelivr.net with specific paths
+        context.Response.Headers["Content-Security-Policy"] =
+            "default-src 'self'; " +
+            "script-src 'self' https://cdn.jsdelivr.net; " +
+            "style-src 'self' https://cdn.jsdelivr.net 'unsafe-inline'; " + // Added 'unsafe-inline' for inline styles
+            "img-src 'self' data:; " +
+            "font-src 'self' https://cdn.jsdelivr.net; " + // Added font-src for Bootstrap Icons
+            "connect-src 'self'; " +
+            "object-src 'none'; " +
+            "frame-ancestors 'none'; " +
+            "base-uri 'self'; " +
+            "form-action 'self'";
+        return Task.CompletedTask;
+    });
+    await next();
+});
 
 app.UseRouting();
 app.UseAuthorization();
