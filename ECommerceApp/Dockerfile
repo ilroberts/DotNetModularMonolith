@@ -27,14 +27,9 @@ COPY ECommerce.Modules.Products/ ./ECommerce.Modules.Products/
 RUN dotnet publish ECommerceApp/ECommerceApp.csproj -c Release -o /app/publish
 
 # Runtime stage
-FROM mcr.microsoft.com/dotnet/aspnet:8.0-alpine AS final
+FROM --platform=linux/arm64 mcr.microsoft.com/dotnet/aspnet:8.0 AS final
 WORKDIR /app
 COPY --from=build /app/publish .
-
-# Create a non-root user and set permissions
-RUN addgroup -S appgroup && adduser -S appuser -G appgroup \
-    && chown -R appuser:appgroup /app
-USER appuser
 
 ENV ASPNETCORE_URLS=http://+:8080
 ENV ASPNETCORE_ENVIRONMENT=Development
