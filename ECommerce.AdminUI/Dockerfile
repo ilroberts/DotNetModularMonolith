@@ -16,12 +16,8 @@ COPY ECommerce.AdminUI/. ./ECommerce.AdminUI/
 RUN dotnet publish ECommerce.AdminUI/ECommerce.AdminUI.csproj -c Release -o /app/publish
 
 # Runtime stage
-FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
+FROM --platform=linux/arm64 mcr.microsoft.com/dotnet/aspnet:8.0-alpine AS runtime
 WORKDIR /app
-
-# Create a non-root user
-RUN groupadd -r appgroup && useradd -r -g appgroup appuser
-USER appuser
 
 # Copy the published app
 COPY --from=build /app/publish .
