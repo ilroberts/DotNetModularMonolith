@@ -173,15 +173,17 @@ app.Use(async (context, next) =>
         // Allow scripts and styles from cdn.jsdelivr.net with specific paths
         context.Response.Headers["Content-Security-Policy"] =
             "default-src 'self'; " +
-            "script-src 'self' https://cdn.jsdelivr.net; " +
-            "style-src 'self' https://cdn.jsdelivr.net 'unsafe-inline'; " + // Added 'unsafe-inline' for inline styles
+            "script-src 'self' https://cdn.jsdelivr.net https://cdn.jsdelivr.com 'unsafe-inline'; " +
+            "style-src 'self' https://cdn.jsdelivr.net https://cdn.jsdelivr.com 'unsafe-inline'; " + // Added 'unsafe-inline' for inline styles
             "img-src 'self' data:; " +
-            "font-src 'self' https://cdn.jsdelivr.net; " + // Added font-src for Bootstrap Icons
+            "font-src 'self' https://cdn.jsdelivr.net https://cdn.jsdelivr.com; " + // Added font-src for Bootstrap Icons
             "connect-src 'self'; " +
             "object-src 'none'; " +
             "frame-ancestors 'none'; " +
             "base-uri 'self'; " +
             "form-action 'self'";
+        // Add X-Content-Type-Options header to prevent MIME sniffing
+        context.Response.Headers["X-Content-Type-Options"] = "nosniff";
         return Task.CompletedTask;
     });
     await next();

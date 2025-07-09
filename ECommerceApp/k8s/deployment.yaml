@@ -21,8 +21,8 @@ spec:
     spec:
       containers:
         - name: modularmonolith
-          image: ghcr.io/ilroberts/dotnetmodularmonolith/modularmonolith:latest
-          imagePullPolicy: Always
+          image: modularmonolith:latest
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
           env:

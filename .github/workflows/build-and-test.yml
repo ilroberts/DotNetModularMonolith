@@ -57,29 +57,35 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ secrets.ACCESS_TOKEN }}
 
+      - name: Set short SHA
+        run: echo "SHORT_SHA=$(echo $GITHUB_SHA | cut -c1-7)" >> $GITHUB_ENV
+
       - name: Tag and push ECommerceApp image
         run: |
           docker tag modularmonolith ghcr.io/${{ github.repository_owner }}/dotnetmodularmonolith/modularmonolith:latest
-          docker tag modularmonolith ghcr.io/${{ github.repository_owner }}/dotnetmodularmonolith/modularmonolith:${{ github.sha }}
+          docker tag modularmonolith ghcr.io/${{ github.repository_owner }}/dotnetmodularmonolith/modularmonolith:${{ env.SHORT_SHA }}
           docker push ghcr.io/${{ github.repository_owner }}/dotnetmodularmonolith/modularmonolith:latest
-          docker push ghcr.io/${{ github.repository_owner }}/dotnetmodularmonolith/modularmonolith:${{ github.sha }}
+          docker push ghcr.io/${{ github.repository_owner }}/dotnetmodularmonolith/modularmonolith:${{ env.SHORT_SHA }}
 
       - name: Tag and push ECommerce.AdminUI image
         run: |
           docker tag admin-ui:latest ghcr.io/${{ github.repository_owner }}/dotnetmodularmonolith/admin-ui:latest
-          docker tag admin-ui:latest ghcr.io/${{ github.repository_owner }}/dotnetmodularmonolith/admin-ui:${{ github.sha }}
+          docker tag admin-ui:latest ghcr.io/${{ github.repository_owner }}/dotnetmodularmonolith/admin-ui:${{ env.SHORT_SHA }}
           docker push ghcr.io/${{ github.repository_owner }}/dotnetmodularmonolith/admin-ui:latest
-          docker push ghcr.io/${{ github.repository_owner }}/dotnetmodularmonolith/admin-ui:${{ github.sha }}
+          docker push ghcr.io/${{ github.repository_owner }}/dotnetmodularmonolith/admin-ui:${{ env.SHORT_SHA }}
 
   deploy-mock:
     needs: build-and-test
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' # Only deploy on main, adjust as needed
-    env:
-      IMAGE_TAG: ${{ github.sha }}
-      ENVIRONMENT: ${{ inputs.environment || 'dev' }}
     steps:
+      - name: Set short SHA
+        run: echo "SHORT_SHA=$(echo $GITHUB_SHA | cut -c1-7)" >> $GITHUB_ENV
+
       - name: Show deployment parameters
+        env:
+          IMAGE_TAG: ${{ env.SHORT_SHA }}
+          ENVIRONMENT: ${{ inputs.environment || 'dev' }}
         run: |
           echo "Mock Deploying to environment: $ENVIRONMENT"
           echo "Using image tag: $IMAGE_TAG"
