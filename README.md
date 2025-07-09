@@ -100,6 +100,26 @@ ModularMonolith/
 - OpenTelemetry support in Admin UI
 - API and Admin UI log to console by default
 
+## Kubernetes Manifests & Repository Separation
+
+This repository contains the application code and development tooling (including the Tiltfile for local Kubernetes development). **Production and staging Kubernetes manifests are maintained in a separate infrastructure repository:**
+
+- [ilroberts/DotNetModularMonolith-k8s](https://github.com/ilroberts/DotNetModularMonolith-k8s)
+
+### Local Development (Tilt)
+- The `Tiltfile` in this repository is used for local development and testing.
+- It references Kubernetes manifests and resources needed for running the app locally.
+- Developers should use the manifests and configuration in this repository for local workflows.
+
+### Production/Staging (ArgoCD)
+- The infrastructure repository contains the manifests and configuration for production and staging environments.
+- These are managed by ArgoCD for GitOps-based deployment.
+- Do **not** point the `Tiltfile` to the infrastructure repository; keep local development resources close to the codebase.
+
+**Summary:**
+- Use this repository for local development and testing with Tilt.
+- Use the infrastructure repository for production/staging deployments with ArgoCD.
+
 ## Contributing
 
 Contributions are welcome! Please see the `docs/` folder for architecture decisions and contribution guidelines.
