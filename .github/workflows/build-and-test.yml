@@ -99,3 +99,39 @@ jobs:
 
       - name: Confirm mock deployment success
         run: echo "Mock deployment completed successfully."
+
+  update-ecommerceapp-manifest:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Checkout infrastructure repository
+        uses: actions/checkout@v4
+        with:
+          repository: ilroberts/DotNetModularMonolith-k8s
+          token: ${{ secrets.ACCESS_TOKEN }}
+          path: infra-repo
+
+      - name: Set up Git
+        run: |
+          git config --global user.name "github-actions"
+          git config --global user.email "github-actions@github.com"
+        working-directory: infra-repo
+
+      - name: Install yq
+        run: sudo apt-get update && sudo apt-get install -y yq
+
+      - name: Set short SHA
+        run: echo "SHORT_SHA=$(echo $GITHUB_SHA | cut -c1-7)" >> $GITHUB_ENV
+
+      - name: Update ECommerceApp image tag in manifest
+        run: |
+          yq -y -i '(.spec.template.spec.containers[] | select(.name == "modularmonolith").image) = "ghcr.io/${{ github.repository_owner }}/dotnetmodularmonolith/modularmonolith:${{ env.SHORT_SHA }}"' ECommerceApp/k8s/deployment.yaml
+        working-directory: infra-repo
+
+      - name: Commit and push manifest update
+        run: |
+          git add ECommerceApp/k8s/deployment.yaml
+          git commit -m "Update ECommerceApp image to ${{ env.SHORT_SHA }} [ci skip]" || echo "No changes to commit"
+          git push
+        working-directory: infra-repo
