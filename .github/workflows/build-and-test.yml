@@ -100,7 +100,7 @@ jobs:
       - name: Confirm mock deployment success
         run: echo "Mock deployment completed successfully."
 
-  update-ecommerceapp-manifest:
+  update-deployment-manifests:
     needs: build-and-test
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
@@ -129,9 +129,14 @@ jobs:
           yq -y -i '(.spec.template.spec.containers[] | select(.name == "modularmonolith").image) = "ghcr.io/${{ github.repository_owner }}/dotnetmodularmonolith/modularmonolith:${{ env.SHORT_SHA }}"' ECommerceApp/k8s/deployment.yaml
         working-directory: infra-repo
 
-      - name: Commit and push manifest update
+      - name: Update AdminUI image tag in manifest
         run: |
-          git add ECommerceApp/k8s/deployment.yaml
-          git commit -m "Update ECommerceApp image to ${{ env.SHORT_SHA }} [ci skip]" || echo "No changes to commit"
+          yq -y -i '(.spec.template.spec.containers[] | select(.name == "admin-ui").image) = "ghcr.io/${{ github.repository_owner }}/dotnetmodularmonolith/admin-ui:${{ env.SHORT_SHA }}"' ECommerce.AdminUI/k8s/base/deployment.yaml
+        working-directory: infra-repo
+
+      - name: Commit and push manifest updates
+        run: |
+          git add ECommerceApp/k8s/deployment.yaml ECommerce.AdminUI/k8s/base/deployment.yaml
+          git commit -m "Update ECommerceApp and AdminUI images to ${{ env.SHORT_SHA }} [ci skip]" || echo "No changes to commit"
           git push
         working-directory: infra-repo
