@@ -33,7 +33,7 @@ builder.Services.AddRazorPages()
 // Add session state
 // builder.Services.AddDistributedMemoryCache();
 // Use Redis for distributed session state instead of in-memory cache
-string redisConnectionString = Environment.GetEnvironmentVariable("REDIS_CONNECTION_STRING") ?? "localhost:6379";
+string redisConnectionString = builder.Configuration["REDIS_CONNECTION_STRING"] ?? Environment.GetEnvironmentVariable("REDIS_CONNECTION_STRING");
 builder.Services.AddStackExchangeRedisCache(options =>
 {
     options.Configuration = redisConnectionString;

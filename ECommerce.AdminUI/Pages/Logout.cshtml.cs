@@ -21,7 +21,8 @@ public class LogoutModel : PageModel
         // Clear all session data
         HttpContext.Session.Clear();
 
-        // Redirect to login page
-        return RedirectToPage("/Admin/Login");
+        // Redirect to login page, respecting PathBase
+        var pathBase = HttpContext.Request.PathBase.HasValue ? HttpContext.Request.PathBase.Value : string.Empty;
+        return Redirect(pathBase + "/Login");
     }
 }
