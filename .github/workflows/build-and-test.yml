@@ -126,7 +126,7 @@ jobs:
 
       - name: Update ECommerceApp image tag in manifest
         run: |
-          yq -y -i '(.spec.template.spec.containers[] | select(.name == "modularmonolith").image) = "ghcr.io/${{ github.repository_owner }}/dotnetmodularmonolith/modularmonolith:${{ env.SHORT_SHA }}"' ECommerceApp/k8s/deployment.yaml
+          yq -y -i '(.spec.template.spec.containers[] | select(.name == "modularmonolith").image) = "ghcr.io/${{ github.repository_owner }}/dotnetmodularmonolith/modularmonolith:${{ env.SHORT_SHA }}"' ECommerceApp/k8s/base/deployment.yaml
         working-directory: infra-repo
 
       - name: Update AdminUI image tag in manifest
@@ -136,7 +136,7 @@ jobs:
 
       - name: Commit and push manifest updates
         run: |
-          git add ECommerceApp/k8s/deployment.yaml ECommerce.AdminUI/k8s/base/deployment.yaml
+          git add ECommerceApp/k8s/base/deployment.yaml ECommerce.AdminUI/k8s/base/deployment.yaml
           git commit -m "Update ECommerceApp and AdminUI images to ${{ env.SHORT_SHA }} [ci skip]" || echo "No changes to commit"
           git push
         working-directory: infra-repo

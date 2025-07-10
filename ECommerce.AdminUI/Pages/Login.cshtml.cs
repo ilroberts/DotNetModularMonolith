@@ -20,6 +20,11 @@ namespace ECommerce.AdminUI.Pages
         [Required(ErrorMessage = "Username is required")]
         public string Username { get; set; } = string.Empty;
 
+        [BindProperty]
+        [Required(ErrorMessage = "Password is required")]
+        [DataType(DataType.Password)]
+        public string Password { get; set; } = string.Empty;
+
         public IActionResult OnGet()
         {
             _logger.LogDebug("OnGet: Login page accessed. PathBase: {PathBase}, Path: {Path}, HasToken: {HasToken}",
@@ -42,6 +47,13 @@ namespace ECommerce.AdminUI.Pages
 
             if (!ModelState.IsValid)
             {
+                return Page();
+            }
+
+            // temporary hardcoded validation for demonstration purposes
+            if (Password != "password123")
+            {
+                ModelState.AddModelError(string.Empty, "Invalid username or password.");
                 return Page();
             }
 
