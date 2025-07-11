@@ -21,6 +21,12 @@ public partial class Program
     public static async Task  Main(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
+
+        // Log all environment variables to help with debugging
+        Console.WriteLine("=== Environment Variables ===");
+        Console.WriteLine($"ASPNETCORE_ENVIRONMENT: {Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "not set"}");
+        Console.WriteLine($"OTEL_EXPORTER_OTLP_ENDPOINT: {Environment.GetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT") ?? "not set"}");
+        Console.WriteLine("==========================");
         // test
         builder.Logging.ClearProviders();
         builder.Logging.AddConsole();

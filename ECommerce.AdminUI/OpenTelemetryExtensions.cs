@@ -91,7 +91,9 @@ public static IServiceCollection AddOpenTelemetryConfiguration(
 
                 builder.AddOtlpExporter(options =>
                 {
-                    options.Endpoint = new Uri("http://jaeger-collector.devops.svc.cluster.local:4317");
+                    string otlpEndpoint = Environment.GetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT")
+                                          ?? "http://jaeger-collector.devops.svc.cluster.local:4317";
+                    options.Endpoint = new Uri(otlpEndpoint);
                     options.Protocol = OpenTelemetry.Exporter.OtlpExportProtocol.Grpc;
                 });
             });

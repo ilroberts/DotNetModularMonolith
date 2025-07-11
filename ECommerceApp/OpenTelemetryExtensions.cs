@@ -17,12 +17,14 @@ public static IServiceCollection AddOpenTelemetryConfiguration(
         var openTelemetryConfig = configuration.GetSection("OpenTelemetry");
 
         services.AddOpenTelemetry()
+            .ConfigureResource(resource => resource.AddService("Modulith-Service",
+                openTelemetryConfig["ServiceVersion"]))
             .WithMetrics(builder =>
             {
                 builder
                     .SetResourceBuilder(ResourceBuilder.CreateDefault()
                         .AddService(
-                            serviceName: openTelemetryConfig["ServiceName"],
+                            serviceName: openTelemetryConfig["ServiceName"] ?? "Modulith",
                             serviceVersion: openTelemetryConfig["ServiceVersion"]))
                     .AddRuntimeInstrumentation()
                     .AddProcessInstrumentation();
@@ -60,7 +62,7 @@ public static IServiceCollection AddOpenTelemetryConfiguration(
                 builder
                     .SetResourceBuilder(ResourceBuilder.CreateDefault()
                         .AddService(
-                            serviceName: openTelemetryConfig["ServiceName"],
+                            serviceName: openTelemetryConfig["ServiceName"] ?? "Modulith",
                             serviceVersion: openTelemetryConfig["ServiceVersion"]));
 
                 if (openTelemetryConfig.GetValue<bool>("Instrumentation:AspNetCore"))
@@ -70,7 +72,7 @@ public static IServiceCollection AddOpenTelemetryConfiguration(
                     builder.AddHttpClientInstrumentation();
 
                 if (openTelemetryConfig.GetValue<bool>("Instrumentation:SqlClient"))
-                    builder.AddSqlClientInstrumentation();
+                    builder.AddSqlClientInstrumentation(o => o.SetDbStatementForText = true);
 
                 var azureMonitorEnabled = openTelemetryConfig.GetValue<bool>("Exporters:AzureMonitor:Enabled");
                 if (azureMonitorEnabled)
@@ -84,6 +86,14 @@ public static IServiceCollection AddOpenTelemetryConfiguration(
                         });
                     }
                 }
+
+                builder.AddOtlpExporter(options =>
+                {
+                    string otlpEndpoint = Environment.GetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT")
+                                          ?? "http://jaeger-collector.devops.svc.cluster.local:4317";
+                    options.Endpoint = new Uri(otlpEndpoint);
+                    options.Protocol = OpenTelemetry.Exporter.OtlpExportProtocol.Grpc;
+                });
             });
 
         return services;
