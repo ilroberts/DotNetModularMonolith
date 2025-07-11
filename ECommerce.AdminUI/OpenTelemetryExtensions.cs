@@ -89,7 +89,11 @@ public static IServiceCollection AddOpenTelemetryConfiguration(
                     }
                 }
 
-                builder.AddOtlpExporter();
+                builder.AddOtlpExporter(options =>
+                {
+                    options.Endpoint = new Uri("http://jaeger-collector.devops.svc.cluster.local:4317");
+                    options.Protocol = OpenTelemetry.Exporter.OtlpExportProtocol.Grpc;
+                });
             });
 
         return services;
