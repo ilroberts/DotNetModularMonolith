@@ -72,7 +72,7 @@ public static IServiceCollection AddOpenTelemetryConfiguration(
                     builder.AddHttpClientInstrumentation();
 
                 if (openTelemetryConfig.GetValue<bool>("Instrumentation:SqlClient"))
-                    builder.AddSqlClientInstrumentation();
+                    builder.AddSqlClientInstrumentation(o => o.SetDbStatementForText = true);
 
                 var azureMonitorEnabled = openTelemetryConfig.GetValue<bool>("Exporters:AzureMonitor:Enabled");
                 if (azureMonitorEnabled)
@@ -86,6 +86,8 @@ public static IServiceCollection AddOpenTelemetryConfiguration(
                         });
                     }
                 }
+
+                builder.AddOtlpExporter();
             });
 
         return services;
