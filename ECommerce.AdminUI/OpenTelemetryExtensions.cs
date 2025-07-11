@@ -17,6 +17,8 @@ public static IServiceCollection AddOpenTelemetryConfiguration(
         var openTelemetryConfig = configuration.GetSection("OpenTelemetry");
 
         services.AddOpenTelemetry()
+            .ConfigureResource(resource => resource.AddService("AdminUI-Service",
+                openTelemetryConfig["ServiceVersion"]))
             .WithMetrics(builder =>
             {
                 builder
