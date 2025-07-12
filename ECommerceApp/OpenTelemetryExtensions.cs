@@ -2,6 +2,7 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 
 using Azure.Monitor.OpenTelemetry.Exporter;
+using Npgsql;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
@@ -74,6 +75,7 @@ public static IServiceCollection AddOpenTelemetryConfiguration(
                 if (openTelemetryConfig.GetValue<bool>("Instrumentation:SqlClient"))
                     builder.AddSqlClientInstrumentation(o => o.SetDbStatementForText = true);
 
+                builder.AddNpgsql();
                 var azureMonitorEnabled = openTelemetryConfig.GetValue<bool>("Exporters:AzureMonitor:Enabled");
                 if (azureMonitorEnabled)
                 {
