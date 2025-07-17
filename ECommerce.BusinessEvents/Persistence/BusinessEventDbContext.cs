@@ -1,4 +1,5 @@
 using ECommerce.BusinessEvents.Domain;
+using ECommerce.BusinessEvents.Domain.Schemas;
 using Microsoft.EntityFrameworkCore;
 using ModularMonolith.Domain.BusinessEvents;
 
@@ -26,6 +27,13 @@ namespace ECommerce.BusinessEvents.Persistence
             // SchemaVersion configuration
             modelBuilder.Entity<SchemaVersion>()
                 .HasKey(sv => new { sv.EntityType, sv.Version });
+
+            // Seed Customer and Product schemas
+            modelBuilder.Entity<SchemaVersion>().HasData(
+                CustomerSchemaVersions.All.ToArray()
+                    .Concat(ProductSchemaVersions.All.ToArray())
+                    .ToArray()
+            );
 
             // ...additional configuration as needed...
         }

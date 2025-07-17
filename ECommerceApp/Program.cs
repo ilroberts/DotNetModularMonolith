@@ -131,8 +131,6 @@ public partial class Program
             });
         }
 
-        await BusinessEventsModule.InitializeDefaultSchemasAsync(app.Services);
-
         // After builder.Build():
         app.UseAuthentication();
         app.UseAuthorization();

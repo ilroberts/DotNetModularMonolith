@@ -3,6 +3,7 @@ using System;
 using ECommerce.BusinessEvents.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace ECommerce.BusinessEvents.Migrations
 {
     [DbContext(typeof(BusinessEventDbContext))]
-    partial class BusinessEventDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250717193128_SeedCustomerAndProductSchemas")]
+    partial class SeedCustomerAndProductSchemas
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

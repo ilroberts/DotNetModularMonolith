@@ -39,8 +39,6 @@ namespace ECommerce.BusinessEvents
 
             // Register SchemaRegistryService
             services.AddScoped<SchemaRegistryService>();
-            services.AddScoped<SchemaInitializerService>();
-
             services.AddScoped<IBusinessEventService, EventTrackingService>();
             services.AddScoped<IJsonSchemaValidator, JsonSchemaValidator>();
             services.AddScoped<IEventRetrievalService>(sp =>
@@ -57,13 +55,6 @@ namespace ECommerce.BusinessEvents
             var context = scope.ServiceProvider.GetRequiredService<BusinessEventDbContext>();
             context.Database.EnsureCreated();
             // Add seed logic if needed
-        }
-
-        public static async Task InitializeDefaultSchemasAsync(IServiceProvider serviceProvider)
-        {
-            using var scope = serviceProvider.CreateScope();
-            var schemaInitializer = scope.ServiceProvider.GetRequiredService<SchemaInitializerService>();
-            await schemaInitializer.InitializeDefaultSchemasAsync();
         }
     }
 }
