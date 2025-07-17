@@ -80,6 +80,20 @@ public class CustomWebApplicationFactory<TStartup> : WebApplicationFactory<TStar
             {
                 options.UseInMemoryDatabase(_businessEventsDbName);
             });
+
+            // Seed schemas for BusinessEventDbContext only once
+            var sp = services.BuildServiceProvider();
+            using var scope = sp.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<ECommerce.BusinessEvents.Persistence.BusinessEventDbContext>();
+            db.Database.EnsureCreated();
+            if (db.SchemaVersions.Any())
+            {
+                return;
+            }
+
+            db.SchemaVersions.AddRange(ECommerce.BusinessEvents.Domain.Schemas.CustomerSchemaVersions.All);
+            db.SchemaVersions.AddRange(ECommerce.BusinessEvents.Domain.Schemas.ProductSchemaVersions.All);
+            db.SaveChanges();
         });
 
         builder.ConfigureAppConfiguration((_, configBuilder) =>
