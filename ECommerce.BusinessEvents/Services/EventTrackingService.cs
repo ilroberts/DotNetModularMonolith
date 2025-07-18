@@ -66,5 +66,20 @@ namespace ECommerce.BusinessEvents.Services
         {
             return await dbContext.BusinessEvents.ToListAsync();
         }
+
+        public async Task<BusinessEvent?> GetEventByIdAsync(Guid eventId)
+        {
+            return await dbContext.BusinessEvents.FirstOrDefaultAsync(e => e.EventId == eventId);
+        }
+
+        public async Task<BusinessEvent?> GetPreviousEventAsync(BusinessEvent currentEvent)
+        {
+            return await dbContext.BusinessEvents
+                .Where(e => e.EntityType == currentEvent.EntityType &&
+                            e.EntityId == currentEvent.EntityId &&
+                            e.EventTimestamp < currentEvent.EventTimestamp)
+                .OrderByDescending(e => e.EventTimestamp)
+                .FirstOrDefaultAsync();
+        }
     }
 }

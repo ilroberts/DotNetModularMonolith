@@ -287,6 +287,11 @@
           <dd class="col-sm-9">
             <pre id="eventDetailEntityData" class="bg-light p-2" style="max-height: 300px; overflow-y: auto;"></pre>
           </dd>
+
+          <dt class="col-sm-3">Patch (vs. previous)</dt>
+          <dd class="col-sm-9">
+            <pre id="eventDetailPatch" class="bg-light p-2" style="max-height: 300px; overflow-y: auto;"></pre>
+          </dd>
         </dl>
       </div>
       <div class="modal-footer">
@@ -449,11 +454,30 @@
 
                     document.getElementById('eventDetailEntityData').innerText = formattedData;
 
+                    // Fetch and display the patch for this event
+                    const patchElement = document.getElementById('eventDetailPatch');
+                    patchElement.innerText = 'Loading...';
+                    fetch(`/events/${eventData.eventId || eventData.EventId}/patch`)
+                        .then(response => {
+                            if (!response.ok) throw new Error('No patch available');
+                            return response.json();
+                        })
+                        .then(patchOps => {
+                            if (Array.isArray(patchOps) && patchOps.length > 0) {
+                                patchElement.innerText = JSON.stringify(patchOps, null, 2);
+                            } else {
+                                patchElement.innerText = 'No changes from previous event.';
+                            }
+                        })
+                        .catch(err => {
+                            patchElement.innerText = 'No patch available.';
+                        });
+
                     // Show the modal
                     const modal = new bootstrap.Modal(document.getElementById('eventDetailsModal'));
                     modal.show();
                 });
             });
-        });
+        }); // <-- Properly close DOMContentLoaded event listener
     </script>
 }

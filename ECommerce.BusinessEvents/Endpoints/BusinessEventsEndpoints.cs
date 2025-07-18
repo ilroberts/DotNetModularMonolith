@@ -95,6 +95,26 @@ namespace ECommerce.BusinessEvents.Endpoints
                 .WithName("AddSchemaVersion")
                 .WithTags("Schemas")
                 .RequireAuthorization();
+
+            // Generate a JSON Patch (git-style diff) between an event and its previous version
+            app.MapGet("/events/{eventId:guid}/patch", async (
+                [FromRoute] Guid eventId,
+                IEventRetrievalService eventRetrieval) =>
+            {
+                var currentEvent = await eventRetrieval.GetEventByIdAsync(eventId);
+                if (currentEvent == null)
+                    return Results.NotFound($"Event with ID '{eventId}' not found");
+
+                var previousEvent = await eventRetrieval.GetPreviousEventAsync(currentEvent);
+                if (previousEvent == null)
+                    return Results.NotFound($"No previous event found for entity '{currentEvent.EntityType}' with ID '{currentEvent.EntityId}'");
+
+                var patch = JsonPatchUtility.GeneratePatch(previousEvent.EntityData, currentEvent.EntityData);
+                return Results.Ok(patch.Operations);
+            })
+            .WithName("GetBusinessEventPatch")
+            .WithTags("BusinessEvents")
+            .RequireAuthorization();
         }
     }
 

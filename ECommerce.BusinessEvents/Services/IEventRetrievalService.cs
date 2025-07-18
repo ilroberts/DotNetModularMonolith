@@ -8,4 +8,6 @@ namespace ECommerce.BusinessEvents.Services;
 public interface IEventRetrievalService
 {
     Task<List<BusinessEvent>> GetAllEventsAsync();
+    Task<BusinessEvent?> GetEventByIdAsync(Guid eventId);
+    Task<BusinessEvent?> GetPreviousEventAsync(BusinessEvent currentEvent);
 }
