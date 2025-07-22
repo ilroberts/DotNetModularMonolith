@@ -23,4 +23,16 @@ public class IndexModel : PageModel
         Username = HttpContext.Session.GetString("Username") ?? "Admin";
         Stats = await _dashboardService.GetDashboardStatsAsync();
     }
+
+    public async Task<IActionResult> OnGetPatchAsync(Guid eventId)
+    {
+        // TODO: Replace with your actual patch-fetching logic
+        // Example: var patch = await _dashboardService.GetEventPatchAsync(eventId);
+        var patch = await _dashboardService.GetEventPatchAsync(eventId);
+        if (patch == null)
+        {
+            return new JsonResult(Array.Empty<object>());
+        }
+        return new JsonResult(patch);
+    }
 }

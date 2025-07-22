@@ -90,6 +90,19 @@ public class DashboardService(
         return stats;
     }
 
+    public async Task<List<object>> GetEventPatchAsync(Guid eventId)
+    {
+        AddAuthorizationHeader();
+        var response = await _httpClient.GetAsync($"events/{eventId}/patch");
+        if (!response.IsSuccessStatusCode)
+        {
+            logger.LogWarning("No patch available for event {EventId}", eventId);
+            return new List<object>();
+        }
+        var patch = await response.Content.ReadFromJsonAsync<List<object>>();
+        return patch ?? new List<object>();
+    }
+
     private List<OrderStatistic> GenerateOrderStatistics(List<OrderDto> orders)
     {
         // For demo/initial implementation purpose, if no orders exist, create some sample data

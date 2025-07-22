@@ -458,7 +458,7 @@
                     const patchElement = document.getElementById('eventDetailPatch');
                     patchElement.innerText = 'Loading...';
                     console.log('eventId:', eventData.eventId, 'EventId:', eventData.EventId);
-                    fetch(`/modulith/events/${eventData.eventId || eventData.EventId}/patch`)
+                    fetch(`/Index?handler=Patch&eventId=${eventData.eventId || eventData.EventId}`)
                         .then(response => {
                             if (!response.ok) throw new Error('No patch available');
                             return response.json();
