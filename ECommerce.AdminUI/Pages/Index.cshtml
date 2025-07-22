@@ -457,6 +457,7 @@
                     // Fetch and display the patch for this event
                     const patchElement = document.getElementById('eventDetailPatch');
                     patchElement.innerText = 'Loading...';
+                    console.log('eventId:', eventData.eventId, 'EventId:', eventData.EventId);
                     fetch(`/events/${eventData.eventId || eventData.EventId}/patch`)
                         .then(response => {
                             if (!response.ok) throw new Error('No patch available');
