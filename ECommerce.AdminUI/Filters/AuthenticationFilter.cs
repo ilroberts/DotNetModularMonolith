@@ -34,7 +34,7 @@ public class AuthenticationFilter(ILogger<AuthenticationFilter> logger) : IPageF
             var session = context.HttpContext.Session;
             if (session is not { IsAvailable: true })
             {
-                context.Result = new RedirectResult("/Admin/Login");
+                context.Result = new RedirectResult("/admin/Login");
                 return;
             }
 
@@ -42,7 +42,7 @@ public class AuthenticationFilter(ILogger<AuthenticationFilter> logger) : IPageF
             if (string.IsNullOrEmpty(token))
             {
                 // Redirect to login if no token
-                context.Result = new RedirectResult("/Admin/Login");
+                context.Result = new RedirectResult("/admin/Login");
                 return;
             }
 
