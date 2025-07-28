@@ -28,4 +28,8 @@
     <ProjectReference Include="..\ECommerce.Contracts\ECommerce.Contracts.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <EmbeddedResource Include="Resources/Schemas/*.json" />
+  </ItemGroup>
+
 </Project>

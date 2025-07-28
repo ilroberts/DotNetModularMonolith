@@ -8,30 +8,7 @@ public static class ProductSchemaVersions
     {
         EntityType = "Product",
         Version = 1,
-        SchemaDefinition = @"{
-                ""$schema"": ""https://json-schema.org/draft/2020-12/schema"",
-                ""$id"": ""https://example.com/schemas/product/v1"",
-                ""title"": ""Product"",
-                ""description"": ""A product entity"",
-                ""type"": ""object"",
-                ""properties"": {
-                    ""Id"": {
-                        ""type"": ""string"",
-                        ""description"": ""Unique product identifier""
-                    },
-                    ""Name"": {
-                        ""type"": ""string"",
-                        ""description"": ""Product name""
-                    },
-                    ""Price"": {
-                        ""type"": ""number"",
-                        ""format"": ""decimal"",
-                        ""description"": ""Product price""
-                    }
-                },
-                ""required"": [""Id"", ""Name"", ""Price""],
-                ""additionalProperties"": false
-            }",
+        SchemaDefinition = SchemaFileLoader.LoadEmbeddedSchema("ECommerce.BusinessEvents.Resources.Schemas.product.v1.schema.json"),
         CreatedDate = new DateTime(2024, 1, 1)
     };
 

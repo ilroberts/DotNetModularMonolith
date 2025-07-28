@@ -1,0 +1,25 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://example.com/schemas/product/v1",
+    "title": "Product",
+    "description": "A product entity",
+    "type": "object",
+    "properties": {
+        "Id": {
+            "type": "string",
+            "description": "Unique product identifier"
+        },
+        "Name": {
+            "type": "string",
+            "description": "Product name"
+        },
+        "Price": {
+            "type": "number",
+            "format": "decimal",
+            "description": "Product price"
+        }
+    },
+    "required": ["Id", "Name", "Price"],
+    "additionalProperties": false
+}
+
