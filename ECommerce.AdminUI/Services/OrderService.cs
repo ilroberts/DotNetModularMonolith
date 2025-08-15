@@ -1,3 +1,4 @@
+using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 
@@ -164,28 +165,30 @@ namespace ECommerce.AdminUI.Services
 
             try
             {
-                // Convert our OrderDto to the API format
-                var apiOrder = new ApiOrderDto
+                // Prepare the order items array for the API using CreateOrderItemDto
+                var apiOrderItems = new[]
                 {
-                    CustomerId = order.CustomerId,
-                    Items =
-                    [
-                        new ApiOrderItemDto { ProductId = order.ProductId,
-                            Quantity = order.Quantity,
-                            Price = order.ProductPrice }
-                    ]
+                    new CreateOrderItemDto
+                    {
+                        ProductId = order.ProductId,
+                        Quantity = order.Quantity,
+                        Price = order.ProductPrice
+                    }
                 };
-
+                var orderContents = JsonSerializer.Serialize(apiOrderItems);
                 var content = new StringContent(
-                    JsonSerializer.Serialize(apiOrder),
+                    orderContents,
                     Encoding.UTF8,
                     "application/json");
+
+                // Build the API URL with customerId as query parameter
+                var url = $"/modulith/orders?customerId={order.CustomerId}";
 
                 // Define the API call as a function that takes a token
                 async Task<HttpResponseMessage> apiCall(string tkn)
                 {
-                    AddAuthorizationHeader(_httpClient, tkn);
-                    return await _httpClient.PostAsync("orders", content);
+                    _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", tkn);
+                    return await _httpClient.PostAsync(url, content);
                 }
 
                 // Execute with automatic token refresh
