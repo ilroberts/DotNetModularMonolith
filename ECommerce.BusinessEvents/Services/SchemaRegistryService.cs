@@ -1,9 +1,7 @@
 using Microsoft.EntityFrameworkCore;
-using ModularMonolith.Domain.BusinessEvents;
 using ECommerce.BusinessEvents.Persistence;
 using ECommerce.BusinessEvents.Domain;
-using Newtonsoft.Json.Schema;
-using Newtonsoft.Json.Linq;
+using System.Text.Json;
 using DomainSchemaVersion = ModularMonolith.Domain.BusinessEvents.SchemaVersion;
 
 namespace ECommerce.BusinessEvents.Services
@@ -77,8 +75,8 @@ namespace ECommerce.BusinessEvents.Services
 
             try
             {
-                var schema = JSchema.Parse(schemaDefinition);
-                ExtractMetadataFromSchema(schema, config, string.Empty);
+                using var document = JsonDocument.Parse(schemaDefinition);
+                ExtractMetadataFromSchema(document.RootElement, config, string.Empty);
             }
             catch (Exception ex)
             {
@@ -94,13 +92,14 @@ namespace ECommerce.BusinessEvents.Services
         /// Recursively extracts metadata field configurations from JSON schema.
         /// Supports nested objects using dot notation for field paths.
         /// </summary>
-        private void ExtractMetadataFromSchema(JSchema schema, MetadataExtractionConfig config, string fieldPath)
+        private void ExtractMetadataFromSchema(JsonElement schemaElement, MetadataExtractionConfig config, string fieldPath)
         {
-            if (schema.Properties == null) return;
+            if (!schemaElement.TryGetProperty("properties", out var propertiesElement))
+                return;
 
-            foreach (var property in schema.Properties)
+            foreach (var property in propertiesElement.EnumerateObject())
             {
-                var propertyName = property.Key;
+                var propertyName = property.Name;
                 var propertySchema = property.Value;
                 var currentPath = string.IsNullOrEmpty(fieldPath) ? propertyName : $"{fieldPath}.{propertyName}";
 
@@ -112,7 +111,7 @@ namespace ECommerce.BusinessEvents.Services
                 }
 
                 // Recursively process nested objects
-                if (propertySchema.Type == JSchemaType.Object && propertySchema.Properties?.Any() == true)
+                if (IsObjectType(propertySchema) && propertySchema.TryGetProperty("properties", out _))
                 {
                     ExtractMetadataFromSchema(propertySchema, config, currentPath);
                 }
@@ -122,11 +121,11 @@ namespace ECommerce.BusinessEvents.Services
         /// <summary>
         /// Checks if a JSON schema property has the x-metadata custom annotation set to true.
         /// </summary>
-        private bool HasMetadataAnnotation(JSchema propertySchema)
+        private bool HasMetadataAnnotation(JsonElement propertySchema)
         {
-            if (propertySchema.ExtensionData?.TryGetValue("x-metadata", out var metadataValue) == true)
+            if (propertySchema.TryGetProperty("x-metadata", out var metadataElement))
             {
-                return metadataValue.Type == JTokenType.Boolean && metadataValue.Value<bool>();
+                return metadataElement.ValueKind == JsonValueKind.True;
             }
             return false;
         }
@@ -135,14 +134,19 @@ namespace ECommerce.BusinessEvents.Services
         /// Maps JSON schema types to BusinessEventMetadata DataType values.
         /// Supports string, number, boolean, and date types.
         /// </summary>
-        private string MapSchemaTypeToDataType(JSchema propertySchema)
+        private string MapSchemaTypeToDataType(JsonElement propertySchema)
         {
-            return propertySchema.Type switch
+            if (!propertySchema.TryGetProperty("type", out var typeElement))
+                return "string"; // Default fallback
+
+            var schemaType = typeElement.GetString();
+
+            return schemaType switch
             {
-                JSchemaType.String when IsDateTimeFormat(propertySchema) => "date",
-                JSchemaType.String => "string",
-                JSchemaType.Number or JSchemaType.Integer => "number",
-                JSchemaType.Boolean => "boolean",
+                "string" when IsDateTimeFormat(propertySchema) => "date",
+                "string" => "string",
+                "number" or "integer" => "number",
+                "boolean" => "boolean",
                 _ => "string" // Default fallback
             };
         }
@@ -150,10 +154,26 @@ namespace ECommerce.BusinessEvents.Services
         /// <summary>
         /// Determines if a string property represents a date/time value based on format annotations.
         /// </summary>
-        private bool IsDateTimeFormat(JSchema propertySchema)
+        private bool IsDateTimeFormat(JsonElement propertySchema)
         {
-            var format = propertySchema.Format;
-            return format == "date-time" || format == "date" || format == "time";
+            if (propertySchema.TryGetProperty("format", out var formatElement))
+            {
+                var format = formatElement.GetString();
+                return format == "date-time" || format == "date" || format == "time";
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Determines if a JSON schema element represents an object type.
+        /// </summary>
+        private bool IsObjectType(JsonElement propertySchema)
+        {
+            if (propertySchema.TryGetProperty("type", out var typeElement))
+            {
+                return typeElement.GetString() == "object";
+            }
+            return false;
         }
     }
 }

@@ -6,7 +6,6 @@ using Microsoft.EntityFrameworkCore;
 using ECommerce.BusinessEvents.Domain;
 using ECommerce.Contracts.DTOs;
 using ECommerce.Contracts.Interfaces;
-
 using ECommerce.Common;
 
 namespace ECommerce.BusinessEvents.Services
@@ -42,24 +41,167 @@ namespace ECommerce.BusinessEvents.Services
                 return Result<Unit, string>.Failure(validationResult.Error!);
             }
 
-            var businessEvent = new BusinessEvent
-            {
-                EventId = businessEventDto.EventId == Guid.Empty ? Guid.NewGuid() : businessEventDto.EventId,
-                EntityType = businessEventDto.EntityType,
-                EntityId = businessEventDto.EntityId,
-                EventType = businessEventDto.EventType.ToString(),
-                SchemaVersion = schemaVersion,
-                EventTimestamp = businessEventDto.EventTimestamp == default ?
-                    DateTimeOffset.UtcNow : businessEventDto.EventTimestamp,
-                CorrelationId = businessEventDto.CorrelationId,
-                ActorId = businessEventDto.ActorId,
-                ActorType = businessEventDto.ActorType.ToString(),
-                EntityData = json
-            };
+            // Use transaction to ensure both BusinessEvent and BusinessEventMetadata are saved together
+            using var transaction = await dbContext.Database.BeginTransactionAsync();
 
-            dbContext.BusinessEvents.Add(businessEvent);
-            await dbContext.SaveChangesAsync();
-            return Result<Unit, string>.Success(new Unit());
+            try
+            {
+                var businessEvent = new BusinessEvent
+                {
+                    EventId = businessEventDto.EventId == Guid.Empty ? Guid.NewGuid() : businessEventDto.EventId,
+                    EntityType = businessEventDto.EntityType,
+                    EntityId = businessEventDto.EntityId,
+                    EventType = businessEventDto.EventType.ToString(),
+                    SchemaVersion = schemaVersion,
+                    EventTimestamp = businessEventDto.EventTimestamp == default ?
+                        DateTimeOffset.UtcNow : businessEventDto.EventTimestamp,
+                    CorrelationId = businessEventDto.CorrelationId,
+                    ActorId = businessEventDto.ActorId,
+                    ActorType = businessEventDto.ActorType.ToString(),
+                    EntityData = json
+                };
+
+                // Save main business event
+                dbContext.BusinessEvents.Add(businessEvent);
+                await dbContext.SaveChangesAsync();
+
+                // Extract and save metadata
+                var metadataResult = await ExtractAndSaveMetadataAsync(
+                    businessEvent.EventId,
+                    businessEvent.EntityType,
+                    businessEvent.EntityId,
+                    json,
+                    schemaVersion);
+
+                if (!metadataResult.IsSuccess)
+                {
+                    await transaction.RollbackAsync();
+                    return Result<Unit, string>.Failure($"Metadata save failed: {metadataResult.Error}");
+                }
+
+                await transaction.CommitAsync();
+                logger.LogInformation("Successfully tracked business event {EventId} with metadata", businessEvent.EventId);
+
+                return Result<Unit, string>.Success(new Unit());
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                logger.LogError(ex, "Transaction failed while tracking business event for entity {EntityType}:{EntityId}", entityType, businessEventDto.EntityId);
+                return Result<Unit, string>.Failure($"Transaction failed: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Extracts metadata from JSON data based on schema configuration and saves to BusinessEventMetadata table.
+        /// </summary>
+        private async Task<Result<Unit, string>> ExtractAndSaveMetadataAsync(
+            Guid eventId,
+            string entityType,
+            string entityId,
+            string jsonData,
+            int schemaVersion)
+        {
+            try
+            {
+                // Get metadata configuration from schema
+                var metadataConfig = await schemaRegistry.GetMetadataConfigAsync(entityType, schemaVersion);
+
+                if (!metadataConfig.HasMetadata)
+                {
+                    logger.LogDebug("No metadata fields configured for {EntityType} v{SchemaVersion}, skipping metadata extraction",
+                        entityType, schemaVersion);
+                    return Result<Unit, string>.Success(new Unit());
+                }
+
+                // Extract metadata fields from JSON
+                var metadataEntries = ExtractMetadataFromJson(jsonData, metadataConfig);
+
+                // Create BusinessEventMetadata entries
+                var businessEventMetadata = metadataEntries.Select(entry => new BusinessEventMetadata
+                {
+                    EventId = eventId,
+                    EntityType = entityType,
+                    EntityId = entityId,
+                    MetadataKey = entry.Key,
+                    MetadataValue = entry.Value.Value?.ToString() ?? string.Empty,
+                    DataType = entry.Value.DataType
+                }).ToList();
+
+                if (businessEventMetadata.Any())
+                {
+                    dbContext.BusinessEventMetadata.AddRange(businessEventMetadata);
+                    await dbContext.SaveChangesAsync();
+
+                    logger.LogDebug("Extracted and saved {Count} metadata fields for event {EventId}",
+                        businessEventMetadata.Count, eventId);
+                }
+
+                return Result<Unit, string>.Success(new Unit());
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Failed to extract metadata for event {EventId}", eventId);
+                return Result<Unit, string>.Failure($"Metadata extraction failed: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Extracts metadata values from JSON data based on configured field paths.
+        /// Supports nested field access using dot notation.
+        /// </summary>
+        private Dictionary<string, (object? Value, string DataType)> ExtractMetadataFromJson(
+            string jsonData,
+            MetadataExtractionConfig config)
+        {
+            var metadata = new Dictionary<string, (object? Value, string DataType)>();
+
+            try
+            {
+                using var document = JsonDocument.Parse(jsonData);
+                var root = document.RootElement;
+
+                foreach (var fieldPath in config.FieldsToExtract)
+                {
+                    var value = GetValueFromJsonPath(root, fieldPath);
+                    var dataType = config.FieldTypes.GetValueOrDefault(fieldPath, "string");
+
+                    metadata[fieldPath] = (value, dataType);
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Error parsing JSON for metadata extraction: {JsonData}", jsonData);
+            }
+
+            return metadata;
+        }
+
+        /// <summary>
+        /// Retrieves a value from JSON using dot notation path (e.g., "Address.PostCode").
+        /// </summary>
+        private object? GetValueFromJsonPath(JsonElement element, string path)
+        {
+            var parts = path.Split('.');
+            var current = element;
+
+            foreach (var part in parts)
+            {
+                if (current.ValueKind != JsonValueKind.Object || !current.TryGetProperty(part, out current))
+                {
+                    return null;
+                }
+            }
+
+            return current.ValueKind switch
+            {
+                JsonValueKind.String => current.GetString(),
+                JsonValueKind.Number => current.GetDecimal(),
+                JsonValueKind.True => true,
+                JsonValueKind.False => false,
+                JsonValueKind.Null => null,
+                _ => current.GetRawText()
+            };
         }
 
         public async Task<List<BusinessEvent>> GetAllEventsAsync()

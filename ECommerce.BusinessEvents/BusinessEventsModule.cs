@@ -33,7 +33,7 @@ namespace ECommerce.BusinessEvents
                 else
                 {
                     logger?.LogInformation("BusinessEventsModule: No connection string found, using in-memory database");
-                    options.UseInMemoryDatabase("ECommerce.BusinessEvents");
+                    options.UseInMemoryDatabase("ECommerce.Business.Events");
                 }
             });
 
@@ -43,6 +43,9 @@ namespace ECommerce.BusinessEvents
             services.AddScoped<IJsonSchemaValidator, JsonSchemaValidator>();
             services.AddScoped<IEventRetrievalService>(sp =>
                 (IEventRetrievalService)sp.GetRequiredService<IBusinessEventService>());
+
+            // Register new EventQueryService for metadata-based queries
+            services.AddScoped<IEventQueryService, EventQueryService>();
 
             // Add other services as needed
 
