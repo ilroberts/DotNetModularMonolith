@@ -7,16 +7,19 @@
     "properties": {
         "Id": {
             "type": "string",
-            "description": "Unique customer identifier"
+            "description": "Unique customer identifier",
+            "x-metadata": true
         },
         "Name": {
             "type": "string",
-            "description": "Customer's name"
+            "description": "Customer's name",
+            "x-metadata": true
         },
         "Email": {
             "type": "string",
             "format": "email",
-            "description": "Customer's email address"
+            "description": "Customer's email address",
+            "x-metadata": true
         },
         "Phone": {
             "type": "string",
@@ -30,15 +33,16 @@
         "CreatedAt": {
             "type": "string",
             "format": "date-time",
-            "description": "When the customer was created"
+            "description": "When the customer was created",
+            "x-metadata": true
         },
         "UpdatedAt": {
             "type": "string",
             "format": "date-time",
-            "description": "When the customer was last updated"
+            "description": "When the customer was last updated",
+            "x-metadata": true
         }
     },
     "required": ["Id", "Name", "Email"],
     "additionalProperties": false
 }
-

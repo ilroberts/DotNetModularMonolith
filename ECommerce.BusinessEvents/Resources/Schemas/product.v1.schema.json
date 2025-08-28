@@ -7,19 +7,21 @@
     "properties": {
         "Id": {
             "type": "string",
-            "description": "Unique product identifier"
+            "description": "Unique product identifier",
+            "x-metadata": true
         },
         "Name": {
             "type": "string",
-            "description": "Product name"
+            "description": "Product name",
+            "x-metadata": true
         },
         "Price": {
             "type": "number",
             "format": "decimal",
-            "description": "Product price"
+            "description": "Product price",
+            "x-metadata": true
         }
     },
     "required": ["Id", "Name", "Price"],
     "additionalProperties": false
 }
-
