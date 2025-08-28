@@ -14,6 +14,7 @@ namespace ECommerce.BusinessEvents.Persistence
 
         public DbSet<BusinessEvent> BusinessEvents { get; set; }
         public DbSet<SchemaVersion> SchemaVersions { get; set; }
+        public DbSet<BusinessEventMetadata> BusinessEventMetadata { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -34,6 +35,24 @@ namespace ECommerce.BusinessEvents.Persistence
                     .Concat(ProductSchemaVersions.All.ToArray())
                     .ToArray()
             );
+
+            // BusinessEventMetadata configuration
+            modelBuilder.Entity<BusinessEventMetadata>()
+                .HasKey(bem => new { bem.EventId, bem.MetadataKey });
+
+            modelBuilder.Entity<BusinessEventMetadata>()
+                .HasIndex(bem => new { bem.EntityType, bem.EntityId, bem.MetadataKey })
+                .HasDatabaseName("IX_BusinessEventMetadata_Entity");
+
+            modelBuilder.Entity<BusinessEventMetadata>()
+                .HasIndex(bem => new { bem.MetadataKey, bem.MetadataValue })
+                .HasDatabaseName("IX_BusinessEventMetadata_Key_Value");
+
+            modelBuilder.Entity<BusinessEventMetadata>()
+                .HasOne(bem => bem.BusinessEvent)
+                .WithMany()
+                .HasForeignKey(bem => bem.EventId)
+                .OnDelete(DeleteBehavior.Cascade);
 
             // ...additional configuration as needed...
         }
