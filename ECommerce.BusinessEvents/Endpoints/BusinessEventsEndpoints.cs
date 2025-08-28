@@ -1,4 +1,5 @@
 using ECommerce.BusinessEvents.Services;
+using ECommerce.BusinessEvents.Domain;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using System.ComponentModel.DataAnnotations;
@@ -10,6 +11,72 @@ namespace ECommerce.BusinessEvents.Endpoints
     {
         public static void MapBusinessEventEndpoints(this WebApplication app)
         {
+            // Enhanced Events Endpoints with Metadata Support
+
+            // Get events for a specific entity with optional field selection
+            // Example: GET /events/Customer/123?fields=Name,Email,Status
+            app.MapGet("/events/{entityType}/{entityId}", async (
+                    [FromRoute] string entityType,
+                    [FromRoute] string entityId,
+                    [FromQuery] string? fields,
+                    IEventQueryService eventQueryService) =>
+                {
+                    var fieldArray = string.IsNullOrEmpty(fields)
+                        ? null
+                        : fields.Split(',', StringSplitOptions.RemoveEmptyEntries);
+
+                    var result = await eventQueryService.GetEntityEventsAsync(
+                        entityType, entityId, fieldArray);
+
+                    return result.IsSuccess
+                        ? Results.Ok(result.Value)
+                        : Results.BadRequest(result.Error);
+                })
+                .WithName("GetEntityEvents")
+                .WithTags("BusinessEvents")
+                .WithSummary("Get events for a specific entity with optional field selection")
+                .WithDescription("Returns events for the specified entity. Use 'fields' query parameter to select specific metadata fields for better performance.")
+                .RequireAuthorization();
+
+            // Search events with metadata-based filtering
+            // Example: GET /events/search?entityType=Customer&Email=*@example.com&eventType=Updated
+            app.MapGet("/events/search", async (
+                    [FromQuery] string entityType,
+                    [FromQuery] string? eventType,
+                    [FromQuery] string? email,
+                    [FromQuery] string? name,
+                    [FromQuery] string? status,
+                    [FromQuery] int? limit,
+                    IEventQueryService eventQueryService) =>
+                {
+                    if (string.IsNullOrEmpty(entityType))
+                    {
+                        return Results.BadRequest("EntityType is required for search operations");
+                    }
+
+                    var request = new EventSearchRequest
+                    {
+                        EntityType = entityType,
+                        EventType = eventType,
+                        Email = email,
+                        Name = name,
+                        Status = status,
+                        Limit = limit
+                    };
+
+                    var result = await eventQueryService.SearchEventsAsync(request);
+
+                    return result.IsSuccess
+                        ? Results.Ok(result.Value)
+                        : Results.BadRequest(result.Error);
+                })
+                .WithName("SearchEvents")
+                .WithTags("BusinessEvents")
+                .WithSummary("Search events with metadata-based filtering")
+                .WithDescription("Search events using metadata fields with support for wildcards (e.g., Email=*@example.com)")
+                .RequireAuthorization();
+
+            // Original get all events endpoint
             app.MapGet("/events", async (IEventRetrievalService eventRetrieval) =>
                 {
                     var events = await eventRetrieval.GetAllEventsAsync();
@@ -17,6 +84,7 @@ namespace ECommerce.BusinessEvents.Endpoints
                 })
                 .WithName("GetAllBusinessEvents")
                 .WithTags("BusinessEvents")
+                .WithSummary("Get all business events")
                 .RequireAuthorization();
 
             // Schema Management Endpoints
