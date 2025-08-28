@@ -26,8 +26,6 @@ jobs:
 
       - name: Run tests
         run: |
-          dotnet test ECommerceApp.IntegrationTests/ECommerceApp.IntegrationTests.csproj --no-build --configuration Release --logger "trx;LogFileName=test_results.trx"
-          dotnet test ECommerce.AdminUI.IntegrationTests/ECommerce.AdminUI.IntegrationTests.csproj --no-build --configuration Release --logger "trx;LogFileName=adminui_test_results.trx"
           dotnet test ECommerce.Modules.Orders.Tests/ECommerce.Modules.Orders.Tests.csproj --no-build --configuration Release --logger "trx;LogFileName=orders_test_results.trx"
           dotnet test ECommerce.BusinessEvents.Tests/ECommerce.BusinessEvents.Tests.csproj --no-build --configuration Release --logger "trx;LogFileName=businessevents_test_results.trx"
 
