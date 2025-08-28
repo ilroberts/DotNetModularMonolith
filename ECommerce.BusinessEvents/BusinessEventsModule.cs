@@ -1,3 +1,4 @@
+using ECommerce.BusinessEvents.Infrastructure;
 using ECommerce.BusinessEvents.Infrastructure.Validators;
 using ECommerce.BusinessEvents.Persistence;
 using ECommerce.BusinessEvents.Services;
@@ -39,6 +40,11 @@ namespace ECommerce.BusinessEvents
 
             // Register SchemaRegistryService
             services.AddScoped<SchemaRegistryService>();
+            services.AddScoped<ITransactionManager, EfCoreTransactionManager>(sp =>
+            {
+                var dbContext = sp.GetRequiredService<BusinessEventDbContext>();
+                return new EfCoreTransactionManager(dbContext);
+            });
             services.AddScoped<IBusinessEventService, EventTrackingService>();
             services.AddScoped<IJsonSchemaValidator, JsonSchemaValidator>();
             services.AddScoped<IEventRetrievalService>(sp =>

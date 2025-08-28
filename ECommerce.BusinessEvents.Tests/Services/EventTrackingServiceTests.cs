@@ -6,6 +6,7 @@ using ECommerce.BusinessEvents.Infrastructure.Validators;
 using Moq;
 using ECommerce.Contracts.DTOs;
 using ECommerce.Contracts.Interfaces;
+using ECommerce.BusinessEvents.Infrastructure;
 
 namespace ECommerce.BusinessEvents.Tests.Services
 {
@@ -15,6 +16,7 @@ namespace ECommerce.BusinessEvents.Tests.Services
         private readonly SchemaRegistryService _schemaRegistry;
         private readonly Mock<IJsonSchemaValidator> _schemaValidatorMock;
         private readonly EventTrackingService _eventTracker;
+        private readonly ITransactionManager _transactionManager;
 
         public EventTrackingServiceTests()
         {
@@ -26,7 +28,8 @@ namespace ECommerce.BusinessEvents.Tests.Services
             _schemaRegistry = new SchemaRegistryService(_context);
             _schemaValidatorMock = new Mock<IJsonSchemaValidator>();
             var loggerMock = new Mock<Microsoft.Extensions.Logging.ILogger<EventTrackingService>>();
-            _eventTracker = new EventTrackingService(_context, _schemaRegistry, _schemaValidatorMock.Object, loggerMock.Object);
+            _transactionManager = new NoOpTransactionManager();
+            _eventTracker = new EventTrackingService(_context, _schemaRegistry, _schemaValidatorMock.Object, loggerMock.Object, _transactionManager);
 
             InitializeTestSchema().Wait();
         }

@@ -7,6 +7,7 @@ using ECommerce.BusinessEvents.Domain;
 using ECommerce.Contracts.DTOs;
 using ECommerce.Contracts.Interfaces;
 using ECommerce.Common;
+using ECommerce.BusinessEvents.Infrastructure;
 
 namespace ECommerce.BusinessEvents.Services
 {
@@ -14,7 +15,8 @@ namespace ECommerce.BusinessEvents.Services
         BusinessEventDbContext dbContext,
         SchemaRegistryService schemaRegistry,
         IJsonSchemaValidator schemaValidator,
-        ILogger<EventTrackingService> logger) : IBusinessEventService, IEventRetrievalService
+        ILogger<EventTrackingService> logger,
+        ITransactionManager transactionManager) : IBusinessEventService, IEventRetrievalService
     {
         public async Task<Result<Unit, string>> TrackEventAsync(BusinessEventDto businessEventDto)
         {
@@ -41,9 +43,7 @@ namespace ECommerce.BusinessEvents.Services
                 return Result<Unit, string>.Failure(validationResult.Error!);
             }
 
-            // Use transaction to ensure both BusinessEvent and BusinessEventMetadata are saved together
-            using var transaction = await dbContext.Database.BeginTransactionAsync();
-
+            await transactionManager.BeginTransactionAsync();
             try
             {
                 var businessEvent = new BusinessEvent
@@ -75,20 +75,24 @@ namespace ECommerce.BusinessEvents.Services
 
                 if (!metadataResult.IsSuccess)
                 {
-                    await transaction.RollbackAsync();
+                    await transactionManager.RollbackAsync();
                     return Result<Unit, string>.Failure($"Metadata save failed: {metadataResult.Error}");
                 }
 
-                await transaction.CommitAsync();
+                await transactionManager.CommitAsync();
                 logger.LogInformation("Successfully tracked business event {EventId} with metadata", businessEvent.EventId);
 
                 return Result<Unit, string>.Success(new Unit());
             }
             catch (Exception ex)
             {
-                await transaction.RollbackAsync();
-                logger.LogError(ex, "Transaction failed while tracking business event for entity {EntityType}:{EntityId}", entityType, businessEventDto.EntityId);
-                return Result<Unit, string>.Failure($"Transaction failed: {ex.Message}");
+                logger.LogError(ex, "Failed to track business event for entity type {EntityType}", entityType);
+                await transactionManager.RollbackAsync();
+                return Result<Unit, string>.Failure($"Failed to track business event: {ex.Message}");
+            }
+            finally
+            {
+                await transactionManager.DisposeAsync();
             }
         }
 
