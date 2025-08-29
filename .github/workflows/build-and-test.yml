@@ -24,10 +24,16 @@ jobs:
       - name: Build solution
         run: dotnet build ModularMonolith.sln --no-restore --configuration Release
 
-      - name: Run tests
+      - name: Run unit tests
         run: |
           dotnet test ECommerce.Modules.Orders.Tests/ECommerce.Modules.Orders.Tests.csproj --no-build --configuration Release --logger "trx;LogFileName=orders_test_results.trx"
           dotnet test ECommerce.BusinessEvents.Tests/ECommerce.BusinessEvents.Tests.csproj --no-build --configuration Release --logger "trx;LogFileName=businessevents_test_results.trx"
+          dotnet test ECommerce.AdminUI.Tests/ECommerce.AdminUI.Tests.csproj --no-build --configuration Release --logger "trx;LogFileName=adminui_unit_test_results.trx"
+
+      - name: Run integration tests
+        run: |
+          dotnet test ECommerceApp.IntegrationTests/ECommerceApp.IntegrationTests.csproj --no-build --configuration Release --logger "trx;LogFileName=ecommerceapp_integration_test_results.trx"
+          dotnet test ECommerce.AdminUI.IntegrationTests/ECommerce.AdminUI.IntegrationTests.csproj --no-build --configuration Release --logger "trx;LogFileName=adminui_integration_test_results.trx"
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
