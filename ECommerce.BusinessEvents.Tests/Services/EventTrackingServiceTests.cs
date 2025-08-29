@@ -212,6 +212,123 @@ namespace ECommerce.BusinessEvents.Tests.Services
             Assert.Empty(events);
         }
 
+        [Fact]
+        public async Task TrackEventAsync_WithNullAndEmptyFields_OnlySavesMetadataForFieldsWithData()
+        {
+            // Arrange - Create a schema with metadata extraction configuration
+            string customerSchemaWithMetadata = @"{
+                ""$schema"": ""https://json-schema.org/draft/2020-12/schema"",
+                ""$id"": ""https://example.com/schemas/customer-with-metadata/v1"",
+                ""title"": ""Customer With Metadata"",
+                ""type"": ""object"",
+                ""properties"": {
+                    ""Id"": {
+                        ""type"": ""string"",
+                        ""x-metadata"": true
+                    },
+                    ""Name"": {
+                        ""type"": ""string"",
+                        ""x-metadata"": true
+                    },
+                    ""Email"": {
+                        ""type"": ""string"",
+                        ""format"": ""email"",
+                        ""x-metadata"": true
+                    },
+                    ""Phone"": {
+                        ""type"": [""string"", ""null""],
+                        ""x-metadata"": true
+                    },
+                    ""CompanyName"": {
+                        ""type"": [""string"", ""null""],
+                        ""x-metadata"": true
+                    },
+                    ""Status"": {
+                        ""type"": ""string"",
+                        ""x-metadata"": true
+                    }
+                },
+                ""required"": [""Id"", ""Name"", ""Email""]
+            }";
+
+            await _schemaRegistry.AddSchemaAsync("CustomerWithMetadata", 1, customerSchemaWithMetadata);
+
+            // Create test data with some null/empty fields
+            // Filtering happens in ExtractMetadataFromJson during JSON parsing stage
+            var customerData = new
+            {
+                Id = "test-123",
+                Name = "John Doe",
+                Email = "john.doe@example.com",
+                Phone = (string?)null,           // null field - should be filtered out
+                CompanyName = "",                // empty string - should be filtered out
+                Status = "Active"                // valid field - should be included
+            };
+
+            _schemaValidatorMock
+                .Setup(v => v.Validate(It.IsAny<string>(), It.IsAny<string>()))
+                .Returns(ECommerce.Common.Result<ECommerce.Common.Unit, string>.Success(new ECommerce.Common.Unit()));
+
+            var dto = new BusinessEventDto
+            {
+                EntityType = "CustomerWithMetadata",
+                EntityId = "test-123",
+                EventType = IBusinessEventService.EventType.Created,
+                SchemaVersion = 1,
+                EventTimestamp = DateTimeOffset.UtcNow,
+                CorrelationId = Guid.NewGuid().ToString(),
+                ActorId = "test-user",
+                ActorType = IBusinessEventService.ActorType.User,
+                EntityData = customerData
+            };
+
+            // Act
+            var result = await _eventTracker.TrackEventAsync(dto);
+
+            // Assert
+            Assert.True(result.IsSuccess, result.Error);
+
+            // Verify the main event was saved
+            var savedEvent = await _context.BusinessEvents.FirstOrDefaultAsync();
+            Assert.NotNull(savedEvent);
+            Assert.Equal("CustomerWithMetadata", savedEvent.EntityType);
+            Assert.Equal("test-123", savedEvent.EntityId);
+
+            // Verify metadata - should only have records for fields with actual data
+            // Null and empty fields are filtered out in ExtractMetadataFromJson method
+            var metadataRecords = await _context.BusinessEventMetadata
+                .Where(m => m.EventId == savedEvent.EventId)
+                .ToListAsync();
+
+            // Should have metadata for: Id, Name, Email, Status (4 fields)
+            // Should NOT have metadata for: Phone (null), CompanyName (empty string)
+            Assert.Equal(4, metadataRecords.Count);
+
+            // Verify specific metadata entries exist with correct values
+            var idMetadata = metadataRecords.FirstOrDefault(m => m.MetadataKey == "Id");
+            Assert.NotNull(idMetadata);
+            Assert.Equal("test-123", idMetadata.MetadataValue);
+
+            var nameMetadata = metadataRecords.FirstOrDefault(m => m.MetadataKey == "Name");
+            Assert.NotNull(nameMetadata);
+            Assert.Equal("John Doe", nameMetadata.MetadataValue);
+
+            var emailMetadata = metadataRecords.FirstOrDefault(m => m.MetadataKey == "Email");
+            Assert.NotNull(emailMetadata);
+            Assert.Equal("john.doe@example.com", emailMetadata.MetadataValue);
+
+            var statusMetadata = metadataRecords.FirstOrDefault(m => m.MetadataKey == "Status");
+            Assert.NotNull(statusMetadata);
+            Assert.Equal("Active", statusMetadata.MetadataValue);
+
+            // Verify null and empty fields are NOT saved as metadata
+            var phoneMetadata = metadataRecords.FirstOrDefault(m => m.MetadataKey == "Phone");
+            Assert.Null(phoneMetadata);
+
+            var companyMetadata = metadataRecords.FirstOrDefault(m => m.MetadataKey == "CompanyName");
+            Assert.Null(companyMetadata);
+        }
+
         public void Dispose()
         {
             _context.Dispose();

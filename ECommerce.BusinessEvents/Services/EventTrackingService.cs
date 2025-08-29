@@ -108,6 +108,9 @@ namespace ECommerce.BusinessEvents.Services
         {
             try
             {
+                logger.LogInformation("Adding metadata for event {EventId}, entity type {EntityType}, entity ID {EntityId}",
+                    eventId, entityType, entityId);
+
                 // Get metadata configuration from schema
                 var metadataConfig = await schemaRegistry.GetMetadataConfigAsync(entityType, schemaVersion);
 
@@ -121,16 +124,17 @@ namespace ECommerce.BusinessEvents.Services
                 // Extract metadata fields from JSON
                 var metadataEntries = ExtractMetadataFromJson(jsonData, metadataConfig);
 
-                // Create BusinessEventMetadata entries
-                var businessEventMetadata = metadataEntries.Select(entry => new BusinessEventMetadata
-                {
-                    EventId = eventId,
-                    EntityType = entityType,
-                    EntityId = entityId,
-                    MetadataKey = entry.Key,
-                    MetadataValue = entry.Value.Value?.ToString() ?? string.Empty,
-                    DataType = entry.Value.DataType
-                }).ToList();
+                // Create BusinessEventMetadata entries (filtering already done in ExtractMetadataFromJson)
+                var businessEventMetadata = metadataEntries
+                    .Select(entry => new BusinessEventMetadata
+                    {
+                        EventId = eventId,
+                        EntityType = entityType,
+                        EntityId = entityId,
+                        MetadataKey = entry.Key,
+                        MetadataValue = entry.Value.Value!.ToString()!,
+                        DataType = entry.Value.DataType
+                    }).ToList();
 
                 if (businessEventMetadata.Any())
                 {
@@ -153,6 +157,7 @@ namespace ECommerce.BusinessEvents.Services
         /// <summary>
         /// Extracts metadata values from JSON data based on configured field paths.
         /// Supports nested field access using dot notation.
+        /// Only includes fields that have actual data (not null or empty).
         /// </summary>
         private Dictionary<string, (object? Value, string DataType)> ExtractMetadataFromJson(
             string jsonData,
@@ -168,9 +173,13 @@ namespace ECommerce.BusinessEvents.Services
                 foreach (var fieldPath in config.FieldsToExtract)
                 {
                     var value = GetValueFromJsonPath(root, fieldPath);
-                    var dataType = config.FieldTypes.GetValueOrDefault(fieldPath, "string");
 
-                    metadata[fieldPath] = (value, dataType);
+                    // Only include fields that have actual data
+                    if (value != null && !string.IsNullOrWhiteSpace(value.ToString()))
+                    {
+                        var dataType = config.FieldTypes.GetValueOrDefault(fieldPath, "string");
+                        metadata[fieldPath] = (value, dataType);
+                    }
                 }
             }
             catch (Exception ex)

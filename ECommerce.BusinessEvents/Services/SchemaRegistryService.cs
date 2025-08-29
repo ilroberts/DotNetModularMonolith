@@ -103,15 +103,21 @@ namespace ECommerce.BusinessEvents.Services
                 var propertySchema = property.Value;
                 var currentPath = string.IsNullOrEmpty(fieldPath) ? propertyName : $"{fieldPath}.{propertyName}";
 
-                // Check if this property has x-metadata annotation
-                if (HasMetadataAnnotation(propertySchema))
+                // Check if this property is marked for metadata extraction
+                if (propertySchema.TryGetProperty("x-metadata", out var metadataFlag) &&
+                    metadataFlag.ValueKind == JsonValueKind.True)
                 {
                     config.FieldsToExtract.Add(currentPath);
-                    config.FieldTypes[currentPath] = MapSchemaTypeToDataType(propertySchema);
+
+                    // Determine data type from schema
+                    var dataType = GetDataTypeFromSchema(propertySchema);
+                    config.FieldTypes[currentPath] = dataType;
                 }
 
                 // Recursively process nested objects
-                if (IsObjectType(propertySchema) && propertySchema.TryGetProperty("properties", out _))
+                if (propertySchema.TryGetProperty("type", out var typeElement) &&
+                    typeElement.ValueKind == JsonValueKind.String &&
+                    typeElement.GetString() == "object")
                 {
                     ExtractMetadataFromSchema(propertySchema, config, currentPath);
                 }
@@ -119,59 +125,65 @@ namespace ECommerce.BusinessEvents.Services
         }
 
         /// <summary>
-        /// Checks if a JSON schema property has the x-metadata custom annotation set to true.
+        /// Determines the data type for metadata storage based on JSON schema type definition.
         /// </summary>
-        private bool HasMetadataAnnotation(JsonElement propertySchema)
+        private string GetDataTypeFromSchema(JsonElement propertySchema)
         {
-            if (propertySchema.TryGetProperty("x-metadata", out var metadataElement))
+            if (!propertySchema.TryGetProperty("type", out var typeElement))
+                return "string";
+
+            // Handle array of types (e.g., ["string", "null"])
+            if (typeElement.ValueKind == JsonValueKind.Array)
             {
-                return metadataElement.ValueKind == JsonValueKind.True;
+                foreach (var arrayElement in typeElement.EnumerateArray())
+                {
+                    if (arrayElement.ValueKind == JsonValueKind.String)
+                    {
+                        var typeString = arrayElement.GetString();
+                        if (typeString != "null")
+                        {
+                            return MapSchemaTypeToDataType(typeString, propertySchema);
+                        }
+                    }
+                }
+                return "string"; // Default fallback
             }
-            return false;
+
+            // Handle single type
+            if (typeElement.ValueKind == JsonValueKind.String)
+            {
+                var typeString = typeElement.GetString();
+                return MapSchemaTypeToDataType(typeString, propertySchema);
+            }
+
+            return "string"; // Default fallback
         }
 
         /// <summary>
-        /// Maps JSON schema types to BusinessEventMetadata DataType values.
-        /// Supports string, number, boolean, and date types.
+        /// Maps JSON schema types to metadata storage types.
         /// </summary>
-        private string MapSchemaTypeToDataType(JsonElement propertySchema)
+        private string MapSchemaTypeToDataType(string schemaType, JsonElement propertySchema)
         {
-            if (!propertySchema.TryGetProperty("type", out var typeElement))
-                return "string"; // Default fallback
-
-            var schemaType = typeElement.GetString();
-
-            return schemaType switch
+            return schemaType?.ToLower() switch
             {
-                "string" when IsDateTimeFormat(propertySchema) => "date",
-                "string" => "string",
-                "number" or "integer" => "number",
+                "string" => IsDateTimeFormat(propertySchema) ? "date" : "string",
+                "number" => "number",
+                "integer" => "number",
                 "boolean" => "boolean",
-                _ => "string" // Default fallback
+                _ => "string"
             };
         }
 
         /// <summary>
-        /// Determines if a string property represents a date/time value based on format annotations.
+        /// Checks if a string property has a date/time format annotation.
         /// </summary>
         private bool IsDateTimeFormat(JsonElement propertySchema)
         {
-            if (propertySchema.TryGetProperty("format", out var formatElement))
+            if (propertySchema.TryGetProperty("format", out var formatElement) &&
+                formatElement.ValueKind == JsonValueKind.String)
             {
                 var format = formatElement.GetString();
-                return format == "date-time" || format == "date" || format == "time";
-            }
-            return false;
-        }
-
-        /// <summary>
-        /// Determines if a JSON schema element represents an object type.
-        /// </summary>
-        private bool IsObjectType(JsonElement propertySchema)
-        {
-            if (propertySchema.TryGetProperty("type", out var typeElement))
-            {
-                return typeElement.GetString() == "object";
+                return format is "date" or "date-time" or "time";
             }
             return false;
         }
