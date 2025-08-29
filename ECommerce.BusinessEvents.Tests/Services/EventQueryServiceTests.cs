@@ -122,8 +122,8 @@ namespace ECommerce.BusinessEvents.Tests.Services
 
             var events = new List<BusinessEvent>
             {
-                new() { EventId = event1Id, EntityType = "Customer", EntityId = "123", EventType = "Created", EventTimestamp = DateTimeOffset.UtcNow, ActorId = "user1", ActorType = "User", EntityData = "{}", SchemaVersion = 1 },
-                new() { EventId = event2Id, EntityType = "Customer", EntityId = "456", EventType = "Updated", EventTimestamp = DateTimeOffset.UtcNow, ActorId = "user1", ActorType = "User", EntityData = "{}", SchemaVersion = 1 }
+                new() { EventId = event1Id, EntityType = "Customer", EntityId = "123", EventType = "Created", EventTimestamp = DateTimeOffset.UtcNow, ActorId = "user1", ActorType = "User", EntityData = "{\"Id\":\"123\",\"Name\":\"John Doe\",\"Email\":\"john@example.com\"}", SchemaVersion = 1 },
+                new() { EventId = event2Id, EntityType = "Customer", EntityId = "456", EventType = "Updated", EventTimestamp = DateTimeOffset.UtcNow, ActorId = "user1", ActorType = "User", EntityData = "{\"Id\":\"456\",\"Name\":\"Jane Smith\",\"Email\":\"jane@other.com\"}", SchemaVersion = 1 }
             };
 
             var metadata = new List<BusinessEventMetadata>
@@ -150,6 +150,8 @@ namespace ECommerce.BusinessEvents.Tests.Services
             var eventResponse = result.Value.First();
             Assert.Equal(event1Id, eventResponse.EventId);
             Assert.Equal("john@example.com", eventResponse.Fields["Email"]);
+            // Verify that FullData is now populated with complete JSON
+            Assert.Equal("{\"Id\":\"123\",\"Name\":\"John Doe\",\"Email\":\"john@example.com\"}", eventResponse.FullData);
         }
 
         [Fact]
@@ -165,8 +167,8 @@ namespace ECommerce.BusinessEvents.Tests.Services
 
             var events = new List<BusinessEvent>
             {
-                new() { EventId = event1Id, EntityType = "Customer", EntityId = "123", EventType = "Created", EventTimestamp = DateTimeOffset.UtcNow, ActorId = "user1", ActorType = "User", EntityData = "{}", SchemaVersion = 1 },
-                new() { EventId = event2Id, EntityType = "Customer", EntityId = "456", EventType = "Updated", EventTimestamp = DateTimeOffset.UtcNow, ActorId = "user1", ActorType = "User", EntityData = "{}", SchemaVersion = 1 }
+                new() { EventId = event1Id, EntityType = "Customer", EntityId = "123", EventType = "Created", EventTimestamp = DateTimeOffset.UtcNow, ActorId = "user1", ActorType = "User", EntityData = "{\"Id\":\"123\",\"Name\":\"John Doe\",\"Email\":\"john@example.com\"}", SchemaVersion = 1 },
+                new() { EventId = event2Id, EntityType = "Customer", EntityId = "456", EventType = "Updated", EventTimestamp = DateTimeOffset.UtcNow, ActorId = "user1", ActorType = "User", EntityData = "{\"Id\":\"456\",\"Name\":\"Jane Smith\",\"Email\":\"jane@example.com\"}", SchemaVersion = 1 }
             };
 
             var metadata = new List<BusinessEventMetadata>
@@ -190,6 +192,14 @@ namespace ECommerce.BusinessEvents.Tests.Services
             // Assert
             Assert.True(result.IsSuccess);
             Assert.Equal(2, result.Value.Count);
+
+            // Verify that both results have FullData populated
+            foreach (var eventResponse in result.Value)
+            {
+                Assert.NotNull(eventResponse.FullData);
+                Assert.NotEmpty(eventResponse.FullData);
+                Assert.Contains("Email", eventResponse.FullData);
+            }
         }
     }
 }

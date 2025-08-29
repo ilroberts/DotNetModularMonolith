@@ -129,7 +129,8 @@ namespace ECommerce.BusinessEvents.Services
                     ActorType = evt.ActorType,
                     Fields = metadata
                         .Where(m => m.EventId == evt.EventId)
-                        .ToDictionary(m => m.MetadataKey, m => m.MetadataValue)
+                        .ToDictionary(m => m.MetadataKey, m => m.MetadataValue),
+                    FullData = evt.EntityData  // Add the complete JSON data
                 }).ToList();
 
                 _logger.LogDebug("Search returned {EventCount} events for {EntityType} with {FilterCount} filters",
