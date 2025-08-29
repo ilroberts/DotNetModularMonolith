@@ -8,6 +8,8 @@ using ECommerce.Contracts.DTOs;
 using ECommerce.Contracts.Interfaces;
 using ECommerce.Common;
 using ECommerce.BusinessEvents.Infrastructure;
+using JsonFlatten;
+using Newtonsoft.Json.Linq;
 
 namespace ECommerce.BusinessEvents.Services
 {
@@ -155,8 +157,8 @@ namespace ECommerce.BusinessEvents.Services
         }
 
         /// <summary>
-        /// Extracts metadata values from JSON data based on configured field paths.
-        /// Supports nested field access using dot notation.
+        /// Extracts metadata values from JSON data using JsonFlatten for automatic flattening.
+        /// Uses schema configuration to filter which fields should be extracted as metadata.
         /// Only includes fields that have actual data (not null or empty).
         /// </summary>
         private Dictionary<string, (object? Value, string DataType)> ExtractMetadataFromJson(
@@ -167,18 +169,27 @@ namespace ECommerce.BusinessEvents.Services
 
             try
             {
-                using var document = JsonDocument.Parse(jsonData);
-                var root = document.RootElement;
+                // Convert string to JObject for JsonFlatten
+                var jObject = JObject.Parse(jsonData);
 
-                foreach (var fieldPath in config.FieldsToExtract)
+                // Use JsonFlatten to automatically flatten the JSON into dot notation
+                var flattened = jObject.Flatten();
+
+                // Get all field patterns that should be extracted based on schema configuration
+                var fieldsToExtract = GetAllFieldsToExtract(config);
+
+                foreach (var flattenedEntry in flattened)
                 {
-                    var value = GetValueFromJsonPath(root, fieldPath);
+                    var key = flattenedEntry.Key;
+                    var value = flattenedEntry.Value;
 
-                    // Only include fields that have actual data
-                    if (value != null && !string.IsNullOrWhiteSpace(value.ToString()))
+                    // Check if this flattened key matches any of our configured metadata fields
+                    if (ShouldExtractField(key, fieldsToExtract) &&
+                        value != null &&
+                        !string.IsNullOrWhiteSpace(value.ToString()))
                     {
-                        var dataType = config.FieldTypes.GetValueOrDefault(fieldPath, "string");
-                        metadata[fieldPath] = (value, dataType);
+                        var dataType = GetDataTypeForFlattenedKey(key, config);
+                        metadata[key] = (value, dataType);
                     }
                 }
             }
@@ -191,65 +202,164 @@ namespace ECommerce.BusinessEvents.Services
         }
 
         /// <summary>
-        /// Retrieves a value from JSON using dot notation path with array indexing support (e.g., "PhoneNumbers[0].Number").
+        /// Gets all field patterns that should be extracted based on schema configuration.
+        /// Includes both static fields and dynamic array fields.
         /// </summary>
-        private object? GetValueFromJsonPath(JsonElement element, string path)
+        private HashSet<string> GetAllFieldsToExtract(MetadataExtractionConfig config)
         {
-            var parts = path.Split('.');
-            var current = element;
+            var fieldsToExtract = new HashSet<string>();
 
-            foreach (var part in parts)
+            // Add static fields
+            foreach (var field in config.FieldsToExtract)
             {
-                // Check if this part contains array indexing (e.g., "PhoneNumbers[0]")
-                if (part.Contains('[') && part.Contains(']'))
+                fieldsToExtract.Add(field);
+            }
+
+            // Add array field patterns
+            foreach (var arrayPath in config.ArrayPathsToExtract.Keys)
+            {
+                try
                 {
-                    var arrayProperty = part.Substring(0, part.IndexOf('['));
-                    var indexStr = part.Substring(part.IndexOf('[') + 1, part.IndexOf(']') - part.IndexOf('[') - 1);
+                    // Parse the JSON string back to JsonElement for processing
+                    var arrayItemSchemaJson = config.ArrayPathsToExtract[arrayPath];
+                    using var schemaDoc = JsonDocument.Parse(arrayItemSchemaJson);
+                    var arrayItemSchema = schemaDoc.RootElement;
 
-                    if (!int.TryParse(indexStr, out var index))
+                    // Add patterns for array items (e.g., PhoneNumbers[*].Number, PhoneNumbers[*].Prefix)
+                    if (arrayItemSchema.TryGetProperty("properties", out var propertiesElement))
                     {
-                        return null;
+                        foreach (var property in propertiesElement.EnumerateObject())
+                        {
+                            if (property.Value.TryGetProperty("x-metadata", out var metadataFlag) &&
+                                metadataFlag.ValueKind == JsonValueKind.True)
+                            {
+                                // Create pattern like "PhoneNumbers[*].Number"
+                                fieldsToExtract.Add($"{arrayPath}[*].{property.Name}");
+                            }
+                        }
                     }
-
-                    // Navigate to the array property
-                    if (current.ValueKind != JsonValueKind.Object || !current.TryGetProperty(arrayProperty, out current))
-                    {
-                        return null;
-                    }
-
-                    // Navigate to the array element at the specified index
-                    if (current.ValueKind != JsonValueKind.Array)
-                    {
-                        return null;
-                    }
-
-                    var arrayElements = current.EnumerateArray().ToArray();
-                    if (index < 0 || index >= arrayElements.Length)
-                    {
-                        return null;
-                    }
-
-                    current = arrayElements[index];
                 }
-                else
+                catch (Exception ex)
                 {
-                    // Regular property access
-                    if (current.ValueKind != JsonValueKind.Object || !current.TryGetProperty(part, out current))
+                    logger.LogWarning(ex, "Error parsing array schema for path {ArrayPath}", arrayPath);
+                }
+            }
+
+            return fieldsToExtract;
+        }
+
+        /// <summary>
+        /// Determines if a flattened key should be extracted based on configured field patterns.
+        /// </summary>
+        private bool ShouldExtractField(string flattenedKey, HashSet<string> fieldsToExtract)
+        {
+            // Check exact matches first
+            if (fieldsToExtract.Contains(flattenedKey))
+            {
+                return true;
+            }
+
+            // Check pattern matches (e.g., PhoneNumbers[*].Number matches PhoneNumbers[0].Number)
+            foreach (var pattern in fieldsToExtract)
+            {
+                if (pattern.Contains("[*]"))
+                {
+                    // Convert pattern to regex-like matching
+                    var regexPattern = pattern.Replace("[*]", @"\[\d+\]");
+                    if (System.Text.RegularExpressions.Regex.IsMatch(flattenedKey, $"^{regexPattern}$"))
                     {
-                        return null;
+                        return true;
                     }
                 }
             }
 
-            return current.ValueKind switch
+            return false;
+        }
+
+        /// <summary>
+        /// Gets the data type for a flattened key based on schema configuration.
+        /// </summary>
+        private string GetDataTypeForFlattenedKey(string flattenedKey, MetadataExtractionConfig config)
+        {
+            // Check if we have an exact match in field types
+            if (config.FieldTypes.TryGetValue(flattenedKey, out var exactType))
             {
-                JsonValueKind.String => current.GetString(),
-                JsonValueKind.Number => current.GetDecimal(),
-                JsonValueKind.True => true,
-                JsonValueKind.False => false,
-                JsonValueKind.Null => null,
-                _ => current.GetRawText()
-            };
+                return exactType;
+            }
+
+            // For array fields, try to match the pattern
+            foreach (var arrayPath in config.ArrayPathsToExtract.Keys)
+            {
+                if (flattenedKey.StartsWith($"{arrayPath}["))
+                {
+                    try
+                    {
+                        // Parse the JSON string back to JsonElement for processing
+                        var arrayItemSchemaJson = config.ArrayPathsToExtract[arrayPath];
+                        using var schemaDoc = JsonDocument.Parse(arrayItemSchemaJson);
+                        var arrayItemSchema = schemaDoc.RootElement;
+
+                        if (arrayItemSchema.TryGetProperty("properties", out var propertiesElement))
+                        {
+                            // Extract the property name from the flattened key (e.g., "Number" from "PhoneNumbers[0].Number")
+                            var lastDotIndex = flattenedKey.LastIndexOf('.');
+                            if (lastDotIndex >= 0)
+                            {
+                                var propertyName = flattenedKey.Substring(lastDotIndex + 1);
+
+                                if (propertiesElement.TryGetProperty(propertyName, out var propertySchema))
+                                {
+                                    return GetDataTypeFromSchemaElement(propertySchema);
+                                }
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.LogWarning(ex, "Error parsing array schema for data type lookup in path {ArrayPath}", arrayPath);
+                    }
+                }
+            }
+
+            return "string"; // Default fallback
+        }
+
+        /// <summary>
+        /// Gets data type from a schema element (similar to GetDataTypeFromSchema but for individual elements).
+        /// </summary>
+        private string GetDataTypeFromSchemaElement(JsonElement propertySchema)
+        {
+            if (!propertySchema.TryGetProperty("type", out var typeElement))
+                return "string";
+
+            if (typeElement.ValueKind == JsonValueKind.String)
+            {
+                var typeString = typeElement.GetString();
+                return typeString?.ToLower() switch
+                {
+                    "string" => IsDateTimeFormatElement(propertySchema) ? "date" : "string",
+                    "number" => "number",
+                    "integer" => "number",
+                    "boolean" => "boolean",
+                    _ => "string"
+                };
+            }
+
+            return "string";
+        }
+
+        /// <summary>
+        /// Checks if a string property has a date/time format annotation (element version).
+        /// </summary>
+        private bool IsDateTimeFormatElement(JsonElement propertySchema)
+        {
+            if (propertySchema.TryGetProperty("format", out var formatElement) &&
+                formatElement.ValueKind == JsonValueKind.String)
+            {
+                var format = formatElement.GetString();
+                return format is "date" or "date-time" or "time";
+            }
+            return false;
         }
 
         public async Task<List<BusinessEvent>> GetAllEventsAsync()

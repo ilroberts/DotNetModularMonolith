@@ -120,29 +120,27 @@ namespace ECommerce.BusinessEvents.Services
                 {
                     var typeString = typeElement.GetString();
 
-                    // Recursively process nested objects
-                    if (typeString == "object")
+                    switch (typeString)
                     {
-                        ExtractMetadataFromSchema(propertySchema, config, currentPath);
-                    }
-                    // Handle arrays
-                    else if (typeString == "array" && propertySchema.TryGetProperty("items", out var itemsElement))
-                    {
-                        // Check if array items are objects with properties that have metadata annotations
-                        if (itemsElement.TryGetProperty("type", out var itemTypeElement) &&
-                            itemTypeElement.ValueKind == JsonValueKind.String &&
-                            itemTypeElement.GetString() == "object" &&
-                            itemsElement.TryGetProperty("properties", out _))
-                        {
-                            // For arrays, we need to extract metadata for indexed paths
-                            // We'll assume a reasonable number of array items (e.g., up to 10)
-                            // In a real-world scenario, you might want to make this configurable
-                            for (int i = 0; i < 10; i++)
+                        // Recursively process nested objects
+                        case "object":
+                            ExtractMetadataFromSchema(propertySchema, config, currentPath);
+                            break;
+                        // Handle arrays - store the array path and item schema for dynamic extraction
+                        case "array" when propertySchema.TryGetProperty("items", out var itemsElement):
                             {
-                                var arrayItemPath = $"{currentPath}[{i}]";
-                                ExtractMetadataFromSchema(itemsElement, config, arrayItemPath);
+                                // Check if array items are objects with properties that have metadata annotations
+                                if (itemsElement.TryGetProperty("type", out var itemTypeElement) &&
+                                    itemTypeElement.ValueKind == JsonValueKind.String &&
+                                    itemTypeElement.GetString() == "object" &&
+                                    itemsElement.TryGetProperty("properties", out _))
+                                {
+                                    // Store the array item schema as JSON string to avoid JsonElement disposal issues
+                                    config.ArrayPathsToExtract[currentPath] = itemsElement.GetRawText();
+                                }
+
+                                break;
                             }
-                        }
                     }
                 }
             }

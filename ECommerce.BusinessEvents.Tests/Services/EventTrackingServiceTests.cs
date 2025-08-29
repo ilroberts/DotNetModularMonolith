@@ -7,6 +7,9 @@ using Moq;
 using ECommerce.Contracts.DTOs;
 using ECommerce.Contracts.Interfaces;
 using ECommerce.BusinessEvents.Infrastructure;
+using ECommerce.Common;
+using Newtonsoft.Json.Linq;
+using JsonFlatten;
 
 namespace ECommerce.BusinessEvents.Tests.Services
 {
@@ -16,7 +19,6 @@ namespace ECommerce.BusinessEvents.Tests.Services
         private readonly SchemaRegistryService _schemaRegistry;
         private readonly Mock<IJsonSchemaValidator> _schemaValidatorMock;
         private readonly EventTrackingService _eventTracker;
-        private readonly ITransactionManager _transactionManager;
 
         public EventTrackingServiceTests()
         {
@@ -28,8 +30,8 @@ namespace ECommerce.BusinessEvents.Tests.Services
             _schemaRegistry = new SchemaRegistryService(_context);
             _schemaValidatorMock = new Mock<IJsonSchemaValidator>();
             var loggerMock = new Mock<Microsoft.Extensions.Logging.ILogger<EventTrackingService>>();
-            _transactionManager = new NoOpTransactionManager();
-            _eventTracker = new EventTrackingService(_context, _schemaRegistry, _schemaValidatorMock.Object, loggerMock.Object, _transactionManager);
+            ITransactionManager transactionManager = new NoOpTransactionManager();
+            _eventTracker = new EventTrackingService(_context, _schemaRegistry, _schemaValidatorMock.Object, loggerMock.Object, transactionManager);
 
             InitializeTestSchema().Wait();
         }
@@ -59,7 +61,7 @@ namespace ECommerce.BusinessEvents.Tests.Services
             Customer customer = new Customer("John Doe", "john.doe@example.com");
             _schemaValidatorMock
                 .Setup(v => v.Validate(It.IsAny<string>(), It.IsAny<string>()))
-                .Returns(ECommerce.Common.Result<ECommerce.Common.Unit, string>.Success(new ECommerce.Common.Unit()));
+                .Returns(Result<Unit, string>.Success(new Unit()));
 
             var dto = new BusinessEventDto
             {
@@ -98,7 +100,7 @@ namespace ECommerce.BusinessEvents.Tests.Services
             var invalidCustomer = new Customer("john doe", "wrong-email-format");
             _schemaValidatorMock
                 .Setup(v => v.Validate(It.IsAny<string>(), It.IsAny<string>()))
-                .Returns(ECommerce.Common.Result<ECommerce.Common.Unit, string>.Failure("Entity data does not match schema"));
+                .Returns(Result<Unit, string>.Failure("Entity data does not match schema"));
 
             var dto = new BusinessEventDto
             {
@@ -158,7 +160,7 @@ namespace ECommerce.BusinessEvents.Tests.Services
             Customer customer1 = new Customer("Alice", "alice@example.com");
             Customer customer2 = new Customer("Bob", "bob@example.com");
             _schemaValidatorMock.Setup(v => v.Validate(It.IsAny<string>(), It.IsAny<string>()))
-                .Returns(ECommerce.Common.Result<ECommerce.Common.Unit, string>.Success(new ECommerce.Common.Unit()));
+                .Returns(Result<Unit, string>.Success(new Unit()));
 
             var dto1 = new BusinessEventDto
             {
@@ -267,7 +269,7 @@ namespace ECommerce.BusinessEvents.Tests.Services
 
             _schemaValidatorMock
                 .Setup(v => v.Validate(It.IsAny<string>(), It.IsAny<string>()))
-                .Returns(ECommerce.Common.Result<ECommerce.Common.Unit, string>.Success(new ECommerce.Common.Unit()));
+                .Returns(Result<Unit, string>.Success(new Unit()));
 
             var dto = new BusinessEventDto
             {
@@ -354,6 +356,14 @@ namespace ECommerce.BusinessEvents.Tests.Services
 
             await _schemaRegistry.AddSchemaAsync("CustomerWithPhones", 1, customerSchemaWithPhones);
 
+            // Debug: Test metadata config parsing directly
+            var metadataConfig = _schemaRegistry.ParseMetadataConfig(customerSchemaWithPhones);
+            Assert.Equal(2, metadataConfig.FieldsToExtract.Count); // Should have Id and Name
+            Assert.Single(metadataConfig.ArrayPathsToExtract); // Should have PhoneNumbers array
+            Assert.Contains("Id", metadataConfig.FieldsToExtract);
+            Assert.Contains("Name", metadataConfig.FieldsToExtract);
+            Assert.Contains("PhoneNumbers", metadataConfig.ArrayPathsToExtract.Keys);
+
             var customerData = new {
                 Id = "cust-001",
                 Name = "Ent",
@@ -365,7 +375,7 @@ namespace ECommerce.BusinessEvents.Tests.Services
 
             _schemaValidatorMock
                 .Setup(v => v.Validate(It.IsAny<string>(), It.IsAny<string>()))
-                .Returns(ECommerce.Common.Result<ECommerce.Common.Unit, string>.Success(new ECommerce.Common.Unit()));
+                .Returns(Result<Unit, string>.Success(new Unit()));
 
             var dto = new BusinessEventDto
             {
@@ -392,6 +402,12 @@ namespace ECommerce.BusinessEvents.Tests.Services
                 .Where(m => m.EventId == savedEvent.EventId)
                 .ToListAsync();
 
+            // Debug: Check what we actually got vs what we expected
+            Assert.True(metadataRecords.Count > 0, "No metadata records were extracted at all!");
+
+            // Should have 6 total: Id, Name, PhoneNumbers[0].Number, PhoneNumbers[0].Prefix, PhoneNumbers[1].Number, PhoneNumbers[1].Prefix
+            Assert.Equal(6, metadataRecords.Count);
+
             // Should have Id and Name
             Assert.Contains(metadataRecords, m => m.MetadataKey == "Id" && m.MetadataValue == "cust-001");
             Assert.Contains(metadataRecords, m => m.MetadataKey == "Name" && m.MetadataValue == "Ent");
@@ -403,6 +419,35 @@ namespace ECommerce.BusinessEvents.Tests.Services
             // Should have PhoneNumbers[1].Number and PhoneNumbers[1].Prefix
             Assert.Contains(metadataRecords, m => m.MetadataKey == "PhoneNumbers[1].Number" && m.MetadataValue == "987654321");
             Assert.Contains(metadataRecords, m => m.MetadataKey == "PhoneNumbers[1].Prefix" && m.MetadataValue == "+1");
+        }
+
+        [Fact]
+        public void JsonFlatten_BasicTest_ShouldFlattenCorrectly()
+        {
+            // Arrange
+            var testJson = @"{
+                ""Id"": ""cust-001"",
+                ""Name"": ""Ent"",
+                ""PhoneNumbers"": [
+                    {""Number"": ""123456789"", ""Prefix"": ""+44""},
+                    {""Number"": ""987654321"", ""Prefix"": ""+1""}
+                ]
+            }";
+
+            // Act
+            var jObject = JObject.Parse(testJson);
+            var flattened = jObject.Flatten();
+
+            // Assert - Let's see what keys JsonFlatten actually produces
+            var keys = flattened.Keys.ToList();
+            Assert.Contains("Id", keys);
+            Assert.Contains("Name", keys);
+
+            // Check if JsonFlatten produces the expected array keys
+            Assert.Contains("PhoneNumbers[0].Number", keys);
+            Assert.Contains("PhoneNumbers[0].Prefix", keys);
+            Assert.Contains("PhoneNumbers[1].Number", keys);
+            Assert.Contains("PhoneNumbers[1].Prefix", keys);
         }
 
         public void Dispose()

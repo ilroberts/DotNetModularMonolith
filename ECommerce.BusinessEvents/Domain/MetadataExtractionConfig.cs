@@ -1,3 +1,5 @@
+
+
 namespace ECommerce.BusinessEvents.Domain
 {
     /// <summary>
@@ -10,7 +12,7 @@ namespace ECommerce.BusinessEvents.Domain
         /// List of field paths that should be extracted as metadata.
         /// Supports nested paths using dot notation (e.g., "Address.PostCode").
         /// </summary>
-        public List<string> FieldsToExtract { get; set; } = new();
+        public List<string> FieldsToExtract { get; set; } = [];
 
         /// <summary>
         /// Maps field paths to their expected data types for proper storage.
@@ -19,8 +21,14 @@ namespace ECommerce.BusinessEvents.Domain
         public Dictionary<string, string> FieldTypes { get; set; } = new();
 
         /// <summary>
+        /// Maps array paths to their item schema definitions for dynamic extraction.
+        /// Stores the schema as JSON string to avoid JsonElement disposal issues.
+        /// </summary>
+        public Dictionary<string, string> ArrayPathsToExtract { get; set; } = new();
+
+        /// <summary>
         /// Indicates whether any metadata fields are configured for extraction.
         /// </summary>
-        public bool HasMetadata => FieldsToExtract.Any();
+        public bool HasMetadata => FieldsToExtract.Any() || ArrayPathsToExtract.Any();
     }
 }
