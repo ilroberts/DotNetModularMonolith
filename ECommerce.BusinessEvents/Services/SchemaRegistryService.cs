@@ -91,6 +91,7 @@ namespace ECommerce.BusinessEvents.Services
         /// <summary>
         /// Recursively extracts metadata field configurations from JSON schema.
         /// Supports nested objects using dot notation for field paths.
+        /// Supports arrays with indexed notation for field paths (e.g., "PhoneNumbers[0].Number").
         /// </summary>
         private void ExtractMetadataFromSchema(JsonElement schemaElement, MetadataExtractionConfig config, string fieldPath)
         {
@@ -114,12 +115,35 @@ namespace ECommerce.BusinessEvents.Services
                     config.FieldTypes[currentPath] = dataType;
                 }
 
-                // Recursively process nested objects
                 if (propertySchema.TryGetProperty("type", out var typeElement) &&
-                    typeElement.ValueKind == JsonValueKind.String &&
-                    typeElement.GetString() == "object")
+                    typeElement.ValueKind == JsonValueKind.String)
                 {
-                    ExtractMetadataFromSchema(propertySchema, config, currentPath);
+                    var typeString = typeElement.GetString();
+
+                    // Recursively process nested objects
+                    if (typeString == "object")
+                    {
+                        ExtractMetadataFromSchema(propertySchema, config, currentPath);
+                    }
+                    // Handle arrays
+                    else if (typeString == "array" && propertySchema.TryGetProperty("items", out var itemsElement))
+                    {
+                        // Check if array items are objects with properties that have metadata annotations
+                        if (itemsElement.TryGetProperty("type", out var itemTypeElement) &&
+                            itemTypeElement.ValueKind == JsonValueKind.String &&
+                            itemTypeElement.GetString() == "object" &&
+                            itemsElement.TryGetProperty("properties", out _))
+                        {
+                            // For arrays, we need to extract metadata for indexed paths
+                            // We'll assume a reasonable number of array items (e.g., up to 10)
+                            // In a real-world scenario, you might want to make this configurable
+                            for (int i = 0; i < 10; i++)
+                            {
+                                var arrayItemPath = $"{currentPath}[{i}]";
+                                ExtractMetadataFromSchema(itemsElement, config, arrayItemPath);
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -162,7 +186,7 @@ namespace ECommerce.BusinessEvents.Services
         /// <summary>
         /// Maps JSON schema types to metadata storage types.
         /// </summary>
-        private string MapSchemaTypeToDataType(string schemaType, JsonElement propertySchema)
+        private string MapSchemaTypeToDataType(string? schemaType, JsonElement propertySchema)
         {
             return schemaType?.ToLower() switch
             {

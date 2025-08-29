@@ -329,6 +329,82 @@ namespace ECommerce.BusinessEvents.Tests.Services
             Assert.Null(companyMetadata);
         }
 
+        [Fact]
+        public async Task TrackEventAsync_WithEmbeddedPhoneNumbers_ExtractsMetadataCorrectly()
+        {
+            // Arrange: Schema with embedded array of phone numbers
+            string customerSchemaWithPhones = @"{
+                ""$schema"": ""https://json-schema.org/draft/2020-12/schema"",
+                ""type"": ""object"",
+                ""properties"": {
+                    ""Id"": { ""type"": ""string"", ""x-metadata"": true },
+                    ""Name"": { ""type"": ""string"", ""x-metadata"": true },
+                    ""PhoneNumbers"": {
+                        ""type"": ""array"",
+                        ""items"": {
+                            ""type"": ""object"",
+                            ""properties"": {
+                                ""Number"": { ""type"": ""string"", ""x-metadata"": true },
+                                ""Prefix"": { ""type"": ""string"", ""x-metadata"": true }
+                            }
+                        }
+                    }
+                }
+            }";
+
+            await _schemaRegistry.AddSchemaAsync("CustomerWithPhones", 1, customerSchemaWithPhones);
+
+            var customerData = new {
+                Id = "cust-001",
+                Name = "Ent",
+                PhoneNumbers = new[] {
+                    new { Number = "123456789", Prefix = "+44" },
+                    new { Number = "987654321", Prefix = "+1" }
+                }
+            };
+
+            _schemaValidatorMock
+                .Setup(v => v.Validate(It.IsAny<string>(), It.IsAny<string>()))
+                .Returns(ECommerce.Common.Result<ECommerce.Common.Unit, string>.Success(new ECommerce.Common.Unit()));
+
+            var dto = new BusinessEventDto
+            {
+                EntityType = "CustomerWithPhones",
+                EntityId = "cust-001",
+                EventType = IBusinessEventService.EventType.Created,
+                SchemaVersion = 1,
+                EventTimestamp = DateTimeOffset.UtcNow,
+                CorrelationId = Guid.NewGuid().ToString(),
+                ActorId = "test-user",
+                ActorType = IBusinessEventService.ActorType.User,
+                EntityData = customerData
+            };
+
+            // Act
+            var result = await _eventTracker.TrackEventAsync(dto);
+
+            // Assert
+            Assert.True(result.IsSuccess, result.Error);
+            var savedEvent = await _context.BusinessEvents.FirstOrDefaultAsync(e => e.EntityId == "cust-001");
+            Assert.NotNull(savedEvent);
+
+            var metadataRecords = await _context.BusinessEventMetadata
+                .Where(m => m.EventId == savedEvent.EventId)
+                .ToListAsync();
+
+            // Should have Id and Name
+            Assert.Contains(metadataRecords, m => m.MetadataKey == "Id" && m.MetadataValue == "cust-001");
+            Assert.Contains(metadataRecords, m => m.MetadataKey == "Name" && m.MetadataValue == "Ent");
+
+            // Should have PhoneNumbers[0].Number and PhoneNumbers[0].Prefix
+            Assert.Contains(metadataRecords, m => m.MetadataKey == "PhoneNumbers[0].Number" && m.MetadataValue == "123456789");
+            Assert.Contains(metadataRecords, m => m.MetadataKey == "PhoneNumbers[0].Prefix" && m.MetadataValue == "+44");
+
+            // Should have PhoneNumbers[1].Number and PhoneNumbers[1].Prefix
+            Assert.Contains(metadataRecords, m => m.MetadataKey == "PhoneNumbers[1].Number" && m.MetadataValue == "987654321");
+            Assert.Contains(metadataRecords, m => m.MetadataKey == "PhoneNumbers[1].Prefix" && m.MetadataValue == "+1");
+        }
+
         public void Dispose()
         {
             _context.Dispose();

@@ -191,7 +191,7 @@ namespace ECommerce.BusinessEvents.Services
         }
 
         /// <summary>
-        /// Retrieves a value from JSON using dot notation path (e.g., "Address.PostCode").
+        /// Retrieves a value from JSON using dot notation path with array indexing support (e.g., "PhoneNumbers[0].Number").
         /// </summary>
         private object? GetValueFromJsonPath(JsonElement element, string path)
         {
@@ -200,9 +200,44 @@ namespace ECommerce.BusinessEvents.Services
 
             foreach (var part in parts)
             {
-                if (current.ValueKind != JsonValueKind.Object || !current.TryGetProperty(part, out current))
+                // Check if this part contains array indexing (e.g., "PhoneNumbers[0]")
+                if (part.Contains('[') && part.Contains(']'))
                 {
-                    return null;
+                    var arrayProperty = part.Substring(0, part.IndexOf('['));
+                    var indexStr = part.Substring(part.IndexOf('[') + 1, part.IndexOf(']') - part.IndexOf('[') - 1);
+
+                    if (!int.TryParse(indexStr, out var index))
+                    {
+                        return null;
+                    }
+
+                    // Navigate to the array property
+                    if (current.ValueKind != JsonValueKind.Object || !current.TryGetProperty(arrayProperty, out current))
+                    {
+                        return null;
+                    }
+
+                    // Navigate to the array element at the specified index
+                    if (current.ValueKind != JsonValueKind.Array)
+                    {
+                        return null;
+                    }
+
+                    var arrayElements = current.EnumerateArray().ToArray();
+                    if (index < 0 || index >= arrayElements.Length)
+                    {
+                        return null;
+                    }
+
+                    current = arrayElements[index];
+                }
+                else
+                {
+                    // Regular property access
+                    if (current.ValueKind != JsonValueKind.Object || !current.TryGetProperty(part, out current))
+                    {
+                        return null;
+                    }
                 }
             }
 
