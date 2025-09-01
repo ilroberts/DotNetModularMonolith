@@ -10,6 +10,7 @@ using ECommerce.BusinessEvents.Infrastructure;
 using ECommerce.Common;
 using Newtonsoft.Json.Linq;
 using JsonFlatten;
+using Microsoft.Extensions.Logging;
 
 namespace ECommerce.BusinessEvents.Tests.Services
 {
@@ -19,6 +20,7 @@ namespace ECommerce.BusinessEvents.Tests.Services
         private readonly SchemaRegistryService _schemaRegistry;
         private readonly Mock<IJsonSchemaValidator> _schemaValidatorMock;
         private readonly EventTrackingService _eventTracker;
+        private readonly Mock<ILogger<SchemaRegistryService>> _schemaRegistryLoggerMock;
 
         public EventTrackingServiceTests()
         {
@@ -27,9 +29,10 @@ namespace ECommerce.BusinessEvents.Tests.Services
                 .Options;
 
             _context = new BusinessEventDbContext(options);
-            _schemaRegistry = new SchemaRegistryService(_context);
+            _schemaRegistryLoggerMock = new Mock<ILogger<SchemaRegistryService>>();
+            _schemaRegistry = new SchemaRegistryService(_context, _schemaRegistryLoggerMock.Object);
             _schemaValidatorMock = new Mock<IJsonSchemaValidator>();
-            var loggerMock = new Mock<Microsoft.Extensions.Logging.ILogger<EventTrackingService>>();
+            var loggerMock = new Mock<ILogger<EventTrackingService>>();
             ITransactionManager transactionManager = new NoOpTransactionManager();
             _eventTracker = new EventTrackingService(_context, _schemaRegistry, _schemaValidatorMock.Object, loggerMock.Object, transactionManager);
 

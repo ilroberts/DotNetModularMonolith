@@ -3,11 +3,21 @@ using ECommerce.BusinessEvents.Persistence;
 using ECommerce.BusinessEvents.Domain;
 using System.Text.Json;
 using DomainSchemaVersion = ModularMonolith.Domain.BusinessEvents.SchemaVersion;
+using Microsoft.Extensions.Logging;
 
 namespace ECommerce.BusinessEvents.Services
 {
-    public class SchemaRegistryService(BusinessEventDbContext dbContext)
+    public class SchemaRegistryService
     {
+        private readonly BusinessEventDbContext dbContext;
+        private readonly ILogger<SchemaRegistryService> logger;
+
+        public SchemaRegistryService(BusinessEventDbContext dbContext, ILogger<SchemaRegistryService> logger)
+        {
+            this.dbContext = dbContext;
+            this.logger = logger;
+        }
+
         public async Task<DomainSchemaVersion?> GetSchemaAsync(string entityType, int version)
         {
             return await dbContext.SchemaVersions
@@ -81,8 +91,7 @@ namespace ECommerce.BusinessEvents.Services
             catch (Exception ex)
             {
                 // Log the error but return empty config to allow graceful degradation
-                // In a production system, you might want to use proper logging here
-                Console.WriteLine($"Error parsing schema for metadata extraction: {ex.Message}");
+                logger.LogError(ex, "Error parsing schema for metadata extraction: {Message}", ex.Message);
             }
 
             return config;

@@ -2,6 +2,8 @@ using ECommerce.BusinessEvents.Services;
 using ECommerce.BusinessEvents.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Xunit;
+using Microsoft.Extensions.Logging;
+using Moq;
 
 namespace ECommerce.BusinessEvents.Tests.Services
 {
@@ -16,12 +18,18 @@ namespace ECommerce.BusinessEvents.Tests.Services
             return new BusinessEventDbContext(options);
         }
 
+        private SchemaRegistryService CreateService(BusinessEventDbContext context)
+        {
+            var loggerMock = new Mock<ILogger<SchemaRegistryService>>();
+            return new SchemaRegistryService(context, loggerMock.Object);
+        }
+
         [Fact]
         public void ParseMetadataConfig_CustomerSchema_ExtractsCorrectFields()
         {
             // Arrange
             var context = CreateInMemoryContext();
-            var service = new SchemaRegistryService(context);
+            var service = CreateService(context);
 
             var customerSchema = @"{
                 ""$schema"": ""https://json-schema.org/draft/2020-12/schema"",
@@ -75,7 +83,7 @@ namespace ECommerce.BusinessEvents.Tests.Services
         {
             // Arrange
             var context = CreateInMemoryContext();
-            var service = new SchemaRegistryService(context);
+            var service = CreateService(context);
 
             var productSchema = @"{
                 ""$schema"": ""https://json-schema.org/draft/2020-12/schema"",
@@ -117,7 +125,7 @@ namespace ECommerce.BusinessEvents.Tests.Services
         {
             // Arrange
             var context = CreateInMemoryContext();
-            var service = new SchemaRegistryService(context);
+            var service = CreateService(context);
 
             var schemaWithNesting = @"{
                 ""$schema"": ""https://json-schema.org/draft/2020-12/schema"",
@@ -162,7 +170,7 @@ namespace ECommerce.BusinessEvents.Tests.Services
         {
             // Arrange
             var context = CreateInMemoryContext();
-            var service = new SchemaRegistryService(context);
+            var service = CreateService(context);
 
             var schemaWithoutMetadata = @"{
                 ""$schema"": ""https://json-schema.org/draft/2020-12/schema"",
@@ -191,7 +199,7 @@ namespace ECommerce.BusinessEvents.Tests.Services
         {
             // Arrange
             var context = CreateInMemoryContext();
-            var service = new SchemaRegistryService(context);
+            var service = CreateService(context);
 
             var invalidSchema = "{ invalid json";
 

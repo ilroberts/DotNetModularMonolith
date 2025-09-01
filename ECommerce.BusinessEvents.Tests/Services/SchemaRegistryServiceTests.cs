@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using ECommerce.BusinessEvents.Persistence;
 using ECommerce.BusinessEvents.Services;
+using Microsoft.Extensions.Logging;
+using Moq;
 
 namespace ECommerce.BusinessEvents.Tests.Services
 {
@@ -8,6 +10,7 @@ namespace ECommerce.BusinessEvents.Tests.Services
     {
         private readonly BusinessEventDbContext _context;
         private readonly SchemaRegistryService _service;
+        private readonly Mock<ILogger<SchemaRegistryService>> _loggerMock;
 
         public SchemaRegistryServiceTests()
         {
@@ -16,7 +19,8 @@ namespace ECommerce.BusinessEvents.Tests.Services
                 .Options;
 
             _context = new BusinessEventDbContext(options);
-            _service = new SchemaRegistryService(_context);
+            _loggerMock = new Mock<ILogger<SchemaRegistryService>>();
+            _service = new SchemaRegistryService(_context, _loggerMock.Object);
         }
 
         [Fact]

@@ -1,9 +1,9 @@
 using ECommerce.BusinessEvents.Services;
 using ECommerce.BusinessEvents.Persistence;
 using Microsoft.EntityFrameworkCore;
-using Xunit;
-using System.IO;
 using System.Reflection;
+using Microsoft.Extensions.Logging;
+using Moq;
 
 namespace ECommerce.BusinessEvents.Tests.Services
 {
@@ -18,12 +18,18 @@ namespace ECommerce.BusinessEvents.Tests.Services
             return new BusinessEventDbContext(options);
         }
 
+        private SchemaRegistryService CreateService(BusinessEventDbContext context)
+        {
+            var loggerMock = new Mock<ILogger<SchemaRegistryService>>();
+            return new SchemaRegistryService(context, loggerMock.Object);
+        }
+
         [Fact]
         public void ParseMetadataConfig_ActualCustomerSchema_ExtractsCorrectFields()
         {
             // Arrange
             var context = CreateInMemoryContext();
-            var service = new SchemaRegistryService(context);
+            var service = CreateService(context);
 
             // Load the actual customer schema file
             var assembly = Assembly.GetExecutingAssembly();
@@ -34,10 +40,8 @@ namespace ECommerce.BusinessEvents.Tests.Services
             {
                 if (stream != null)
                 {
-                    using (var reader = new StreamReader(stream))
-                    {
-                        customerSchema = reader.ReadToEnd();
-                    }
+                    using var reader = new StreamReader(stream);
+                    customerSchema = reader.ReadToEnd();
                 }
                 else
                 {
@@ -76,7 +80,7 @@ namespace ECommerce.BusinessEvents.Tests.Services
         {
             // Arrange
             var context = CreateInMemoryContext();
-            var service = new SchemaRegistryService(context);
+            var service = CreateService(context);
 
             // Load the actual product schema file
             var assembly = Assembly.GetExecutingAssembly();
