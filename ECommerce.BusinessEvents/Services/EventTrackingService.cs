@@ -178,11 +178,8 @@ namespace ECommerce.BusinessEvents.Services
                 // Get all field patterns that should be extracted based on schema configuration
                 var fieldsToExtract = GetAllFieldsToExtract(config);
 
-                foreach (var flattenedEntry in flattened)
+                foreach ((string? key, object? value) in flattened)
                 {
-                    var key = flattenedEntry.Key;
-                    var value = flattenedEntry.Value;
-
                     // Check if this flattened key matches any of our configured metadata fields
                     if (ShouldExtractField(key, fieldsToExtract) &&
                         value != null &&
@@ -260,20 +257,11 @@ namespace ECommerce.BusinessEvents.Services
             }
 
             // Check pattern matches (e.g., PhoneNumbers[*].Number matches PhoneNumbers[0].Number)
-            foreach (var pattern in fieldsToExtract)
-            {
-                if (pattern.Contains("[*]"))
-                {
-                    // Convert pattern to regex-like matching
-                    var regexPattern = pattern.Replace("[*]", @"\[\d+\]");
-                    if (System.Text.RegularExpressions.Regex.IsMatch(flattenedKey, $"^{regexPattern}$"))
-                    {
-                        return true;
-                    }
-                }
-            }
-
-            return false;
+            return (from pattern in fieldsToExtract where
+                pattern.Contains("[*]")
+                select pattern.Replace("[*]", @"\[\d+\]"))
+                    .Any(regexPattern => System.Text.RegularExpressions.Regex
+                        .IsMatch(flattenedKey, $"^{regexPattern}$"));
         }
 
         /// <summary>
@@ -288,36 +276,37 @@ namespace ECommerce.BusinessEvents.Services
             }
 
             // For array fields, try to match the pattern
-            foreach (var arrayPath in config.ArrayPathsToExtract.Keys)
+            foreach (var arrayPath in config.ArrayPathsToExtract.Keys.Where(arrayPath => flattenedKey.StartsWith($"{arrayPath}[")))
             {
-                if (flattenedKey.StartsWith($"{arrayPath}["))
+                try
                 {
-                    try
-                    {
-                        // Parse the JSON string back to JsonElement for processing
-                        var arrayItemSchemaJson = config.ArrayPathsToExtract[arrayPath];
-                        using var schemaDoc = JsonDocument.Parse(arrayItemSchemaJson);
-                        var arrayItemSchema = schemaDoc.RootElement;
+                    // Parse the JSON string back to JsonElement for processing
+                    string arrayItemSchemaJson = config.ArrayPathsToExtract[arrayPath];
+                    using var schemaDoc = JsonDocument.Parse(arrayItemSchemaJson);
+                    var arrayItemSchema = schemaDoc.RootElement;
 
-                        if (arrayItemSchema.TryGetProperty("properties", out var propertiesElement))
-                        {
-                            // Extract the property name from the flattened key (e.g., "Number" from "PhoneNumbers[0].Number")
-                            var lastDotIndex = flattenedKey.LastIndexOf('.');
-                            if (lastDotIndex >= 0)
-                            {
-                                var propertyName = flattenedKey.Substring(lastDotIndex + 1);
-
-                                if (propertiesElement.TryGetProperty(propertyName, out var propertySchema))
-                                {
-                                    return GetDataTypeFromSchemaElement(propertySchema);
-                                }
-                            }
-                        }
-                    }
-                    catch (Exception ex)
+                    if (!arrayItemSchema.TryGetProperty("properties", out var propertiesElement))
                     {
-                        logger.LogWarning(ex, "Error parsing array schema for data type lookup in path {ArrayPath}", arrayPath);
+                        continue;
                     }
+
+                    // Extract the property name from the flattened key (e.g., "Number" from "PhoneNumbers[0].Number")
+                    int lastDotIndex = flattenedKey.LastIndexOf('.');
+                    if (lastDotIndex < 0)
+                    {
+                        continue;
+                    }
+
+                    string propertyName = flattenedKey.Substring(lastDotIndex + 1);
+
+                    if (propertiesElement.TryGetProperty(propertyName, out var propertySchema))
+                    {
+                        return GetDataTypeFromSchemaElement(propertySchema);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    logger.LogWarning(ex, "Error parsing array schema for data type lookup in path {ArrayPath}", arrayPath);
                 }
             }
 
@@ -332,20 +321,21 @@ namespace ECommerce.BusinessEvents.Services
             if (!propertySchema.TryGetProperty("type", out var typeElement))
                 return "string";
 
-            if (typeElement.ValueKind == JsonValueKind.String)
+            if (typeElement.ValueKind != JsonValueKind.String)
             {
-                var typeString = typeElement.GetString();
-                return typeString?.ToLower() switch
-                {
-                    "string" => IsDateTimeFormatElement(propertySchema) ? "date" : "string",
-                    "number" => "number",
-                    "integer" => "number",
-                    "boolean" => "boolean",
-                    _ => "string"
-                };
+                return "string";
             }
 
-            return "string";
+            string? typeString = typeElement.GetString();
+            return typeString?.ToLower() switch
+            {
+                "string" => IsDateTimeFormatElement(propertySchema) ? "date" : "string",
+                "number" => "number",
+                "integer" => "number",
+                "boolean" => "boolean",
+                _ => "string"
+            };
+
         }
 
         /// <summary>
@@ -353,13 +343,14 @@ namespace ECommerce.BusinessEvents.Services
         /// </summary>
         private bool IsDateTimeFormatElement(JsonElement propertySchema)
         {
-            if (propertySchema.TryGetProperty("format", out var formatElement) &&
-                formatElement.ValueKind == JsonValueKind.String)
+            if (!propertySchema.TryGetProperty("format", out var formatElement) ||
+                formatElement.ValueKind != JsonValueKind.String)
             {
-                var format = formatElement.GetString();
-                return format is "date" or "date-time" or "time";
+                return false;
             }
-            return false;
+
+            var format = formatElement.GetString();
+            return format is "date" or "date-time" or "time";
         }
 
         public async Task<List<BusinessEvent>> GetAllEventsAsync()

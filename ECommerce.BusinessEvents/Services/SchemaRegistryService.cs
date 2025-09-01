@@ -157,17 +157,11 @@ namespace ECommerce.BusinessEvents.Services
             // Handle array of types (e.g., ["string", "null"])
             if (typeElement.ValueKind == JsonValueKind.Array)
             {
-                foreach (var arrayElement in typeElement.EnumerateArray())
+                foreach (var typeString in from arrayElement in typeElement.EnumerateArray() where arrayElement.ValueKind == JsonValueKind.String select arrayElement.GetString() into typeString where typeString != "null" select typeString)
                 {
-                    if (arrayElement.ValueKind == JsonValueKind.String)
-                    {
-                        var typeString = arrayElement.GetString();
-                        if (typeString != "null")
-                        {
-                            return MapSchemaTypeToDataType(typeString, propertySchema);
-                        }
-                    }
+                    return MapSchemaTypeToDataType(typeString, propertySchema);
                 }
+
                 return "string"; // Default fallback
             }
 
