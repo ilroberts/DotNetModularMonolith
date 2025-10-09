@@ -11,6 +11,7 @@ nupkg/
 # Visual Studio Code
 .vscode/
 **/node_modules/
+**/.store
 
 # Rider
 .idea/
