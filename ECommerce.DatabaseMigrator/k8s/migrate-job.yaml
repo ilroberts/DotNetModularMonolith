@@ -8,27 +8,27 @@ spec:
       containers:
         - name: migrator
           image: ecommerce-db-migrator:latest
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           env:
             - name: CUSTOMER_DB_CONNECTION
               valueFrom:
                 secretKeyRef:
-                  name: customers-db-secret
-                  key: connectionString
+                  name: app-secret
+                  key: connection-string
             - name: ORDER_DB_CONNECTION
               valueFrom:
                 secretKeyRef:
-                  name: orders-db-secret
-                  key: connectionString
+                  name: app-secret
+                  key: connection-string
             - name: PRODUCT_DB_CONNECTION
               valueFrom:
                 secretKeyRef:
-                  name: products-db-secret
-                  key: connectionString
+                  name: app-secret
+                  key: connection-string
             - name: BUSINESSEVENT_DB_CONNECTION
               valueFrom:
                 secretKeyRef:
-                  name: businessevents-db-secret
-                  key: connectionString
+                  name: app-secret
+                  key: connection-string
       restartPolicy: Never
   backoffLimit: 1

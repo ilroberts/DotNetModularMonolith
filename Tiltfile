@@ -27,7 +27,6 @@ k8s_yaml([
     'ECommerceApp/k8s/deployment.yaml',
     'ECommerceApp/k8s/ingress.yaml',
     'ECommerceApp/k8s/service.yaml',
-    'ECommerce.DatabaseMigrator/k8s/db-connection-sealedsecrets.yaml',
     'ECommerce.DatabaseMigrator/k8s/migrate-job.yaml'
 ])
 
