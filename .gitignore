@@ -12,6 +12,7 @@ nupkg/
 .vscode/
 **/node_modules/
 **/.store
+.env
 
 # Rider
 .idea/
