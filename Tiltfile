@@ -23,7 +23,7 @@ docker_build(
 # Apply Kubernetes manifests
 k8s_yaml([
     'ECommerceApp/k8s/sealedsecret.yaml',
-    'ECommerceApp/k8s/hpa.yaml',
+    # 'ECommerceApp/k8s/hpa.yaml',  # Removed for now - metrics-server not fully configured
     'ECommerceApp/k8s/deployment.yaml',
     'ECommerceApp/k8s/ingress.yaml',
     'ECommerceApp/k8s/service.yaml',
@@ -73,3 +73,8 @@ k8s_resource(
 # Let's add metrics server if it's needed
 k8s_yaml('Infrastructure/k8s/metrics-server.yaml')
 k8s_yaml('Infrastructure/k8s/metrics-rbac.yaml')
+
+k8s_resource(
+    'metrics-server',
+    labels=["infrastructure"]
+)
