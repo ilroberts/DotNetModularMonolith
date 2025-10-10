@@ -63,7 +63,7 @@ spec:
             - name: REDIS_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: redis-secret
+                  name: redis.app.pwd
                   key: REDIS_PASSWORD
             - name: REDIS_CONNECTION_STRING
               value: "$(REDIS_HOST):$(REDIS_PORT),user=$(REDIS_USER),password=$(REDIS_PASSWORD)"
