@@ -78,3 +78,23 @@ k8s_resource(
     'metrics-server',
     labels=["infrastructure"]
 )
+
+# Kubernetes Dashboard (local dev)
+# Load the official dashboard manifest (versioned URL) and our local helper manifests
+k8s_yaml('ECommerceApp/Infrastructure/kubernetes-dashboard/recommended.yaml')
+k8s_yaml([
+    'ECommerceApp/Infrastructure/kubernetes-dashboard/dashboard-admin-user.yaml',
+    'ECommerceApp/Infrastructure/kubernetes-dashboard/dashboard-nodeport.yaml',
+])
+
+# Label dashboard resources so they appear under "infrastructure" in Tilt
+k8s_resource(
+    'kubernetes-dashboard',
+    labels=["infrastructure"]
+)
+
+k8s_resource(
+    'dashboard-metrics-scraper',
+    labels=["infrastructure"]
+)
+
