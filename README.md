@@ -1,4 +1,4 @@
-# Modular Monolith E-Commerce Application - Adding Random Text to test revert
+# Modular Monolith E-Commerce Application
 
 ## Overview
 
