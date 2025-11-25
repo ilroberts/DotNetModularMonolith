@@ -1,0 +1,84 @@
+@startuml
+set separator none
+title ECommerce System - ECommerce API - Components
+
+left to right direction
+skinparam ranksep 60
+skinparam nodesep 30
+
+skinparam {
+  arrowFontSize 10
+  defaultTextAlignment center
+  wrapWidth 200
+  maxMessageSize 100
+}
+
+hide stereotype
+
+skinparam rectangle<<AccountingSystem>> {
+  BackgroundColor #1168bd
+  FontColor #ffffff
+  BorderColor #0b4884
+  shadowing false
+}
+skinparam rectangle<<ECommerceSystem.ECommerceAPI.CustomerModule>> {
+  BackgroundColor #dddddd
+  FontColor #000000
+  BorderColor #9a9a9a
+  shadowing false
+}
+skinparam rectangle<<ECommerceSystem.CustomerUI>> {
+  BackgroundColor #dddddd
+  FontColor #000000
+  BorderColor #9a9a9a
+  shadowing false
+}
+skinparam rectangle<<ECommerceSystem.ECommerceAPI.OrderModule>> {
+  BackgroundColor #dddddd
+  FontColor #000000
+  BorderColor #9a9a9a
+  shadowing false
+}
+skinparam rectangle<<ECommerceSystem.ECommerceAPI.ProductModule>> {
+  BackgroundColor #dddddd
+  FontColor #000000
+  BorderColor #9a9a9a
+  shadowing false
+}
+skinparam rectangle<<ShippingSystem>> {
+  BackgroundColor #1168bd
+  FontColor #ffffff
+  BorderColor #0b4884
+  shadowing false
+}
+skinparam rectangle<<ECommerceSystem.ECommerceAPI>> {
+  BorderColor #9a9a9a
+  FontColor #9a9a9a
+  shadowing false
+}
+
+rectangle "==Customer UI\n<size:10>[Container: Blazor, ASP.NET Core]</size>\n\nThe customer-facing interface for browsing and purchasing products" <<ECommerceSystem.CustomerUI>> as ECommerceSystem.CustomerUI
+rectangle "==Accounting System\n<size:10>[Software System]</size>\n\nHandles financial transactions and reporting for the e-commerce platform" <<AccountingSystem>> as AccountingSystem
+rectangle "==Shipping System\n<size:10>[Software System]</size>\n\nManages shipping and delivery of orders" <<ShippingSystem>> as ShippingSystem
+
+rectangle "ECommerce API\n<size:10>[Container: .NET 8, ASP.NET Core]</size>" <<ECommerceSystem.ECommerceAPI>> {
+  rectangle "Domain Modules" <<group1>> as group1 {
+    skinparam RectangleBorderColor<<group1>> #cccccc
+    skinparam RectangleFontColor<<group1>> #cccccc
+    skinparam RectangleBorderStyle<<group1>> dashed
+
+    rectangle "==Product Module\n<size:10>[Component: .NET 8]</size>\n\nHandles product catalog management" <<ECommerceSystem.ECommerceAPI.ProductModule>> as ECommerceSystem.ECommerceAPI.ProductModule
+    rectangle "==Order Module\n<size:10>[Component: .NET 8]</size>\n\nHandles order processing and management" <<ECommerceSystem.ECommerceAPI.OrderModule>> as ECommerceSystem.ECommerceAPI.OrderModule
+    rectangle "==Customer Module\n<size:10>[Component: .NET 8]</size>\n\nHandles customer account management" <<ECommerceSystem.ECommerceAPI.CustomerModule>> as ECommerceSystem.ECommerceAPI.CustomerModule
+  }
+
+}
+
+ECommerceSystem.CustomerUI .[#707070,thickness=2].> ECommerceSystem.ECommerceAPI.CustomerModule : "<color:#707070>Retrieves and updates customer information from"
+ECommerceSystem.CustomerUI .[#707070,thickness=2].> ECommerceSystem.ECommerceAPI.ProductModule : "<color:#707070>Retrieves product catalog from"
+ECommerceSystem.CustomerUI .[#707070,thickness=2].> ECommerceSystem.ECommerceAPI.OrderModule : "<color:#707070>Places orders through"
+ECommerceSystem.ECommerceAPI.OrderModule .[#707070,thickness=2].> AccountingSystem : "<color:#707070>Sends order data to"
+ECommerceSystem.ECommerceAPI.OrderModule .[#707070,thickness=2].> ShippingSystem : "<color:#707070>Sends shipping data to"
+ECommerceSystem.ECommerceAPI.OrderModule .[#707070,thickness=2].> ECommerceSystem.ECommerceAPI.ProductModule : "<color:#707070>Retrieves product information from"
+ECommerceSystem.ECommerceAPI.OrderModule .[#707070,thickness=2].> ECommerceSystem.ECommerceAPI.CustomerModule : "<color:#707070>Retrieves customer information from"
+@enduml

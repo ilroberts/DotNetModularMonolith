@@ -1,0 +1,83 @@
+@startuml
+set separator none
+title ECommerce System - System Context
+
+top to bottom direction
+skinparam ranksep 60
+skinparam nodesep 30
+
+skinparam {
+  arrowFontSize 10
+  defaultTextAlignment center
+  wrapWidth 200
+  maxMessageSize 100
+}
+
+hide stereotype
+
+skinparam rectangle<<AccountingSystem>> {
+  BackgroundColor #1168bd
+  FontColor #ffffff
+  BorderColor #0b4884
+  shadowing false
+}
+skinparam person<<Administrator>> {
+  BackgroundColor #08427b
+  FontColor #ffffff
+  BorderColor #052e56
+  shadowing false
+}
+skinparam person<<Customer>> {
+  BackgroundColor #08427b
+  FontColor #ffffff
+  BorderColor #052e56
+  shadowing false
+}
+skinparam person<<DatabaseAdministrator>> {
+  BackgroundColor #08427b
+  FontColor #ffffff
+  BorderColor #052e56
+  shadowing false
+}
+skinparam rectangle<<ECommerceSystem>> {
+  BackgroundColor #1168bd
+  FontColor #ffffff
+  BorderColor #0b4884
+  shadowing false
+}
+skinparam rectangle<<NotificationSystem>> {
+  BackgroundColor #1168bd
+  FontColor #ffffff
+  BorderColor #0b4884
+  shadowing false
+}
+skinparam rectangle<<ShippingSystem>> {
+  BackgroundColor #1168bd
+  FontColor #ffffff
+  BorderColor #0b4884
+  shadowing false
+}
+
+rectangle "ECommerce Solution" <<group1>> as group1 {
+  skinparam RectangleBorderColor<<group1>> #cccccc
+  skinparam RectangleFontColor<<group1>> #cccccc
+  skinparam RectangleBorderStyle<<group1>> dashed
+
+  rectangle "==Accounting System\n<size:10>[Software System]</size>\n\nHandles financial transactions and reporting for the e-commerce platform" <<AccountingSystem>> as AccountingSystem
+  rectangle "==Shipping System\n<size:10>[Software System]</size>\n\nManages shipping and delivery of orders" <<ShippingSystem>> as ShippingSystem
+  rectangle "==Notification System\n<size:10>[Software System]</size>\n\nSends notifications to customers about their orders" <<NotificationSystem>> as NotificationSystem
+  rectangle "==ECommerce System\n<size:10>[Software System]</size>\n\nA modular monolith e-commerce platform built with .NET 8" <<ECommerceSystem>> as ECommerceSystem
+}
+
+person "==Customer\n<size:10>[Person]</size>\n\nA customer browsing and purchasing products" <<Customer>> as Customer
+person "==Administrator\n<size:10>[Person]</size>\n\nManages products, orders, and customers" <<Administrator>> as Administrator
+person "==Database Administrator\n<size:10>[Person]</size>\n\nManages and maintains the database infrastructure" <<DatabaseAdministrator>> as DatabaseAdministrator
+
+Customer .[#707070,thickness=2].> ECommerceSystem : "<color:#707070>Uses to browse products and place orders"
+DatabaseAdministrator .[#707070,thickness=2].> ECommerceSystem : "<color:#707070>Manages and maintains"
+ECommerceSystem .[#707070,thickness=2].> AccountingSystem : "<color:#707070>Sends order and payment data to"
+ECommerceSystem .[#707070,thickness=2].> ShippingSystem : "<color:#707070>Sends order and shipping data to"
+ECommerceSystem .[#707070,thickness=2].> NotificationSystem : "<color:#707070>Sends order confirmation and shipping notifications to"
+NotificationSystem .[#707070,thickness=2].> Customer : "<color:#707070>Sends notifications to"
+Administrator .[#707070,thickness=2].> ECommerceSystem : "<color:#707070>Uses to manage products, orders, and customers"
+@enduml
