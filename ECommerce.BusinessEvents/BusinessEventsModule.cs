@@ -7,11 +7,26 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Npgsql;
 
 namespace ECommerce.BusinessEvents
 {
     public static class BusinessEventsModule
     {
+        private static bool CanConnectToPostgres(string connectionString)
+        {
+            try
+            {
+                using var conn = new NpgsqlConnection(connectionString);
+                conn.Open();
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
         public static IServiceCollection AddBusinessEventsModule(this IServiceCollection services, IConfiguration configuration)
         {
             var connectionString = configuration.GetConnectionString("DefaultConnection");
@@ -19,12 +34,14 @@ namespace ECommerce.BusinessEvents
             var loggerFactory = serviceProvider.GetService<ILoggerFactory>();
             var logger = loggerFactory?.CreateLogger("BusinessEventsModule");
 
+            var usePostgres = !string.IsNullOrEmpty(connectionString) && CanConnectToPostgres(connectionString);
+
             services.AddDbContext<BusinessEventDbContext>(options =>
             {
-                if (!string.IsNullOrEmpty(connectionString))
+                if (usePostgres)
                 {
                     logger?.LogInformation("BusinessEventsModule: Using PostgreSQL connection string: {ConnectionString}",
-                        connectionString.Substring(0, Math.Min(50, connectionString.Length)) + "...");
+                        connectionString!.Substring(0, Math.Min(50, connectionString.Length)) + "...");
 
                     options.UseNpgsql(connectionString, npgsqlOptions =>
                     {
@@ -33,8 +50,12 @@ namespace ECommerce.BusinessEvents
                 }
                 else
                 {
-                    logger?.LogInformation("BusinessEventsModule: No connection string found, using in-memory database");
+                    if (!string.IsNullOrEmpty(connectionString))
+                        logger?.LogWarning("BusinessEventsModule: Could not connect to PostgreSQL, falling back to in-memory database");
+                    else
+                        logger?.LogInformation("BusinessEventsModule: No connection string found, using in-memory database");
                     options.UseInMemoryDatabase("ECommerce.Business.Events");
+                    options.ConfigureWarnings(w => w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.InMemoryEventId.TransactionIgnoredWarning));
                 }
             });
 

@@ -1,0 +1,49 @@
+{
+  "name": "dotnet-multi-version-with-zscaler",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": "..",
+    "args": {
+      "VARIANT": "10.0"
+    }
+  },
+
+  // Typical devcontainer settings
+  "remoteUser": "vscode",
+  "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
+
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "terminal.integrated.defaultProfile.linux": "bash",
+        "dotnet.defaultSolution": "",
+        "omnisharp.sdkPath": "/usr/share/dotnet"
+      },
+      "extensions": [
+        "ms-dotnettools.csharp",
+        "ms-dotnettools.csdevkit",
+        "ms-vscode.gitlens"
+      ]
+    }
+  },
+
+  // Forward any ports your .NET app uses
+  "forwardPorts": [5000, 5001],
+
+  // Optional: features if you want them
+  "features": {
+    // Example: Node tooling if you later add a front end
+    // "ghcr.io/devcontainers/features/node:1": {
+    //   "version": "22"
+    // }
+  },
+
+  // Mount the Docker socket if later you want "Docker-from-Docker" from inside
+  // the devcontainer (for running docker/kubectl/helm from inside).
+  // Comment this out if you don't need it yet.
+  "mounts": [
+    "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind"
+  ],
+
+  "postCreateCommand": "dotnet --list-sdks"
+}
