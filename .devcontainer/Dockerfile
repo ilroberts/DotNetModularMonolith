@@ -7,7 +7,7 @@ USER root
 
 # Ensure CA utilities are present (usually already are, but this is cheap)
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends ca-certificates curl git \
+    && apt-get install -y --no-install-recommends ca-certificates curl git nodejs npm \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy Zscaler root cert into the system trust store BEFORE downloading anything

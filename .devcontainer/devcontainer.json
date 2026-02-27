@@ -32,10 +32,9 @@
 
   // Optional: features if you want them
   "features": {
-    // Example: Node tooling if you later add a front end
-    // "ghcr.io/devcontainers/features/node:1": {
-    //   "version": "22"
-    // }
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "22"
+    }
   },
 
   // Mount the Docker socket if later you want "Docker-from-Docker" from inside
