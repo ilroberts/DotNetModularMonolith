@@ -84,3 +84,9 @@ Modules communicate through interfaces defined in `ECommerce.Contracts`, which a
 ### Deployment
 
 The application is containerized using Docker and can be deployed to Kubernetes using Skaffold for local development. The application exposes a REST API with Swagger documentation enabled in development environments.
+
+## Skills
+
+| Skill | Location | When to use |
+|---|---|---|
+| conventional-commits | `.github/conventional-commits/SKILL.md` | Use when creating git commit messages |
