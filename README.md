@@ -24,6 +24,7 @@
 - [Setup and Installation](#setup-and-installation)
 - [Usage](#usage)
 - [Testing](#testing)
+- [Performance Testing](#performance-testing)
 - [Logging & Observability](#logging--observability)
 - [Contributing](#contributing)
 
@@ -93,6 +94,63 @@ ModularMonolith/
   ```sh
   dotnet test
   ```
+
+## Performance Testing
+
+Performance tests are located in `tests/k6/` and use [k6](https://k6.io/) — a modern load testing tool built into the devcontainer.
+
+### Prerequisites
+
+- The application must be running (`dotnet run --project ECommerceApp`)
+- k6 must be installed (included in the devcontainer; see [Dockerfile](.devcontainer/Dockerfile))
+
+### Running the tests
+
+Use the wrapper script from the workspace root:
+
+```sh
+./tests/k6/run-k6.sh
+```
+
+This will:
+1. Run the k6 test script
+2. Serve a **live dashboard** at `http://localhost:5665` during the run
+3. Write two reports to `tests/k6/reports/` once the run completes:
+   - `customers-<timestamp>.html` — rich HTML report via [k6-reporter](https://github.com/benc-uk/k6-reporter)
+   - `customers-<timestamp>.json` — raw metrics data
+   - `dashboard-<timestamp>.html` — self-contained dashboard export
+
+#### Options
+
+| Variable | Default | Description |
+|---|---|---|
+| `BASE_URL` | `http://localhost:5173` | Target API base URL |
+| `REPORT_DIR` | `tests/k6/reports` | Directory to write reports to |
+
+```sh
+# Point at a different environment
+BASE_URL=https://staging.example.com ./tests/k6/run-k6.sh
+
+# Run a specific test script
+./tests/k6/run-k6.sh tests/k6/orders.js
+```
+
+### Test scenarios
+
+**`tests/k6/customers.js`** tests the Customer endpoints with two parallel scenarios:
+
+| Scenario | Endpoint | VUs | Duration | Threshold |
+|---|---|---|---|---|
+| `create_customers` | `POST /customers` | ramp to 5 | 40s | p(95) < 500ms, error rate < 1% |
+| `get_customers` | `GET /customers`, `GET /customers/{id}` | ramp to 10 | 40s | p(95) < 300ms, error rate < 1% |
+
+The `setup()` phase automatically:
+- Generates a fresh JWT via `POST /admin/generateToken`
+- Registers the Customer v1 schema via `POST /schemas` (idempotent — ignores 409 if already registered)
+
+### Authentication
+
+Tests generate their own bearer token at startup — no manual token management is needed.
 
 ## Logging & Observability
 
