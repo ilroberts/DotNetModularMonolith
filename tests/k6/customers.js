@@ -1,6 +1,8 @@
 import http from 'k6/http';
 import { check, sleep } from 'k6';
 import { Trend, Rate } from 'k6/metrics';
+import { textSummary } from 'https://jslib.k6.io/k6-summary/0.0.2/index.js';
+import { htmlReport } from 'https://raw.githubusercontent.com/benc-uk/k6-reporter/main/dist/bundle.js';
 
 // ---------------------------------------------------------------------------
 // Configuration
@@ -195,4 +197,20 @@ export function getCustomers({ token }) {
   }
 
   sleep(1);
+}
+
+// ---------------------------------------------------------------------------
+// Summary: write results to stdout, JSON and HTML after the run
+// ---------------------------------------------------------------------------
+export function handleSummary(data) {
+  const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+  const reportDir = __ENV.REPORT_DIR || 'tests/k6/reports';
+  const jsonPath  = `${reportDir}/customers-${timestamp}.json`;
+  const htmlPath  = `${reportDir}/customers-${timestamp}.html`;
+
+  return {
+    'stdout':   textSummary(data, { indent: ' ', enableColors: true }),
+    [jsonPath]: JSON.stringify(data, null, 2),
+    [htmlPath]: htmlReport(data, { title: 'Customer Endpoint Performance Report' }),
+  };
 }

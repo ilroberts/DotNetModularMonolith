@@ -47,3 +47,4 @@ bld/
 msbuild.log
 msbuild.err
 msbuild.wrn
+tests/k6/reports/
