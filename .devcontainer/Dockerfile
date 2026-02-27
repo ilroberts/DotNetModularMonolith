@@ -23,6 +23,13 @@ RUN wget https://dot.net/v1/dotnet-install.sh -O dotnet-install.sh \
     && ./dotnet-install.sh --channel 8.0 --install-dir /usr/share/dotnet \
     && rm dotnet-install.sh
 
+# Install k6 load testing tool (arm64)
+RUN K6_VERSION=$(curl -s https://api.github.com/repos/grafana/k6/releases/latest | grep '"tag_name"' | cut -d'"' -f4) \
+    && curl -L "https://github.com/grafana/k6/releases/download/${K6_VERSION}/k6-${K6_VERSION}-linux-arm64.tar.gz" -o /tmp/k6.tar.gz \
+    && tar -xzf /tmp/k6.tar.gz -C /tmp \
+    && mv /tmp/k6-${K6_VERSION}-linux-arm64/k6 /usr/local/bin/k6 \
+    && rm -rf /tmp/k6.tar.gz /tmp/k6-${K6_VERSION}-linux-arm64
+
 # Verify both SDKs are installed
 RUN dotnet --list-sdks
 
